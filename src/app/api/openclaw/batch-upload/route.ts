@@ -6,6 +6,7 @@ import { calculateGrade } from "@/lib/grade-calculator";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { findParentTagIdForGrade } from "@/lib/tag-recognition";
 import { compare } from "bcryptjs";
+import { generateUniqueShortId } from "@/lib/short-id";
 
 const logger = createLogger('api:openclaw:batch-upload');
 
@@ -166,6 +167,7 @@ async function createErrorItem(
 
     const errorItem = await prisma.errorItem.create({
         data: {
+            shortId: await generateUniqueShortId(prisma),
             userId: userId,
             subjectId: subjectId || undefined,
             originalImageUrl: `data:${mimeType};base64,${imageBase64}`,

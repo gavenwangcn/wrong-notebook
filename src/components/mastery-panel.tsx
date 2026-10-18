@@ -1,0 +1,145 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { ChevronDown, ChevronUp, Loader2, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { apiClient } from "@/lib/api-client";
+import type { PracticeHistoryResponse } from "@/types/api";
+
+interface MasteryPanelProps {
+    errorItemId: string;
+    /** 掌握状态被后台评估更新后回调，用于同步页面上的掌握开关 */
+    onMasteryLevelChange?: (level: number) => void;
+}
+
+const POLL_INTERVAL_MS = 4000;
+const MAX_POLLS = 20;
+
+export const RESULT_BADGE_CLASS: Record<string, string> = {
+    correct: "bg-green-100 text-green-700 border-green-200",
+    wrong: "bg-red-100 text-red-700 border-red-200",
+    not_attempted: "bg-amber-100 text-amber-700 border-amber-200",
+};
+
+export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanelProps) {
+    const { t } = useLanguage();
+    const [data, setData] = useState<PracticeHistoryResponse | null>(null);
+    const [expanded, setExpanded] = useState<string | null>(null);
+    const [polls, setPolls] = useState(0);
+
+    const load = useCallback(() => {
+        apiClient.get<PracticeHistoryResponse>(`/api/error-items/${errorItemId}/practice-records`)
+            .then((result) => {
+                setData(result);
+                onMasteryLevelChange?.(result.masteryLevel);
+            })
+            // 记录加载失败不影响详情页其他内容
+            .catch(() => undefined);
+    }, [errorItemId, onMasteryLevelChange]);
+
+    useEffect(load, [load]);
+
+    const latest = data?.records[0];
+    const isPending = !!latest && (!data?.masteryEvaluatedAt || new Date(latest.createdAt) > new Date(data.masteryEvaluatedAt));
+
+    // 有新记录尚未评估时轮询，直到后台评估完成
+    useEffect(() => {
+        if (!isPending || polls >= MAX_POLLS) return;
+        const timer = setTimeout(() => {
+            setPolls((count) => count + 1);
+            load();
+        }, POLL_INTERVAL_MS);
+        return () => clearTimeout(timer);
+    }, [isPending, polls, load]);
+
+    if (!data) return null;
+
+    const probability = data.masteryProbability;
+    const percent = probability === null ? null : Math.round(probability * 100);
+    const barColor = percent === null ? "" : percent >= 80 ? "bg-green-500" : percent >= 50 ? "bg-amber-500" : "bg-red-500";
+    const difficultyLabels = t.practice.difficulty as Record<string, string>;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    {t.mastery.probability}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {percent === null ? (
+                    <p className="text-sm text-muted-foreground">{isPending ? t.mastery.pending : t.mastery.notEvaluated}</p>
+                ) : (
+                    <div className="space-y-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-3xl font-bold">{percent}%</span>
+                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                                {isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                                <Badge variant="outline">{data.masterySource === "ai" ? t.mastery.aiEvaluated : t.mastery.estimated}</Badge>
+                            </span>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                            <div className={`h-full ${barColor} transition-all`} style={{ width: `${percent}%` }} />
+                        </div>
+                        {data.masteryReason && <p className="text-sm text-muted-foreground">{data.masteryReason}</p>}
+                        <p className="text-xs text-muted-foreground">{t.mastery.thresholdHint}</p>
+                    </div>
+                )}
+
+                <div className="space-y-2 border-t pt-4">
+                    <h4 className="text-sm font-semibold">{t.mastery.history}</h4>
+                    {data.records.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">{t.mastery.noHistory}</p>
+                    ) : (
+                        <ul className="divide-y rounded-md border">
+                            {data.records.map((record) => (
+                                <li key={record.id} className="p-3 text-sm space-y-2">
+                                    <button
+                                        type="button"
+                                        className="flex w-full flex-wrap items-center gap-2 text-left"
+                                        onClick={() => setExpanded(expanded === record.id ? null : record.id)}
+                                    >
+                                        <span className="text-muted-foreground tabular-nums">{format(new Date(record.createdAt), "yyyy-MM-dd HH:mm")}</span>
+                                        <Badge variant="outline" className={RESULT_BADGE_CLASS[record.result] || ""}>
+                                            {t.mastery.results[record.result as keyof typeof t.mastery.results] || record.result}
+                                        </Badge>
+                                        {record.difficulty && <Badge variant="secondary">{difficultyLabels[record.difficulty] || record.difficulty}</Badge>}
+                                        <span className="text-xs text-muted-foreground">
+                                            {record.exam ? `${t.mastery.sources.exam} · ${record.exam.title}` : t.mastery.sources.practice}
+                                        </span>
+                                        {record.questionText && (
+                                            <span className="ml-auto text-muted-foreground">
+                                                {expanded === record.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                            </span>
+                                        )}
+                                    </button>
+                                    {expanded === record.id && record.questionText && (
+                                        <div className="space-y-2 rounded-md bg-muted/40 p-3">
+                                            <MarkdownRenderer content={record.questionText} />
+                                            {record.answerText && (
+                                                <div className="border-t pt-2">
+                                                    <MarkdownRenderer content={record.answerText} className="font-semibold" />
+                                                </div>
+                                            )}
+                                            {record.exam && (
+                                                <Link href={`/exams/${record.exam.paperId}`} className="text-xs text-primary hover:underline">
+                                                    {record.exam.title}
+                                                </Link>
+                                            )}
+                                        </div>
+                                    )}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}

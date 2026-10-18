@@ -25,10 +25,13 @@ model User {
   role      String   @default("user") // "admin" or "user"
   isActive  Boolean  @default(true)   // 用户是否启用
 
+  confirmBeforeImport Boolean @default(false) // 导入题目前是否进入人工校对页
+
   errorItems ErrorItem[]
   subjects   Subject[]
   practiceRecords PracticeRecord[]
   customTags KnowledgeTag[] // User's custom tags
+  examPapers ExamPaper[]
 }
 
 // 统一知识点标签表 (支持无限层级)
@@ -80,6 +83,7 @@ model Subject {
 
 model ErrorItem {
   id             String   @id @default(cuid())
+  shortId        String?  @unique // 6 位 base58 短 ID，创建后不变
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjectId      String?
@@ -109,11 +113,19 @@ model ErrorItem {
   masteryLevel     Int     @default(0) // 0: New, 1: Reviewing, 2: Mastered
   gradeSemester    String? // e.g. "Junior High Grade 2, 1st Semester"
   paperLevel       String? // e.g. "A", "B", "Other"
+
+  // 根据举一反三历史推测的掌握情况
+  masteryProbability Float?    // 0~1
+  masteryReason      String?
+  masterySource      String?   // ai | rule
+  masteryEvaluatedAt DateTime?
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   reviewSchedules ReviewSchedule[]
+  practiceRecords PracticeRecord[]
+  examQuestions   ExamQuestion[]
 }
 
 model ReviewSchedule {
@@ -136,6 +148,59 @@ model PracticeRecord {
   subject   String?  // e.g. "Math", "Physics"
   difficulty String? // "easy", "medium", "hard", "harder"
   isCorrect Boolean?
+
+  // 举一反三记录：关联原题，保存生成的题目与结果
+  errorItemId  String?
+  errorItem    ErrorItem? @relation(fields: [errorItemId], references: [id], onDelete: Cascade)
+  result       String?  // correct | wrong | not_attempted
+  questionText String?
+  answerText   String?
+  analysis     String?
+  source       String   @default("practice") // practice | exam
+  examQuestion ExamQuestion?
   
   createdAt DateTime @default(now())
+
+  @@index([errorItemId, createdAt])
+}
+
+// 随机错题试卷
+model ExamPaper {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  status     String   @default("generating") // generating | ready | partial | failed
+  scope      String   // unmastered | mastered | all
+  difficulty String   // easy | medium | hard | harder
+  requestedCount Int
+  subjectIds String   // JSON 数组
+  tagNames   String?  // JSON 数组
+  resultsRecordedAt DateTime?
+
+  questions  ExamQuestion[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, createdAt])
+}
+
+model ExamQuestion {
+  id            String     @id @default(cuid())
+  paperId       String
+  paper         ExamPaper  @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  order         Int
+  errorItemId   String?
+  errorItem     ErrorItem? @relation(fields: [errorItemId], references: [id], onDelete: SetNull)
+  sourceShortId String     // 来源题目短 ID 快照，原题删除后仍保留
+  status        String     @default("pending") // pending | ready | failed
+  questionText  String?
+  answerText    String?
+  analysis      String?
+  error         String?
+  practiceRecordId String? @unique
+  practiceRecord   PracticeRecord? @relation(fields: [practiceRecordId], references: [id], onDelete: SetNull)
+
+  @@index([paperId, order])
 }

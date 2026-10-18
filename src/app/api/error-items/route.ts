@@ -8,6 +8,8 @@ import { createLogger } from "@/lib/logger";
 import { findParentTagIdForGrade } from "@/lib/tag-recognition";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { normalizeMistakeStatusForSave } from "@/lib/mistake-status";
+import { generateUniqueShortId } from "@/lib/short-id";
+import { resolveNotebookForSubject } from "@/lib/notebook-resolver";
 
 const logger = createLogger('api:error-items');
 
@@ -27,7 +29,8 @@ export async function POST(req: Request) {
             mistakeStatus,
             knowledgePoints,
             originalImageUrl,
-            subjectId,
+            subjectId: requestedSubjectId,
+            subjectName,
             gradeSemester,
             paperLevel,
             geogebraCommands,
@@ -45,7 +48,8 @@ export async function POST(req: Request) {
             knowledgePointsCount: Array.isArray(knowledgePoints) ? knowledgePoints.length : 0,
             hasImage: !!originalImageUrl,
             imageSize: originalImageUrl?.length || 0,
-            subjectId,
+            subjectId: requestedSubjectId,
+            subjectName,
             gradeSemester,
             paperLevel,
             hasGeogebraCommands: !!geogebraCommands,
@@ -99,6 +103,12 @@ export async function POST(req: Request) {
                     duplicate: true, // 标记为重复提交
                 }, { status: 200 }); // 返回 200 而非 201
             }
+        }
+
+        // 未指定错题本时，按学科名匹配或新建错题本
+        let subjectId: string | undefined = requestedSubjectId || undefined;
+        if (!subjectId && typeof subjectName === 'string' && subjectName.trim()) {
+            subjectId = (await resolveNotebookForSubject(user.id, subjectName)).id;
         }
 
         // 计算年级
@@ -161,6 +171,7 @@ export async function POST(req: Request) {
         try {
             const errorItem = await prisma.errorItem.create({
                 data: {
+                    shortId: await generateUniqueShortId(prisma),
                     userId: user.id,
                     subjectId: subjectId || undefined,
                     originalImageUrl,
@@ -181,6 +192,7 @@ export async function POST(req: Request) {
                 },
                 include: {
                     tags: true,
+                    subject: { select: { id: true, name: true } },
                 },
             });
 

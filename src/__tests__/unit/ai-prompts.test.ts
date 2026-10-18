@@ -7,6 +7,7 @@ import {
     generateAnalyzePrompt,
     generateSimilarQuestionPrompt,
     generateReanswerPrompt,
+    generateMasteryPrompt,
     generateGradeInstruction,
     gradeSemesterToDisplayName,
     gradeSemesterToGradeNumber,
@@ -391,5 +392,33 @@ describe('AI Prompts', () => {
             expect(prompt).toContain('<analysis>');
             expect(prompt).toMatch(/<analysis>[\s\S]*表格处理规则[\s\S]*<\/analysis>/);
         });
+    });
+});
+
+describe('掌握概率与学科相关提示词', () => {
+    it('掌握概率提示词包含练习历史、知识点和规则参考值', () => {
+        const prompt = generateMasteryPrompt({
+            questionText: '求 x',
+            knowledgePoints: ['方程', '移项'],
+            mistakeStatus: 'not_attempted',
+            history: [
+                { date: '2026-10-01T08:00:00.000Z', difficulty: 'easy', result: 'wrong', source: 'practice' },
+                { date: '2026-10-05T08:00:00.000Z', difficulty: 'harder', result: 'correct', source: 'exam' },
+            ],
+            ruleProbability: 0.456,
+        });
+
+        expect(prompt).toContain('求 x');
+        expect(prompt).toContain('方程、移项');
+        expect(prompt).toContain('1. 2026-10-01｜难度：简单｜来源：单题练习｜结果：做错');
+        expect(prompt).toContain('2. 2026-10-05｜难度：挑战｜来源：试卷｜结果：做对');
+        expect(prompt).toContain('46%');
+        expect(prompt).toContain('【最初的错误情况】\n不会做');
+    });
+
+    it('重新解题提示词要求输出学科标签', () => {
+        const prompt = generateReanswerPrompt('zh', '1+1=?');
+        expect(prompt).toContain('<subject>');
+        expect(prompt).toContain('7 个 XML 标签');
     });
 });

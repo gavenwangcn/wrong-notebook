@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { unauthorized, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE } from "@/lib/constants/pagination";
+import { isShortId } from "@/lib/short-id";
 
 const logger = createLogger('api:error-items:list');
 
@@ -56,6 +57,7 @@ export async function GET(req: Request) {
                     { wrongAnswerText: { contains: query } },
                     { mistakeAnalysis: { contains: query } },
                     { knowledgePoints: { contains: query } },
+                    ...(isShortId(query.trim()) ? [{ shortId: query.trim() }] : []),
                 ]
             });
         }

@@ -43,3 +43,47 @@ export function validateParsedQuestion(data: unknown): ParsedQuestionFromSchema 
 export function safeParseParsedQuestion(data: unknown) {
     return ParsedQuestionSchema.safeParse(data);
 }
+
+/**
+ * AI 掌握概率评估结果：probability 为 0~100 的百分数
+ */
+export const MasteryEvaluationSchema = z.object({
+    probability: z.coerce.number().min(0).max(100),
+    reason: z.string().trim().min(1).max(500),
+});
+
+/**
+ * 从 AI 文本回复中提取 JSON 对象（兼容 markdown 代码块和前后多余文本）
+ */
+export function extractJsonObject(text: string): unknown {
+    let jsonStr = text.trim();
+    const blockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (blockMatch) {
+        jsonStr = blockMatch[1].trim();
+    }
+    const start = jsonStr.indexOf('{');
+    const end = jsonStr.lastIndexOf('}');
+    if (start !== -1 && end > start) {
+        jsonStr = jsonStr.substring(start, end + 1);
+    }
+    return JSON.parse(jsonStr);
+}
+
+/**
+ * 解析 AI 掌握概率评估回复，返回 0~1 的概率
+ */
+export function parseMasteryEvaluation(text: string): { probability: number; reason: string } {
+    const parsed = MasteryEvaluationSchema.parse(extractJsonObject(text));
+    return {
+        probability: Math.round(parsed.probability) / 100,
+        reason: parsed.reason,
+    };
+}
+
+/**
+ * 规范化 AI 输出的学科名，不在学科列表内时返回 undefined
+ */
+export function normalizeSubject(value: string | null | undefined): ParsedQuestionFromSchema['subject'] | undefined {
+    const parsed = ParsedQuestionSchema.shape.subject.safeParse(value?.trim());
+    return parsed.success ? parsed.data : undefined;
+}

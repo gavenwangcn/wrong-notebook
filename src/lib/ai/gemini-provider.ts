@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIService, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt } from './prompts';
-import { safeParseParsedQuestion } from './schema';
+import { AIService, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt } from './prompts';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject } from './schema';
 import { getAppConfig } from '../config';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
@@ -342,7 +342,7 @@ export class GeminiProvider implements AIService {
 
             logger.info('Reanswer parsed successfully');
 
-            return { answerText, analysis, knowledgePoints: knowledgePointsParsed, wrongAnswerText, mistakeAnalysis, mistakeStatus };
+            return { answerText, analysis, knowledgePoints: knowledgePointsParsed, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")) };
 
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during reanswer');
@@ -394,6 +394,32 @@ export class GeminiProvider implements AIService {
             };
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during GeoGebra analysis');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult> {
+        const prompt = generateMasteryPrompt(input);
+
+        logger.info({
+            provider: 'Gemini',
+            historyCount: input.history.length,
+        }, 'Mastery Evaluation Request');
+
+        try {
+            const response = await this.retryOperation(() => this.ai.models.generateContent({
+                model: this.modelName,
+                contents: prompt
+            }));
+
+            const text = response.text || '';
+            logger.debug({ rawResponse: text }, 'Mastery AI raw response');
+
+            if (!text) throw new Error("Empty response from AI");
+            return parseMasteryEvaluation(text);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during mastery evaluation');
             this.handleError(error);
             throw error;
         }

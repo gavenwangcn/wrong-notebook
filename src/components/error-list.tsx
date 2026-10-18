@@ -26,6 +26,8 @@ import { cleanMarkdown } from "@/lib/markdown-utils";
 import { Pagination } from "@/components/ui/pagination";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants/pagination";
 import { getMistakeStatusLabel } from "@/lib/mistake-status";
+import { isShortId } from "@/lib/short-id-format";
+import { locateByShortId } from "@/lib/short-id-client";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -235,9 +237,17 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                         placeholder={t.notebook.search}
+                        title={t.shortId.searchHint}
                         className="pl-9"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={async (e) => {
+                            // 输入完整短 ID 后回车，直接打开对应题目
+                            const value = search.trim();
+                            if (e.key !== "Enter" || !isShortId(value)) return;
+                            const id = await locateByShortId(value);
+                            if (id) router.push(`/error-items/${id}`);
+                        }}
                     />
                 </div>
                 <DropdownMenu>
@@ -386,7 +396,11 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                                     </span>
                                                 )}
                                             </Badge>
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                {typeof item.masteryProbability === "number" && (
+                                                    <span title={t.mastery.probability}>{Math.round(item.masteryProbability * 100)}%</span>
+                                                )}
+                                                {item.shortId && <span className="font-mono">{item.shortId}</span>}
                                                 {format(new Date(item.createdAt), "MM/dd")}
                                             </span>
                                         </div>

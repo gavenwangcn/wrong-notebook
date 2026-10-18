@@ -13,7 +13,7 @@ import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { processImageFile } from "@/lib/image-utils";
-import { Upload, BookOpen, Tags, LogOut, BarChart3, PenLine } from "lucide-react";
+import { Upload, BookOpen, Tags, LogOut, BarChart3, PenLine, FileText } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { BroadcastNotification } from "@/components/broadcast-notification";
 import { signOut } from "next-auth/react";
@@ -21,6 +21,10 @@ import { signOut } from "next-auth/react";
 import { ProgressFeedback, ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { TextInputZone } from "@/components/text-input-zone";
+import { ImportResultBanner } from "@/components/import-result-banner";
+import { BatchImportPanel } from "@/components/batch-import-panel";
+import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
+import type { ImportedQuestion } from "@/lib/question-import";
 import { DirectTextEditor } from "@/components/direct-text-editor";
 
 function HomeContent() {
@@ -45,6 +49,11 @@ function HomeContent() {
     const [croppingImage, setCroppingImage] = useState<string | null>(null);
     const [isCropperOpen, setIsCropperOpen] = useState(false);
 
+    // 免确认导入：偏好、最近一次导入结果、批量框选的题目图片
+    const [confirmBeforeImport, setConfirmBeforeImport] = useState(false);
+    const [lastImported, setLastImported] = useState<ImportedQuestion | null>(null);
+    const [batchBlobs, setBatchBlobs] = useState<Blob[] | null>(null);
+
     // Timeout Config
     const aiTimeout = config?.timeouts?.analyze || 180000;
     const safetyTimeout = aiTimeout + 10000;
@@ -63,6 +72,8 @@ function HomeContent() {
         apiClient.get<Notebook[]>("/api/notebooks")
             .then(data => setNotebooks(data))
             .catch(err => console.error("Failed to fetch notebooks:", err));
+
+        fetchConfirmBeforeImport().then(setConfirmBeforeImport);
 
         // Fetch settings for timeouts
         apiClient.get<AppConfig>("/api/settings")
@@ -102,7 +113,14 @@ function HomeContent() {
         };
     }, [analysisStep, safetyTimeout]);
 
+    const handleBatchCropComplete = (blobs: Blob[]) => {
+        setIsCropperOpen(false);
+        setLastImported(null);
+        setBatchBlobs(blobs);
+    };
+
     const onImageSelect = (file: File) => {
+        setLastImported(null);
         const imageUrl = URL.createObjectURL(file);
         setCroppingImage(imageUrl);
         setIsCropperOpen(true);
@@ -159,6 +177,16 @@ function HomeContent() {
             setAnalysisStep('processing');
             setProgress(100);
             frontendLogger.info('[HomeAnalyze]', 'Progress updated to 100%');
+
+            // 未开启人工确认时直接入库
+            if (!confirmBeforeImport) {
+                setAnalysisStep('saving');
+                const imported = await saveParsedQuestion(data, { subjectId: initialNotebookId, imageUrl: base64Image });
+                setLastImported(imported);
+                setCurrentImage(null);
+                frontendLogger.info('[HomeAnalyze]', 'Imported without review', { id: imported.id });
+                return;
+            }
 
             frontendLogger.info('[HomeAnalyze]', 'Step 4/5: Setting parsed data and auto-selecting notebook');
             const dataSize = JSON.stringify(data).length;
@@ -313,6 +341,7 @@ function HomeContent() {
                 wrongAnswerText: string;
                 mistakeAnalysis: string;
                 mistakeStatus: string;
+                subject?: string;
             }>("/api/reanswer", {
                 questionText,
                 language,
@@ -330,9 +359,16 @@ function HomeContent() {
                 wrongAnswerText: result.wrongAnswerText || "",
                 mistakeAnalysis: result.mistakeAnalysis || "",
                 mistakeStatus: (result.mistakeStatus as any) || "unknown",
-                subject: "数学", // Default, will be overridden by notebook selection
+                subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
             };
+
+            if (!confirmBeforeImport) {
+                setAnalysisStep('saving');
+                const imported = await saveParsedQuestion(parsed, { subjectId: initialNotebookId, imageUrl: null });
+                setLastImported(imported);
+                return;
+            }
 
             setCurrentImage(null); // No image for text input
             setParsedData(parsed);
@@ -462,7 +498,7 @@ function HomeContent() {
                 </div>
 
                 {/* Action Center */}
-                <div className={initialNotebookId ? "flex justify-center mb-6" : "grid grid-cols-2 md:grid-cols-4 gap-4"}>
+                <div className={initialNotebookId ? "flex justify-center mb-6" : "grid grid-cols-2 md:grid-cols-5 gap-4"}>
                     <Button
                         size="lg"
                         className={`h-auto py-4 text-base shadow-sm hover:shadow-md transition-all ${initialNotebookId ? "w-full max-w-md" : ""}`}
@@ -515,6 +551,19 @@ function HomeContent() {
                                     </div>
                                 </Button>
                             </Link>
+
+                            <Link href="/exams" className="w-full col-span-2 md:col-span-1">
+                                <Button
+                                    variant="outline"
+                                    size="lg"
+                                    className="w-full h-auto py-4 text-base shadow-sm hover:shadow-md transition-all border hover:border-primary/50 hover:bg-accent/50"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-5 w-5" />
+                                        <span>{t.exam.nav}</span>
+                                    </div>
+                                </Button>
+                            </Link>
                         </>
                     )}
                 </div>
@@ -558,7 +607,18 @@ function HomeContent() {
                             </button>
                         </div>
 
-                        {inputMode === "image" ? (
+                        {lastImported && (
+                            <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />
+                        )}
+
+                        {batchBlobs ? (
+                            <BatchImportPanel
+                                blobs={batchBlobs}
+                                subjectId={initialNotebookId}
+                                timeout={aiTimeout}
+                                onClose={() => setBatchBlobs(null)}
+                            />
+                        ) : inputMode === "image" ? (
                             <UploadZone onImageSelect={onImageSelect} isAnalyzing={analysisStep !== 'idle'} />
                         ) : inputMode === "text" ? (
                             <TextInputZone
@@ -591,6 +651,7 @@ function HomeContent() {
                         open={isCropperOpen}
                         onClose={() => setIsCropperOpen(false)}
                         onCropComplete={handleCropComplete}
+                        onMultiCropComplete={handleBatchCropComplete}
                     />
                 )}
 

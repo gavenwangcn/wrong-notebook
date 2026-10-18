@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
+import { ShortIdLocator } from "@/components/short-id-locator";
 import { Plus, House } from "lucide-react";
 import Link from "next/link";
 import { NotebookCard } from "@/components/notebook-card";
@@ -113,6 +114,8 @@ export default function NotebooksPage() {
                         </Link>
                     </div>
                 </div>
+
+                <ShortIdLocator />
 
                 {notebooks.length === 0 ? (
                     <div className="text-center py-12 border-2 border-dashed rounded-lg">

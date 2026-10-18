@@ -25,6 +25,8 @@ const mocks = vi.hoisted(() => ({
     },
     mockPrismaSubject: {
         findUnique: vi.fn(),
+        findMany: vi.fn(),
+        upsert: vi.fn(),
     },
     mockSession: {
         user: {
@@ -103,6 +105,90 @@ describe('/api/error-items', () => {
 
         // Default: errorItem.findFirst returns null (no duplicate found)
         mocks.mockPrismaErrorItem.findFirst.mockResolvedValue(null);
+    });
+
+    describe('POST /api/error-items (短 ID 与自动匹配错题本)', () => {
+        const baseData = {
+            questionText: '求解 x + 2 = 5',
+            answerText: 'x = 3',
+            analysis: '移项',
+            knowledgePoints: [],
+            originalImageUrl: '',
+        };
+
+        const post = (body: object) => POST(new Request('http://localhost/api/error-items', {
+            method: 'POST',
+            body: JSON.stringify(body),
+            headers: { 'Content-Type': 'application/json' },
+        }));
+
+        it('创建时应生成 6 位 base58 短 ID', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+
+            const response = await post(baseData);
+            const data = await response.json();
+
+            expect(response.status).toBe(201);
+            expect(data.shortId).toMatch(/^[1-9A-HJ-NP-Za-km-z]{6}$/);
+        });
+
+        it('未指定错题本时按学科名包含匹配已有错题本', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
+            mocks.mockPrismaSubject.findMany.mockResolvedValue([{ id: 'nb-math', name: '初二数学' }]);
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+
+            await post({ ...baseData, subjectName: '数学' });
+
+            expect(mocks.mockPrismaSubject.upsert).not.toHaveBeenCalled();
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.subjectId).toBe('nb-math');
+        });
+
+        it('没有匹配的错题本时新建同名错题本', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
+            mocks.mockPrismaSubject.findMany.mockResolvedValue([{ id: 'nb-math', name: '数学' }]);
+            mocks.mockPrismaSubject.upsert.mockResolvedValue({ id: 'nb-physics', name: '物理' });
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+
+            await post({ ...baseData, subjectName: '物理' });
+
+            expect(mocks.mockPrismaSubject.upsert).toHaveBeenCalledWith(expect.objectContaining({
+                create: { name: '物理', userId: 'user-123' },
+            }));
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.subjectId).toBe('nb-physics');
+        });
+
+        it('指定错题本时忽略学科名', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+
+            await post({ ...baseData, subjectId: 'nb-chosen', subjectName: '物理' });
+
+            expect(mocks.mockPrismaSubject.findMany).not.toHaveBeenCalled();
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.subjectId).toBe('nb-chosen');
+        });
+    });
+
+    describe('GET /api/error-items/list 短 ID 搜索', () => {
+        it('查询词为短 ID 时同时按短 ID 精确匹配', async () => {
+            mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
+            mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
+
+            await GET_LIST(new Request('http://localhost/api/error-items/list?query=aB3xYz'));
+
+            const where = mocks.mockPrismaErrorItem.findMany.mock.calls[0][0].where;
+            expect(where.AND[0].OR).toContainEqual({ shortId: 'aB3xYz' });
+        });
+
+        it('普通查询词不按短 ID 匹配', async () => {
+            mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
+            mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
+
+            await GET_LIST(new Request('http://localhost/api/error-items/list?query=' + encodeURIComponent('勾股定理')));
+
+            const where = mocks.mockPrismaErrorItem.findMany.mock.calls[0][0].where;
+            expect(where.AND[0].OR.some((condition: object) => 'shortId' in condition)).toBe(false);
+        });
     });
 
     describe('POST /api/error-items (创建错题)', () => {

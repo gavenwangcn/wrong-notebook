@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,8 @@ import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { getMistakeStatusLabel, normalizeMistakeStatusForSave } from "@/lib/mistake-status";
 import { NotebookSelector } from "@/components/notebook-selector";
 import { GeogebraDemo } from "@/components/geogebra-demo";
+import { ShortIdBadge } from "@/components/short-id-badge";
+import { MasteryPanel } from "@/components/mastery-panel";
 
 interface KnowledgeTag {
     id: string;
@@ -27,6 +29,7 @@ interface KnowledgeTag {
 
 interface ErrorItemDetail {
     id: string;
+    shortId?: string | null;
     questionText: string;
     answerText: string;
     analysis: string;
@@ -90,6 +93,11 @@ export default function ErrorDetailPage() {
             fetchItem(params.id as string);
         }
     }, [params.id]);
+
+    // 后台评估可能自动切换掌握状态，同步到页面
+    const handleMasteryLevelChange = useCallback((level: number) => {
+        setItem(prev => (prev && prev.masteryLevel !== level ? { ...prev, masteryLevel: level } : prev));
+    }, []);
 
     const fetchItem = async (id: string) => {
         try {
@@ -449,9 +457,10 @@ export default function ErrorDetailPage() {
                             </Button>
                         </Link>
                         <h1 className="text-2xl font-bold">{t.detail.title}</h1>
+                        <ShortIdBadge shortId={item.shortId} />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Link href={`/practice?id=${item.id}`}>
                             <Button variant="outline" size="sm">
                                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -537,6 +546,8 @@ export default function ErrorDetailPage() {
                         )}
                     </CardContent>
                 </Card>
+
+                <MasteryPanel errorItemId={item.id} onMasteryLevelChange={handleMasteryLevelChange} />
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card className="border-primary/20">

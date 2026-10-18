@@ -479,3 +479,30 @@ describe('Azure OpenAI Provider 错误处理', () => {
         });
     });
 });
+
+describe('Azure OpenAI Provider 掌握概率评估', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('应该解析掌握概率评估结果', async () => {
+        const provider = new AzureOpenAIProvider({
+            apiKey: 'test-key',
+            endpoint: 'https://test.openai.azure.com',
+            deploymentName: 'gpt-4o',
+        });
+        mockAzureCompletionCreate.mockResolvedValueOnce({
+            choices: [{ message: { content: '评估如下：{"probability": 88, "reason": "连续做对"}' } }],
+        });
+
+        const result = await provider.evaluateMastery({
+            questionText: '题目',
+            knowledgePoints: ['函数'],
+            history: [],
+            ruleProbability: 0.5,
+        });
+
+        expect(result).toEqual({ probability: 0.88, reason: '连续做对' });
+        expect(mockAzureCompletionCreate.mock.calls[0][0].model).toBe('gpt-4o');
+    });
+});

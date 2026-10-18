@@ -78,6 +78,22 @@ describe('/api/user', () => {
     });
 
     describe('PATCH /api/user', () => {
+        it('应该更新「导入前人工确认」偏好，包括关闭', async () => {
+            mocks.mockPrismaUser.update.mockResolvedValue({ confirmBeforeImport: false });
+
+            const request = new Request('http://localhost/api/user', {
+                method: 'PATCH',
+                body: JSON.stringify({ confirmBeforeImport: false }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH(request);
+
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].data).toEqual({ confirmBeforeImport: false });
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].select.confirmBeforeImport).toBe(true);
+        });
+
         it('应该成功更新用户名', async () => {
             const updatedUser = {
                 name: 'New Name',

@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { apiClient } from "@/lib/api-client";
 import { AppConfig } from "@/types/api";
+import type { PracticeResult } from "@/types/api";
+import { PracticeResultCard } from "@/components/practice-result-card";
 import { frontendLogger } from "@/lib/frontend-logger";
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +32,10 @@ function PracticeContent() {
     const [notes, setNotes] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    // 生成当前题目时使用的难度（下拉框改动后不影响已生成题目的记录）
+    const [generatedDifficulty, setGeneratedDifficulty] = useState<string>("medium");
+    // 每生成一道新题递增，用于重置结果卡片
+    const [questionVersion, setQuestionVersion] = useState(0);
     const [config, setConfig] = useState<AppConfig | null>(null);
 
     useEffect(() => {
@@ -70,6 +76,8 @@ function PracticeContent() {
                 difficulty
             }, { timeout });
             setQuestion(data);
+            setGeneratedDifficulty(difficulty);
+            setQuestionVersion(v => v + 1);
         } catch (error: any) {
             console.error(error);
             const msg = error.data?.message || "";
@@ -116,14 +124,16 @@ function PracticeContent() {
 
         setIsCorrect(isMatch);
         setShowAnswer(true);
-
-        // Save practice record
-        apiClient.post("/api/practice/record", {
-            subject: question.subject || "Unknown",
-            difficulty,
-            isCorrect: isMatch
-        }).catch(err => console.error("Failed to save practice record:", err));
     };
+
+    // 不作答直接看答案，由用户自己判定结果
+    const revealAnswer = () => {
+        setIsSubmitted(true);
+        setIsCorrect(null);
+        setShowAnswer(true);
+    };
+
+    const suggestedResult: PracticeResult | null = isCorrect === null ? null : isCorrect ? "correct" : "wrong";
 
     if (!errorItemId) {
         return <div className="p-8 text-center">{t.practice.invalidRequest || "Invalid Request"}</div>;
@@ -269,7 +279,7 @@ function PracticeContent() {
 
                     {/* Submit/Result Section */}
                     {!isSubmitted ? (
-                        <div className="flex justify-center">
+                        <div className="flex flex-col sm:flex-row justify-center gap-2">
                             <Button
                                 size="lg"
                                 onClick={submitAnswer}
@@ -279,8 +289,17 @@ function PracticeContent() {
                                 <Send className="mr-2 h-4 w-4" />
                                 {t.app.submitAnswer || "提交答案"}
                             </Button>
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                onClick={revealAnswer}
+                                className="w-full md:w-auto"
+                            >
+                                <Eye className="mr-2 h-4 w-4" />
+                                {t.practice.checkAnswer || "查看答案"}
+                            </Button>
                         </div>
-                    ) : (
+                    ) : isCorrect === null ? null : (
                         <Card className={isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"}>
                             <CardContent className="pt-6">
                                 <div className="flex items-center gap-3 mb-4">
@@ -324,6 +343,13 @@ function PracticeContent() {
 
                     {showAnswer && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                            <PracticeResultCard
+                                key={questionVersion}
+                                errorItemId={errorItemId}
+                                suggested={suggestedResult}
+                                question={question}
+                                difficulty={generatedDifficulty}
+                            />
                             <Card className="bg-muted/50">
                                 <CardHeader>
                                     <CardTitle className="text-green-600">{t.practice.correctAnswer}</CardTitle>

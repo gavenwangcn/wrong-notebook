@@ -1,8 +1,8 @@
 import { AzureOpenAI } from "openai";
-import { AIService, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt } from './prompts';
+import { AIService, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt, generateMasteryPrompt } from './prompts';
 import { getAppConfig } from '../config';
-import { safeParseParsedQuestion } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject } from './schema';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
@@ -368,7 +368,7 @@ Knowledge Points: ${knowledgePoints.join(", ")}
 
             logger.info('Reanswer parsed successfully');
 
-            return { answerText, analysis, knowledgePoints, wrongAnswerText, mistakeAnalysis, mistakeStatus };
+            return { answerText, analysis, knowledgePoints, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")) };
 
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during reanswer');
@@ -425,6 +425,36 @@ Knowledge Points: ${knowledgePoints.join(", ")}
             };
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during GeoGebra analysis');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult> {
+        const prompt = generateMasteryPrompt(input);
+
+        logger.info({
+            provider: 'Azure OpenAI',
+            historyCount: input.history.length,
+        }, 'Mastery Evaluation Request');
+
+        try {
+            const response = await this.client.chat.completions.create({
+                model: this.deployment,
+                messages: [
+                    { role: "system", content: prompt },
+                    { role: "user", content: "请根据上述练习历史给出掌握概率评估。" }
+                ],
+                max_tokens: 1024,
+            });
+
+            const text = response.choices[0]?.message?.content || '';
+            logger.debug({ rawResponse: text }, 'Mastery AI raw response');
+
+            if (!text) throw new Error("Empty response from AI");
+            return parseMasteryEvaluation(text);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during mastery evaluation');
             this.handleError(error);
             throw error;
         }

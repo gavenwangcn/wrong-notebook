@@ -4,7 +4,7 @@
  * 测试 Zod 验证 schema，特别是新增的错因分析字段
  */
 import { describe, it, expect } from 'vitest';
-import { ParsedQuestionSchema, safeParseParsedQuestion } from '@/lib/ai/schema';
+import { ParsedQuestionSchema, safeParseParsedQuestion, parseMasteryEvaluation, extractJsonObject, normalizeSubject } from '@/lib/ai/schema';
 
 describe('ParsedQuestionSchema 验证', () => {
     const validBaseQuestion = {
@@ -146,5 +146,23 @@ describe('ParsedQuestionSchema 验证', () => {
             });
             expect(result.success).toBe(false);
         });
+    });
+});
+
+describe('掌握概率解析与学科规范化', () => {
+    it('兼容代码块和前后多余文字', () => {
+        expect(extractJsonObject('结果：```json\n{"a": 1}\n```')).toEqual({ a: 1 });
+        expect(parseMasteryEvaluation('好的 {"probability": "64", "reason": "一般"} 以上')).toEqual({ probability: 0.64, reason: '一般' });
+    });
+
+    it('缺少理由或概率越界时报错', () => {
+        expect(() => parseMasteryEvaluation('{"probability": 50}')).toThrow();
+        expect(() => parseMasteryEvaluation('{"probability": -1, "reason": "x"}')).toThrow();
+    });
+
+    it('只接受预设学科', () => {
+        expect(normalizeSubject(' 物理 ')).toBe('物理');
+        expect(normalizeSubject('天文')).toBeUndefined();
+        expect(normalizeSubject(null)).toBeUndefined();
     });
 });

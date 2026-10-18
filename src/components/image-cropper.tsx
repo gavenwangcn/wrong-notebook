@@ -5,13 +5,18 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-im
 import "react-image-crop/dist/ReactCrop.css";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RegionSelector } from "@/components/region-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cropImageRegions } from "@/lib/image-crop";
+import type { ImageRegion } from "@/lib/image-crop";
 
 interface ImageCropperProps {
     imageSrc: string;
     open: boolean;
     onClose: () => void;
     onCropComplete: (croppedImageBlob: Blob) => void;
+    /** 提供时显示「多题框选」模式，返回每个框裁剪出的图片 */
+    onMultiCropComplete?: (croppedImageBlobs: Blob[]) => void;
 }
 
 // Helper to center the crop initially
@@ -35,11 +40,27 @@ function centerAspectCrop(
     )
 }
 
-export function ImageCropper({ imageSrc, open, onClose, onCropComplete }: ImageCropperProps) {
+export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiCropComplete }: ImageCropperProps) {
     const { t, language } = useLanguage();
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const imgRef = useRef<HTMLImageElement>(null);
+    const [mode, setMode] = useState<"single" | "multi">("single");
+    // 框选结果与图片绑定，换图后自动清空
+    const [regionState, setRegionState] = useState<{ src: string; regions: ImageRegion[] }>({ src: imageSrc, regions: [] });
+    const regions = regionState.src === imageSrc ? regionState.regions : [];
+    const setRegions = (next: ImageRegion[]) => setRegionState({ src: imageSrc, regions: next });
+    const multiImgRef = useRef<HTMLImageElement>(null);
+
+    const handleMultiConfirm = async () => {
+        if (!multiImgRef.current || regions.length === 0 || !onMultiCropComplete) return;
+        try {
+            onMultiCropComplete(await cropImageRegions(multiImgRef.current, regions));
+            setRegions([]);
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
         const { width, height } = e.currentTarget;
@@ -135,34 +156,65 @@ export function ImageCropper({ imageSrc, open, onClose, onCropComplete }: ImageC
                 </DialogHeader>
 
                 <div className="flex-1 bg-black w-full overflow-auto flex items-center justify-center p-4">
-                    <ReactCrop
-                        crop={crop}
-                        onChange={(_, percentCrop) => setCrop(percentCrop)}
-                        onComplete={(c) => setCompletedCrop(c)}
-                        className="max-h-full"
-                    >
-                        <img
-                            ref={imgRef}
-                            alt="Crop me"
-                            src={imageSrc}
-                            onLoad={onImageLoad}
-                            style={{ maxHeight: '70vh', maxWidth: '100%', objectFit: 'contain' }}
-                        />
-                    </ReactCrop>
+                    {mode === "multi" ? (
+                        <RegionSelector ref={multiImgRef} imageSrc={imageSrc} regions={regions} onChange={setRegions} />
+                    ) : (
+                        <ReactCrop
+                            crop={crop}
+                            onChange={(_, percentCrop) => setCrop(percentCrop)}
+                            onComplete={(c) => setCompletedCrop(c)}
+                            className="max-h-full"
+                        >
+                            <img
+                                ref={imgRef}
+                                alt="Crop me"
+                                src={imageSrc}
+                                onLoad={onImageLoad}
+                                style={{ maxHeight: '70vh', maxWidth: '100%', objectFit: 'contain' }}
+                            />
+                        </ReactCrop>
+                    )}
                 </div>
 
-                <div className="p-4 border-t bg-background shrink-0">
-                    <div className="flex justify-between items-center">
+                <div className="p-4 border-t bg-background shrink-0 space-y-3">
+                    {onMultiCropComplete && (
+                        <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:w-80">
+                            {(["single", "multi"] as const).map((value) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setMode(value)}
+                                    className={`rounded px-3 py-1.5 text-sm font-medium transition-colors ${mode === value ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                                >
+                                    {value === "single" ? t.batchImport.singleMode : t.batchImport.multiMode}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                         <p className="text-sm text-muted-foreground">
-                            {t.common.cropper?.hint || "💡 Drag to adjust crop area"}
+                            {mode === "multi"
+                                ? `${t.batchImport.hint} ${t.batchImport.regionCount.replace("{count}", String(regions.length))}`
+                                : (t.common.cropper?.hint || "💡 Drag to adjust crop area")}
                         </p>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 justify-end">
+                            {mode === "multi" && regions.length > 0 && (
+                                <Button variant="ghost" onClick={() => setRegions([])}>
+                                    {t.batchImport.clear}
+                                </Button>
+                            )}
                             <Button variant="outline" onClick={onClose}>
                                 {t.common.cancel || "Cancel"}
                             </Button>
-                            <Button onClick={handleConfirm}>
-                                {t.common.confirm || "Confirm"}
-                            </Button>
+                            {mode === "multi" ? (
+                                <Button onClick={handleMultiConfirm} disabled={regions.length === 0}>
+                                    {t.batchImport.start.replace("{count}", String(regions.length))}
+                                </Button>
+                            ) : (
+                                <Button onClick={handleConfirm}>
+                                    {t.common.confirm || "Confirm"}
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>

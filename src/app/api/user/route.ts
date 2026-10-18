@@ -15,6 +15,7 @@ const userUpdateSchema = z.object({
     password: z.string().optional(),
     educationStage: z.string().optional(),
     enrollmentYear: z.number().optional().nullable(),
+    confirmBeforeImport: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -32,6 +33,7 @@ export async function GET() {
                 email: true,
                 educationStage: true,
                 enrollmentYear: true,
+                confirmBeforeImport: true,
                 // Do not return password
             }
         });
@@ -58,7 +60,7 @@ export async function PATCH(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, email, password, educationStage, enrollmentYear } = userUpdateSchema.parse(body);
+        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport } = userUpdateSchema.parse(body);
 
         const updateData: any = {};
 
@@ -67,6 +69,9 @@ export async function PATCH(req: Request) {
         if (educationStage && educationStage.trim()) updateData.educationStage = educationStage.trim();
         if (typeof enrollmentYear === 'number' && !isNaN(enrollmentYear)) {
             updateData.enrollmentYear = enrollmentYear;
+        }
+        if (typeof confirmBeforeImport === 'boolean') {
+            updateData.confirmBeforeImport = confirmBeforeImport;
         }
 
         // 验证邮箱格式（如果提供了邮箱）
@@ -95,6 +100,7 @@ export async function PATCH(req: Request) {
                 email: true,
                 educationStage: true,
                 enrollmentYear: true,
+                confirmBeforeImport: true,
             }
         });
 

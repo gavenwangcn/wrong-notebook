@@ -47,6 +47,7 @@ export interface Notebook {
 
 export interface ErrorItem {
     id: string;
+    shortId?: string | null;
     userId: string;
     subjectId?: string | null;
     subject?: Notebook | null;
@@ -66,6 +67,10 @@ export interface ErrorItem {
     tags?: Tag[];
 
     masteryLevel: number;
+    masteryProbability?: number | null;
+    masteryReason?: string | null;
+    masterySource?: 'ai' | 'rule' | string | null;
+    masteryEvaluatedAt?: string | null;
     gradeSemester?: string | null;
     paperLevel?: string | null;
 
@@ -91,6 +96,7 @@ export interface UserProfile {
     enrollmentYear?: number | null;
     role: string;
     isActive: boolean;
+    confirmBeforeImport?: boolean;
 }
 
 export interface UpdateUserProfileRequest {
@@ -243,4 +249,75 @@ export interface RegisterRequest {
     password: string;
     educationStage: string;
     enrollmentYear: number;
+}
+
+// ============ 举一反三记录与掌握概率 ============
+
+export type PracticeResult = 'correct' | 'wrong' | 'not_attempted';
+
+export interface PracticeHistoryRecord {
+    id: string;
+    result: PracticeResult | string;
+    difficulty?: string | null;
+    source: string;
+    questionText?: string | null;
+    answerText?: string | null;
+    analysis?: string | null;
+    createdAt: string;
+    exam: { paperId: string; order: number; title: string } | null;
+}
+
+export interface PracticeHistoryResponse {
+    masteryLevel: number;
+    masteryProbability: number | null;
+    masteryReason: string | null;
+    masterySource: string | null;
+    masteryEvaluatedAt: string | null;
+    records: PracticeHistoryRecord[];
+}
+
+// ============ 错题试卷 ============
+
+export type ExamScope = 'unmastered' | 'mastered' | 'all';
+export type ExamStatus = 'generating' | 'ready' | 'partial' | 'failed';
+
+export interface ExamPaperSummary {
+    id: string;
+    title: string;
+    status: ExamStatus;
+    scope: ExamScope;
+    difficulty: string;
+    requestedCount: number;
+    questionCount: number;
+    readyCount: number;
+    recordedCount: number;
+    resultsRecordedAt: string | null;
+    createdAt: string;
+}
+
+export interface ExamQuestionDetail {
+    id: string;
+    order: number;
+    errorItemId: string | null;
+    sourceShortId: string;
+    status: 'pending' | 'ready' | 'failed';
+    questionText: string | null;
+    answerText: string | null;
+    analysis: string | null;
+    error: string | null;
+    notebookName: string | null;
+    result: PracticeResult | null;
+    resultAt: string | null;
+}
+
+export interface ExamPaperDetail {
+    id: string;
+    title: string;
+    status: ExamStatus;
+    scope: ExamScope;
+    difficulty: string;
+    requestedCount: number;
+    resultsRecordedAt: string | null;
+    createdAt: string;
+    questions: ExamQuestionDetail[];
 }

@@ -244,3 +244,50 @@ describe('OpenAI Provider 错误处理', () => {
         });
     });
 });
+
+describe('OpenAI Provider 掌握概率评估与学科判断', () => {
+    let provider: OpenAIProvider;
+    const input = {
+        questionText: '求解 2x + 3 = 7',
+        knowledgePoints: ['一元一次方程'],
+        history: [{ date: '2026-10-01T00:00:00.000Z', difficulty: 'medium', result: 'correct' as const, source: 'practice' }],
+        ruleProbability: 0.6,
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+    });
+
+    it('应该解析 JSON 结果并换算为 0~1 的概率', async () => {
+        mockCompletionCreate.mockResolvedValueOnce({
+            choices: [{ message: { content: '```json\n{"probability": 72, "reason": "近期做对一次"}\n```' } }],
+        });
+
+        const result = await provider.evaluateMastery(input);
+
+        expect(result).toEqual({ probability: 0.72, reason: '近期做对一次' });
+        const prompt = mockCompletionCreate.mock.calls[0][0].messages[0].content as string;
+        expect(prompt).toContain('求解 2x + 3 = 7');
+        expect(prompt).toContain('做对');
+        expect(prompt).toContain('60%');
+    });
+
+    it('概率超出范围时应该报错，交由调用方兜底', async () => {
+        mockCompletionCreate.mockResolvedValueOnce({
+            choices: [{ message: { content: '{"probability": 150, "reason": "x"}' } }],
+        });
+
+        await expect(provider.evaluateMastery(input)).rejects.toThrow();
+    });
+
+    it('重新解题应该返回规范化后的学科', async () => {
+        mockCompletionCreate.mockResolvedValueOnce({
+            choices: [{ message: { content: '<answer_text>x = 2</answer_text><analysis>移项。</analysis><knowledge_points>方程</knowledge_points><subject>数学</subject>' } }],
+        });
+
+        const result = await provider.reanswerQuestion('求解 2x + 3 = 7', 'zh');
+
+        expect(result.subject).toBe('数学');
+    });
+});

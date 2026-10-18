@@ -15,6 +15,7 @@ export interface ReanswerQuestionResult {
     wrongAnswerText: string;
     mistakeAnalysis: string;
     mistakeStatus: MistakeStatus;
+    subject?: string; // AI 判断的学科，自定义模板未输出时为空
 }
 
 export interface GeogebraAnalysisResult {
@@ -23,11 +24,35 @@ export interface GeogebraAnalysisResult {
     description: string;
 }
 
+export type PracticeResult = 'correct' | 'wrong' | 'not_attempted';
+
+export interface MasteryHistoryEntry {
+    date: string;            // ISO 时间
+    difficulty: DifficultyLevel | string | null;
+    result: PracticeResult;
+    source: 'practice' | 'exam' | string;
+}
+
+export interface MasteryEvaluationInput {
+    questionText: string;
+    knowledgePoints: string[];
+    mistakeStatus?: string | null;
+    history: MasteryHistoryEntry[];
+    ruleProbability: number; // 0~1，规则公式的参考值
+    language?: 'zh' | 'en';
+}
+
+export interface MasteryEvaluationResult {
+    probability: number; // 0~1
+    reason: string;
+}
+
 export interface AIService {
     analyzeImage(imageBase64: string, mimeType?: string, language?: 'zh' | 'en', grade?: 7 | 8 | 9 | 10 | 11 | 12 | null, subject?: string | null, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language?: 'zh' | 'en', difficulty?: DifficultyLevel, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
+    evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
 }
 
 export interface AIConfig {

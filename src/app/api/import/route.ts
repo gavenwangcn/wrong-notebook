@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { unauthorized, internalError, badRequest, forbidden } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { generateUniqueShortId, isShortId } from "@/lib/short-id";
 
 const logger = createLogger('api:import');
 
@@ -40,6 +41,7 @@ interface ImportData {
     }>;
     errorItems: Array<{
         id: string;
+        shortId?: string | null;
         userId: string;
         subjectId: string | null;
         originalImageUrl: string;
@@ -249,8 +251,12 @@ export async function POST(req: Request) {
                     }
                 }
 
+                // 尽量保留导出数据中的短 ID，冲突时重新生成
+                const keepShortId = isShortId(item.shortId)
+                    && !(await tx.errorItem.findUnique({ where: { shortId: item.shortId }, select: { id: true } }));
                 const created = await tx.errorItem.create({
                     data: {
+                        shortId: keepShortId ? item.shortId : await generateUniqueShortId(tx),
                         userId: targetUserId,
                         subjectId: newSubjectId || undefined,
                         originalImageUrl: item.originalImageUrl || '',

@@ -16,6 +16,10 @@ import { ArrowLeft, Upload, PenLine } from "lucide-react";
 import { ProgressFeedback, ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { TextInputZone } from "@/components/text-input-zone";
+import { ImportResultBanner } from "@/components/import-result-banner";
+import { BatchImportPanel } from "@/components/batch-import-panel";
+import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
+import type { ImportedQuestion } from "@/lib/question-import";
 
 export default function AddErrorPage() {
     const params = useParams();
@@ -36,6 +40,11 @@ export default function AddErrorPage() {
     // Cropper state
     const [croppingImage, setCroppingImage] = useState<string | null>(null);
     const [isCropperOpen, setIsCropperOpen] = useState(false);
+
+    // 免确认导入：偏好、最近一次导入结果、批量框选的题目图片
+    const [confirmBeforeImport, setConfirmBeforeImport] = useState(false);
+    const [lastImported, setLastImported] = useState<ImportedQuestion | null>(null);
+    const [batchBlobs, setBatchBlobs] = useState<Blob[] | null>(null);
 
     // Timeout Config
     const aiTimeout = config?.timeouts?.analyze || 180000;
@@ -58,6 +67,8 @@ export default function AddErrorPage() {
                 console.error("Failed to fetch notebook:", err);
                 router.push("/notebooks");
             });
+
+        fetchConfirmBeforeImport().then(setConfirmBeforeImport);
 
         // Fetch settings for timeouts
         apiClient.get<AppConfig>("/api/settings")
@@ -97,7 +108,14 @@ export default function AddErrorPage() {
         };
     }, [analysisStep, safetyTimeout]);
 
+    const handleBatchCropComplete = (blobs: Blob[]) => {
+        setIsCropperOpen(false);
+        setLastImported(null);
+        setBatchBlobs(blobs);
+    };
+
     const onImageSelect = (file: File) => {
+        setLastImported(null);
         const imageUrl = URL.createObjectURL(file);
         setCroppingImage(imageUrl);
         setIsCropperOpen(true);
@@ -153,6 +171,16 @@ export default function AddErrorPage() {
             setAnalysisStep('processing');
             setProgress(100);
             frontendLogger.info('[AddAnalyze]', 'Progress updated to 100%');
+
+            // 未开启人工确认时直接入库
+            if (!confirmBeforeImport) {
+                setAnalysisStep('saving');
+                const imported = await saveParsedQuestion(data, { subjectId: notebookId, imageUrl: base64Image });
+                setLastImported(imported);
+                setCurrentImage(null);
+                frontendLogger.info('[AddAnalyze]', 'Imported without review', { id: imported.id });
+                return;
+            }
 
             frontendLogger.info('[AddAnalyze]', 'Step 4/5: Setting parsed data into state');
             const dataSize = JSON.stringify(data).length;
@@ -251,6 +279,7 @@ export default function AddErrorPage() {
                 wrongAnswerText: string;
                 mistakeAnalysis: string;
                 mistakeStatus: string;
+                subject?: string;
             }>("/api/reanswer", {
                 questionText,
                 language,
@@ -268,9 +297,16 @@ export default function AddErrorPage() {
                 wrongAnswerText: result.wrongAnswerText || "",
                 mistakeAnalysis: result.mistakeAnalysis || "",
                 mistakeStatus: (result.mistakeStatus as any) || "unknown",
-                subject: "数学",
+                subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
             };
+
+            if (!confirmBeforeImport) {
+                setAnalysisStep('saving');
+                const imported = await saveParsedQuestion(parsed, { subjectId: notebookId, imageUrl: null });
+                setLastImported(imported);
+                return;
+            }
 
             setCurrentImage(null);
             setParsedData(parsed);
@@ -392,7 +428,18 @@ export default function AddErrorPage() {
                             </button>
                         </div>
 
-                        {inputMode === "image" ? (
+                        {lastImported && (
+                            <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />
+                        )}
+
+                        {batchBlobs ? (
+                            <BatchImportPanel
+                                blobs={batchBlobs}
+                                subjectId={notebookId}
+                                timeout={aiTimeout}
+                                onClose={() => setBatchBlobs(null)}
+                            />
+                        ) : inputMode === "image" ? (
                             <UploadZone onImageSelect={onImageSelect} isAnalyzing={analysisStep !== 'idle'} />
                         ) : (
                             <TextInputZone
@@ -421,6 +468,7 @@ export default function AddErrorPage() {
                 open={isCropperOpen}
                 onClose={() => setIsCropperOpen(false)}
                 onCropComplete={handleCropComplete}
+                onMultiCropComplete={handleBatchCropComplete}
             />
         </main>
     );

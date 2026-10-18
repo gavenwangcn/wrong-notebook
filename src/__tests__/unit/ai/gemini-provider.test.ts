@@ -229,3 +229,35 @@ describe('Gemini Provider 错误处理', () => {
         });
     });
 });
+
+describe('Gemini Provider 掌握概率评估与学科判断', () => {
+    let provider: GeminiProvider;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        provider = new GeminiProvider({ apiKey: 'test-key', model: 'gemini-2.0-flash' });
+    });
+
+    it('应该解析掌握概率评估结果', async () => {
+        mockGenerateContent.mockResolvedValueOnce({ text: '{"probability": 35, "reason": "最近一次不会做"}' });
+
+        const result = await provider.evaluateMastery({
+            questionText: '题目',
+            knowledgePoints: [],
+            history: [{ date: '2026-10-01T00:00:00.000Z', difficulty: 'hard', result: 'not_attempted', source: 'exam' }],
+            ruleProbability: 0.2,
+        });
+
+        expect(result).toEqual({ probability: 0.35, reason: '最近一次不会做' });
+    });
+
+    it('学科不在列表内时应该返回 undefined', async () => {
+        mockGenerateContent.mockResolvedValueOnce({
+            text: '<answer_text>A</answer_text><analysis>略</analysis><knowledge_points>x</knowledge_points><subject>天文</subject>',
+        });
+
+        const result = await provider.reanswerQuestion('题目', 'zh');
+
+        expect(result.subject).toBeUndefined();
+    });
+});
