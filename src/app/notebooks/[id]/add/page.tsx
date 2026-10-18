@@ -354,10 +354,10 @@ export default function AddErrorPage() {
                 frontendLogger.info('[AddSave]', 'Duplicate submission detected, using existing record');
             }
 
-            alert(t.common.messages?.saveSuccess || 'Saved!');
-            router.push(`/notebooks/${notebookId}`);
+            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
+            router.push(result.duplicate ? `/error-items/${result.id}` : `/notebooks/${notebookId}`);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[AddSave]', 'Save failed', { error: error instanceof Error ? error.message : String(error) });
             alert(t.common.messages?.saveFailed || 'Save failed');
         }
     };

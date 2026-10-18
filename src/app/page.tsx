@@ -305,10 +305,12 @@ function HomeContent() {
             setStep("upload");
             setParsedData(null);
             setCurrentImage(null);
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully!');
+            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
 
             // Redirect to notebook page if subjectId is present
-            if (finalData.subjectId) {
+            if (result.duplicate) {
+                router.push(`/error-items/${result.id}`);
+            } else if (finalData.subjectId) {
                 router.push(`/notebooks/${finalData.subjectId}`);
             }
         } catch (error: any) {
@@ -443,9 +445,11 @@ function HomeContent() {
 
             frontendLogger.info('[HomeDirectSave]', 'Save successful');
             setAnalysisStep('idle');
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully!');
+            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
 
-            if (data.subjectId) {
+            if (result.duplicate) {
+                router.push(`/error-items/${result.id}`);
+            } else if (data.subjectId) {
                 router.push(`/notebooks/${data.subjectId}`);
             }
         } catch (error: any) {

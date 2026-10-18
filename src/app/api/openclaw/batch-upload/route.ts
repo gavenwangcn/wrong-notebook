@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
+import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
 import { createErrorResponse, ErrorCode } from "@/lib/api-errors";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { findParentTagIdForGrade } from "@/lib/tag-recognition";
-import { compare } from "bcryptjs";
 import { generateUniqueShortId } from "@/lib/short-id";
+import { scheduleMasteryEvaluation } from "@/lib/mastery";
+import { findDuplicateQuestion, recordDuplicateQuestion, runQuestionImportTransaction } from "@/lib/question-deduplication";
 
 const logger = createLogger('api:openclaw:batch-upload');
 
@@ -27,6 +29,8 @@ interface OpenclawResponse {
         questionText: string;
         answerText: string;
         analysis: string;
+        wrongAnswerText?: string;
+        mistakeAnalysis?: string;
         knowledgePoints: string[];
         subject?: string;
         errorType?: string;
@@ -115,83 +119,98 @@ async function createErrorItem(
 ) {
     const { questionText, answerText, analysis, knowledgePoints, errorType, source } = parsedData || {};
 
-    const tagNames: string[] = Array.isArray(knowledgePoints) ? knowledgePoints : [];
-    const tagConnections: { id: string }[] = [];
+    const content = {
+        questionText,
+        answerText,
+        analysis,
+        wrongAnswerText: parsedData?.wrongAnswerText,
+        mistakeAnalysis: parsedData?.mistakeAnalysis,
+        originalImageUrl: `data:${mimeType};base64,${imageBase64}`,
+    };
+    const result = await runQuestionImportTransaction(async (tx) => {
+        const duplicate = await findDuplicateQuestion(tx, userId, content);
+        if (duplicate) return recordDuplicateQuestion(tx, userId, duplicate, content);
 
-    const subject = subjectId ? await prisma.subject.findUnique({ where: { id: subjectId } }) : null;
-    const subjectKey = subject ? inferSubjectFromName(subject.name) : null;
+        const tagNames: string[] = Array.isArray(knowledgePoints) ? knowledgePoints : [];
+        const tagConnections: { id: string }[] = [];
 
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { educationStage: true, enrollmentYear: true }
-    });
+        const subject = subjectId ? await tx.subject.findUnique({ where: { id: subjectId } }) : null;
+        const subjectKey = subject ? inferSubjectFromName(subject.name) : null;
 
-    let finalGradeSemester: string | null = null;
-    if (user?.educationStage && user?.enrollmentYear) {
-        finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear);
-    }
+        const user = await tx.user.findUnique({
+            where: { id: userId },
+            select: { educationStage: true, enrollmentYear: true }
+        });
 
-    for (const tagName of tagNames) {
-        try {
-            let tag = await prisma.knowledgeTag.findFirst({
-                where: {
-                    name: tagName,
-                    OR: [
-                        { isSystem: true },
-                        { userId: userId },
-                    ],
-                },
-            });
+        let finalGradeSemester: string | null = null;
+        if (user?.educationStage && user?.enrollmentYear) {
+            finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear);
+        }
 
-            if (!tag) {
-                const parentId = finalGradeSemester && subjectKey 
-                    ? await findParentTagIdForGrade(finalGradeSemester, subjectKey)
-                    : null;
-
-                tag = await prisma.knowledgeTag.create({
-                    data: {
+        for (const tagName of tagNames) {
+            try {
+                let tag = await tx.knowledgeTag.findFirst({
+                    where: {
                         name: tagName,
-                        subject: subjectKey || 'other',
-                        isSystem: false,
-                        userId: userId,
-                        parentId: parentId || undefined,
+                        OR: [
+                            { isSystem: true },
+                            { userId: userId },
+                        ],
                     },
                 });
+
+                if (!tag) {
+                    const parentId = finalGradeSemester && subjectKey
+                        ? await findParentTagIdForGrade(finalGradeSemester, subjectKey, tx)
+                        : null;
+
+                    tag = await tx.knowledgeTag.create({
+                        data: {
+                            name: tagName,
+                            subject: subjectKey || 'other',
+                            isSystem: false,
+                            userId: userId,
+                            parentId: parentId || undefined,
+                        },
+                    });
+                }
+
+                tagConnections.push({ id: tag.id });
+            } catch (tagError) {
+                logger.error({ tagName, error: tagError }, 'Error processing tag');
             }
-
-            tagConnections.push({ id: tag.id });
-        } catch (tagError) {
-            logger.error({ tagName, error: tagError }, 'Error processing tag');
         }
-    }
 
-    const errorItem = await prisma.errorItem.create({
-        data: {
-            shortId: await generateUniqueShortId(prisma),
-            userId: userId,
-            subjectId: subjectId || undefined,
-            originalImageUrl: `data:${mimeType};base64,${imageBase64}`,
-            ocrText: questionText || null,
-            questionText: questionText || null,
-            answerText: answerText || null,
-            analysis: analysis || null,
-            knowledgePoints: JSON.stringify(tagNames),
-            gradeSemester: finalGradeSemester,
-            paperLevel: null,
-            errorType: errorType || null,
-            source: source || 'Openclaw',
-            masteryLevel: 0,
-            tags: {
-                connect: tagConnections,
+        const errorItem = await tx.errorItem.create({
+            data: {
+                shortId: await generateUniqueShortId(tx),
+                userId: userId,
+                subjectId: subjectId || undefined,
+                originalImageUrl: `data:${mimeType};base64,${imageBase64}`,
+                ocrText: questionText || null,
+                questionText: questionText || null,
+                answerText: answerText || null,
+                analysis: analysis || null,
+                knowledgePoints: JSON.stringify(tagNames),
+                gradeSemester: finalGradeSemester,
+                paperLevel: null,
+                errorType: errorType || null,
+                source: source || 'Openclaw',
+                masteryLevel: 0,
+                tags: {
+                    connect: tagConnections,
+                },
             },
-        },
-        include: {
-            tags: true,
-            subject: true,
-        },
-    });
+            include: {
+                tags: true,
+                subject: true,
+            },
+        });
 
-    return errorItem;
+        return errorItem;
+    });
+    if ('duplicate' in result && result.duplicate) scheduleMasteryEvaluation([result.id]);
+    return result;
 }
 
 export async function POST(req: Request) {
@@ -334,6 +353,11 @@ export async function POST(req: Request) {
             success: boolean;
             index: number;
             errorItemId?: string;
+            duplicate?: boolean;
+            mistakeRecorded?: boolean;
+            similarity?: number;
+            practiceRecordId?: string;
+            message?: string;
             error?: string;
         }> = [];
 
@@ -377,6 +401,13 @@ export async function POST(req: Request) {
                     success: true,
                     index: i,
                     errorItemId: errorItem.id,
+                    ...('duplicate' in errorItem ? {
+                        duplicate: errorItem.duplicate,
+                        mistakeRecorded: errorItem.mistakeRecorded,
+                        similarity: errorItem.similarity,
+                        practiceRecordId: errorItem.practiceRecordId,
+                        message: errorItem.message,
+                    } : {}),
                 });
 
                 logger.info({ index: i, errorItemId: errorItem.id }, 'Error item created successfully');

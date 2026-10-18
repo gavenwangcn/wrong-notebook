@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { hash } from "bcryptjs";
+import type { Prisma } from "@prisma/client";
 import { unauthorized, notFound, badRequest, validationError, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 
@@ -16,6 +17,7 @@ const userUpdateSchema = z.object({
     educationStage: z.string().optional(),
     enrollmentYear: z.number().optional().nullable(),
     confirmBeforeImport: z.boolean().optional(),
+    questionDuplicateThreshold: z.number().min(1).max(100).multipleOf(0.01).optional(),
 });
 
 export async function GET() {
@@ -34,6 +36,7 @@ export async function GET() {
                 educationStage: true,
                 enrollmentYear: true,
                 confirmBeforeImport: true,
+                questionDuplicateThreshold: true,
                 // Do not return password
             }
         });
@@ -60,9 +63,9 @@ export async function PATCH(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport } = userUpdateSchema.parse(body);
+        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport, questionDuplicateThreshold } = userUpdateSchema.parse(body);
 
-        const updateData: any = {};
+        const updateData: Prisma.UserUpdateInput = {};
 
         // 只有非空字符串才会触发更新
         if (name && name.trim()) updateData.name = name.trim();
@@ -72,6 +75,9 @@ export async function PATCH(req: Request) {
         }
         if (typeof confirmBeforeImport === 'boolean') {
             updateData.confirmBeforeImport = confirmBeforeImport;
+        }
+        if (typeof questionDuplicateThreshold === 'number') {
+            updateData.questionDuplicateThreshold = questionDuplicateThreshold;
         }
 
         // 验证邮箱格式（如果提供了邮箱）
@@ -101,6 +107,7 @@ export async function PATCH(req: Request) {
                 educationStage: true,
                 enrollmentYear: true,
                 confirmBeforeImport: true,
+                questionDuplicateThreshold: true,
             }
         });
 

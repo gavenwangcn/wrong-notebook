@@ -26,6 +26,7 @@ model User {
   isActive  Boolean  @default(true)   // 用户是否启用
 
   confirmBeforeImport Boolean @default(false) // 导入题目前是否进入人工校对页
+  questionDuplicateThreshold Float @default(99) // 百分比，相似度严格大于此值时判重
 
   errorItems ErrorItem[]
   subjects   Subject[]
@@ -156,7 +157,10 @@ model PracticeRecord {
   questionText String?
   answerText   String?
   analysis     String?
-  source       String   @default("practice") // practice | exam
+  wrongAnswerText String? // 本次作答快照，避免重复导入时覆盖原题
+  mistakeAnalysis String?
+  originalImageUrl String?
+  source       String   @default("practice") // practice | exam | duplicate_import
   examQuestion ExamQuestion?
   
   createdAt DateTime @default(now())

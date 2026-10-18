@@ -6,14 +6,14 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
 interface MarkdownRendererProps {
-    content: string;
+    content?: string | null;
     className?: string;
 }
 
 export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
     // Preprocess content to ensure proper paragraph breaks and LaTeX rendering
     // Convert single line breaks to double line breaks for better readability
-    const processedContent = content
+    const processedContent = (content ?? '')
         // First, convert literal \n sequences to actual newlines (fix for AI responses)
         .replace(/\\n/g, '\n')
         // Preserve existing double line breaks with a unique marker

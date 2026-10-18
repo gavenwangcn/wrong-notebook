@@ -111,7 +111,7 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
                                         </Badge>
                                         {record.difficulty && <Badge variant="secondary">{difficultyLabels[record.difficulty] || record.difficulty}</Badge>}
                                         <span className="text-xs text-muted-foreground">
-                                            {record.exam ? `${t.mastery.sources.exam} · ${record.exam.title}` : t.mastery.sources.practice}
+                                            {record.exam ? `${t.mastery.sources.exam} · ${record.exam.title}` : t.mastery.sources[record.source as keyof typeof t.mastery.sources] || t.mastery.sources.practice}
                                         </span>
                                         {record.questionText && (
                                             <span className="ml-auto text-muted-foreground">
@@ -122,6 +122,23 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
                                     {expanded === record.id && record.questionText && (
                                         <div className="space-y-2 rounded-md bg-muted/40 p-3">
                                             <MarkdownRenderer content={record.questionText} />
+                                            {record.wrongAnswerText && (
+                                                <div className="border-t pt-2">
+                                                    <p className="mb-1 font-medium">{t.editor.wrongAnswerText}</p>
+                                                    <MarkdownRenderer content={record.wrongAnswerText} />
+                                                </div>
+                                            )}
+                                            {record.mistakeAnalysis && (
+                                                <div className="border-t pt-2">
+                                                    <p className="mb-1 font-medium">{t.editor.mistakeAnalysis}</p>
+                                                    <MarkdownRenderer content={record.mistakeAnalysis} />
+                                                </div>
+                                            )}
+                                            {record.originalImageUrl && (
+                                                // 作答图片可能来自上传的数据 URL，按原始比例显示。
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={record.originalImageUrl} alt={t.editor.wrongAnswerText} className="max-h-96 max-w-full rounded object-contain" />
+                                            )}
                                             {record.answerText && (
                                                 <div className="border-t pt-2">
                                                     <MarkdownRenderer content={record.answerText} className="font-semibold" />

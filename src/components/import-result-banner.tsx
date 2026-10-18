@@ -14,7 +14,7 @@ interface ImportResultBannerProps {
 /** 免确认导入成功后的提示条 */
 export function ImportResultBanner({ imported, onDismiss }: ImportResultBannerProps) {
     const { t } = useLanguage();
-    const message = t.importFlow.imported
+    const message = (imported.duplicate ? t.importFlow.duplicate : t.importFlow.imported)
         .replace("{notebook}", imported.notebookName || "-")
         .replace("{id}", imported.shortId || "-");
 

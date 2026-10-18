@@ -88,6 +88,13 @@ export interface CreateErrorItemRequest extends ParsedQuestion {
 
 export type AnalyzeResponse = ParsedQuestion;
 
+export interface QuestionSimilarityResponse {
+    similarity: number;
+    threshold: number;
+    duplicate: boolean;
+    items: { id: string; shortId: string | null; questionText: string; notebookName: string | null }[];
+}
+
 export interface UserProfile {
     id: string;
     email: string;
@@ -97,9 +104,11 @@ export interface UserProfile {
     role: string;
     isActive: boolean;
     confirmBeforeImport?: boolean;
+    questionDuplicateThreshold?: number;
 }
 
 export interface UpdateUserProfileRequest {
+    questionDuplicateThreshold?: number;
     name?: string;
     email?: string;
     educationStage?: string;
@@ -263,6 +272,9 @@ export interface PracticeHistoryRecord {
     questionText?: string | null;
     answerText?: string | null;
     analysis?: string | null;
+    wrongAnswerText?: string | null;
+    mistakeAnalysis?: string | null;
+    originalImageUrl?: string | null;
     createdAt: string;
     exam: { paperId: string; order: number; title: string } | null;
 }

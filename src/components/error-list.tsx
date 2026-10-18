@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, Trash2, X } from "lucide-react";
+import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,6 +19,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ErrorListSelectionBar } from "@/components/error-list-selection-bar";
 import { KnowledgeFilter } from "@/components/knowledge-filter";
 import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
@@ -231,7 +232,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className={`space-y-6 ${isSelectMode ? "pb-40 sm:pb-24" : ""}`}>
             <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative w-full sm:flex-1">
                     <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -288,6 +289,12 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                     <Printer className="mr-2 h-4 w-4" />
                     {t.notebook?.exportPrint || "导出打印"}
                 </Button>
+                {!isSelectMode && (
+                    <Button variant="outline" onClick={toggleSelectMode}>
+                        <GitCompareArrows className="mr-2 h-4 w-4" />
+                        {t.questionSimilarity.title}
+                    </Button>
+                )}
                 <Button
                     variant={isSelectMode ? "secondary" : "outline"}
                     onClick={toggleSelectMode}
@@ -374,6 +381,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                 >
                                     <Checkbox
                                         checked={selectedIds.has(item.id)}
+                                        aria-label={t.questionSimilarity.selectQuestion.replace("{id}", item.shortId || item.id)}
                                         className="h-5 w-5 border-2 bg-background shadow-sm"
                                     />
                                 </div>
@@ -470,32 +478,8 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                 onPageChange={setPage}
             />
 
-            {/* 多选模式底部操作栏 */}
             {isSelectMode && (
-                <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg p-4 z-50">
-                    <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
-                        <span className="text-sm text-muted-foreground">
-                            {(t.notebook?.selectedCount || "{count} selected").replace("{count}", selectedIds.size.toString())}
-                        </span>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={toggleSelectMode}
-                            >
-                                <X className="mr-2 h-4 w-4" />
-                                {t.notebook?.cancelSelect || "取消"}
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                onClick={handleBatchDelete}
-                                disabled={selectedIds.size === 0 || isDeleting}
-                            >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {t.notebook?.deleteSelected || "删除选中"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                <ErrorListSelectionBar selectedIds={[...selectedIds]} deleting={isDeleting} onCancel={toggleSelectMode} onDelete={handleBatchDelete} />
             )}
         </div>
     );

@@ -31,6 +31,7 @@ import { AppConfig, UserProfile, UpdateUserProfileRequest, OpenAIInstance } from
 import { ModelSelector } from "@/components/ui/model-selector";
 import { PromptSettings } from "@/components/settings/prompt-settings";
 import { ImportPreferenceSetting } from "@/components/settings/import-preference-setting";
+import { DuplicateThresholdSetting } from "@/components/settings/duplicate-threshold-setting";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
 const MAX_OPENAI_INSTANCES = 10;
@@ -404,6 +405,7 @@ export function SettingsDialog() {
                     .replace('{items}', String(stats.errorItemsCreated))
                     .replace('{schedules}', String(stats.reviewSchedulesCreated))
                     .replace('{records}', String(stats.practiceRecordsCreated))
+                    .replace('{duplicates}', String(stats.duplicateErrorItems ?? 0))
             );
 
             setSelectedFile(null);
@@ -443,6 +445,7 @@ export function SettingsDialog() {
                         .replace('{items}', String(s.errorItemsCreated))
                         .replace('{schedules}', String(s.reviewSchedulesCreated))
                         .replace('{records}', String(s.practiceRecordsCreated))
+                        .replace('{duplicates}', String(s.duplicateErrorItems ?? 0))
                 );
                 setSelectedFile(null);
                 setSelectedFileName("");
@@ -770,6 +773,7 @@ export function SettingsDialog() {
                             </div>
 
                             <ImportPreferenceSetting />
+                            <DuplicateThresholdSetting />
                         </div>
                         <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

@@ -44,6 +44,12 @@ vi.mock('@/lib/prisma', () => ({
         errorItem: mocks.mockPrismaErrorItem,
         knowledgeTag: mocks.mockPrismaKnowledgeTag,
         subject: mocks.mockPrismaSubject,
+        $transaction: vi.fn(async (callback: (client: unknown) => Promise<unknown>) => callback({
+            user: mocks.mockPrismaUser,
+            errorItem: mocks.mockPrismaErrorItem,
+            knowledgeTag: mocks.mockPrismaKnowledgeTag,
+            subject: mocks.mockPrismaSubject,
+        })),
     },
 }));
 
@@ -105,6 +111,7 @@ describe('/api/error-items', () => {
 
         // Default: errorItem.findFirst returns null (no duplicate found)
         mocks.mockPrismaErrorItem.findFirst.mockResolvedValue(null);
+        mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
     });
 
     describe('POST /api/error-items (短 ID 与自动匹配错题本)', () => {

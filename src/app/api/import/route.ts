@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth";
 import { unauthorized, internalError, badRequest, forbidden } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { generateUniqueShortId, isShortId } from "@/lib/short-id";
+import { isPracticeResult, scheduleMasteryEvaluation } from "@/lib/mastery";
+import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-deduplication";
 
 const logger = createLogger('api:import');
 
@@ -77,6 +79,15 @@ interface ImportData {
         subject: string | null;
         difficulty: string | null;
         isCorrect: boolean | null;
+        errorItemId?: string | null;
+        result?: string | null;
+        questionText?: string | null;
+        answerText?: string | null;
+        analysis?: string | null;
+        wrongAnswerText?: string | null;
+        mistakeAnalysis?: string | null;
+        originalImageUrl?: string | null;
+        source?: string;
         createdAt: string;
     }>;
 }
@@ -143,7 +154,9 @@ export async function POST(req: Request) {
             reviewSchedulesCreated: 0,
             practiceRecordsCreated: 0,
             tagsLinked: 0,
+            duplicateErrorItems: 0,
         };
+        const masteryIds = new Set<string>();
 
         // 使用事务确保数据一致性
         await prisma.$transaction(async (tx) => {
@@ -231,24 +244,21 @@ export async function POST(req: Request) {
 
             // 4. 导入 error items
             const errorItemIdMap = new Map<string, string>();
+            const errorItemOwnerMap = new Map<string, string>();
             for (const item of body.errorItems) {
                 const targetUserId = importAll ? item.userId : user.id;
+                errorItemOwnerMap.set(item.id, targetUserId);
                 const newSubjectId = item.subjectId ? subjectIdMap.get(item.subjectId) : undefined;
 
-                // 去重：同一用户 + 同一科目 + 相同题目文本视为重复
-                if (item.questionText) {
-                    const existing = await tx.errorItem.findFirst({
-                        where: {
-                            userId: targetUserId,
-                            subjectId: newSubjectId || null,
-                            questionText: item.questionText,
-                        },
-                    });
-                    if (existing) {
-                        // 跳过重复，但记录 ID 映射（后续 reviewSchedule 可能需要）
-                        errorItemIdMap.set(item.id, existing.id);
-                        continue;
-                    }
+                const duplicate = await findDuplicateQuestion(tx, targetUserId, item);
+                if (duplicate) {
+                    const existing = await recordDuplicateQuestion(tx, targetUserId, duplicate, item);
+                    // 后续复习计划和练习历史映射到原题，保留本次导入的错误快照。
+                    errorItemIdMap.set(item.id, existing.id);
+                    masteryIds.add(existing.id);
+                    stats.duplicateErrorItems++;
+                    stats.practiceRecordsCreated++;
+                    continue;
                 }
 
                 // 尽量保留导出数据中的短 ID，冲突时重新生成
@@ -334,20 +344,37 @@ export async function POST(req: Request) {
             // 6. 导入 practice records
             for (const record of (body.practiceRecords || [])) {
                 const targetUserId = importAll ? record.userId : user.id;
+                const errorItemId = record.errorItemId && errorItemOwnerMap.get(record.errorItemId) === targetUserId
+                    ? errorItemIdMap.get(record.errorItemId) : undefined;
+                const result = isPracticeResult(record.result) ? record.result : undefined;
                 await tx.practiceRecord.create({
                     data: {
                         userId: targetUserId,
                         subject: record.subject,
                         difficulty: record.difficulty,
                         isCorrect: record.isCorrect,
+                        ...(errorItemId ? {
+                            errorItemId,
+                            result,
+                            questionText: record.questionText,
+                            answerText: record.answerText,
+                            analysis: record.analysis,
+                            wrongAnswerText: record.wrongAnswerText,
+                            mistakeAnalysis: record.mistakeAnalysis,
+                            originalImageUrl: record.originalImageUrl,
+                            source: ['practice', 'exam', 'duplicate_import'].includes(record.source || '') ? record.source : 'practice',
+                        } : {}),
                         createdAt: safeParseDate(record.createdAt),
                     },
                 });
                 stats.practiceRecordsCreated++;
+                if (errorItemId && result) masteryIds.add(errorItemId);
             }
         }, {
             timeout: 60000,
         });
+
+        if (masteryIds.size) scheduleMasteryEvaluation([...masteryIds]);
 
         logger.info({
             userId: user.id,
