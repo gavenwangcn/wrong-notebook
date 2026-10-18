@@ -87,3 +87,21 @@ export function normalizeSubject(value: string | null | undefined): ParsedQuesti
     const parsed = ParsedQuestionSchema.shape.subject.safeParse(value?.trim());
     return parsed.success ? parsed.data : undefined;
 }
+
+/** 每题最多选取的知识点数量 */
+export const MAX_KNOWLEDGE_TAGS = 5;
+
+/**
+ * 解析 AI 选取的知识点，只保留可选清单中存在的标签（去重，最多 5 个）
+ */
+export function parseTagSuggestion(text: string, allowedTags: string[]): string[] {
+    const parsed = z.object({ tags: z.array(z.string()) }).parse(extractJsonObject(text));
+    const allowed = new Set(allowedTags);
+    const result: string[] = [];
+    for (const tag of parsed.tags.map((value) => value.trim())) {
+        if (allowed.has(tag) && !result.includes(tag)) {
+            result.push(tag);
+        }
+    }
+    return result.slice(0, MAX_KNOWLEDGE_TAGS);
+}

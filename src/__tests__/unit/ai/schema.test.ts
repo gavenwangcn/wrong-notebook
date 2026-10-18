@@ -4,7 +4,7 @@
  * 测试 Zod 验证 schema，特别是新增的错因分析字段
  */
 import { describe, it, expect } from 'vitest';
-import { ParsedQuestionSchema, safeParseParsedQuestion, parseMasteryEvaluation, extractJsonObject, normalizeSubject } from '@/lib/ai/schema';
+import { ParsedQuestionSchema, safeParseParsedQuestion, parseMasteryEvaluation, extractJsonObject, normalizeSubject, parseTagSuggestion } from '@/lib/ai/schema';
 
 describe('ParsedQuestionSchema 验证', () => {
     const validBaseQuestion = {
@@ -164,5 +164,18 @@ describe('掌握概率解析与学科规范化', () => {
         expect(normalizeSubject(' 物理 ')).toBe('物理');
         expect(normalizeSubject('天文')).toBeUndefined();
         expect(normalizeSubject(null)).toBeUndefined();
+    });
+});
+
+describe('知识点选取结果解析', () => {
+    const allowed = ['植树问题', '鸡兔同笼', '相遇问题', '追及问题', '年龄问题', '周期问题初步'];
+
+    it('只保留清单内的标签，去重并限制 5 个', () => {
+        const text = '{"tags": [" 植树问题", "自创知识点", "植树问题", "鸡兔同笼", "相遇问题", "追及问题", "年龄问题", "周期问题初步"]}';
+        expect(parseTagSuggestion(text, allowed)).toEqual(['植树问题', '鸡兔同笼', '相遇问题', '追及问题', '年龄问题']);
+    });
+
+    it('格式不正确时报错', () => {
+        expect(() => parseTagSuggestion('{"tag": "植树问题"}', allowed)).toThrow();
     });
 });

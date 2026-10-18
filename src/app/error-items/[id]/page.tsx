@@ -21,6 +21,7 @@ import { NotebookSelector } from "@/components/notebook-selector";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { ShortIdBadge } from "@/components/short-id-badge";
 import { MasteryPanel } from "@/components/mastery-panel";
+import { RetagItemButton } from "@/components/retag-item-button";
 
 interface KnowledgeTag {
     id: string;
@@ -508,7 +509,7 @@ export default function ErrorDetailPage() {
                         ) : <MarkdownRenderer content={item.questionText} />}
 
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center"><h4 className="text-sm font-semibold">{t.editor?.tags || "Knowledge Tags"}</h4>{!isEditingTags && <Button variant="ghost" size="sm" onClick={startEditingTags}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div>
+                            <div className="flex justify-between items-center"><h4 className="text-sm font-semibold">{t.editor?.tags || "Knowledge Tags"}</h4>{!isEditingTags && <div className="flex"><RetagItemButton errorItemId={item.id} onDone={() => fetchItem(item.id)} /><Button variant="ghost" size="sm" onClick={startEditingTags}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button></div>}</div>
                             {isEditingTags ? (
                                 <div className="space-y-3">
                                     <TagInput value={tagsInput} onChange={setTagsInput} placeholder={t.editor?.tagsPlaceholder || "Enter or select knowledge tags..."} subject={inferSubjectFromName(item.subject?.name || null) || undefined} gradeStage={educationStage} />

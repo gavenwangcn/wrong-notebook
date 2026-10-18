@@ -8,6 +8,7 @@ import { Plus, House, Pencil } from "lucide-react";
 import Link from "next/link";
 import { ErrorList } from "@/components/error-list";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
+import { RetagNotebookButton } from "@/components/retag-notebook-button";
 
 import { Notebook } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
@@ -23,6 +24,8 @@ export default function NotebookDetailPage() {
     const [notebook, setNotebook] = useState<Notebook | null>(null);
     const [loading, setLoading] = useState(true);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+    // 批量重新生成知识点后递增，用于刷新题目列表
+    const [listVersion, setListVersion] = useState(0);
 
     useEffect(() => {
         if (params.id) {
@@ -80,7 +83,8 @@ export default function NotebookDetailPage() {
                             {(t.notebooks?.totalErrors || "Total {count} errors").replace("{count}", (notebook._count?.errorItems || 0).toString())}
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-start gap-2 shrink-0">
+                        <RetagNotebookButton notebookId={notebook.id} onFinished={() => setListVersion(v => v + 1)} />
                         <Link href={`/notebooks/${notebook.id}/add`}>
                             <Button size="sm" className="hidden sm:flex">
                                 <Plus className="mr-2 h-4 w-4" />
@@ -98,7 +102,7 @@ export default function NotebookDetailPage() {
                     </div>
                 </div>
 
-                <ErrorList subjectId={notebook.id} subjectName={notebook.name} />
+                <ErrorList key={listVersion} subjectId={notebook.id} subjectName={notebook.name} />
 
                 <RenameNotebookDialog
                     open={renameDialogOpen}

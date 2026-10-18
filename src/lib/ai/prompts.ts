@@ -740,3 +740,57 @@ export function generateMasteryPrompt(input: {
     rule_probability: String(Math.round(input.ruleProbability * 100)),
   }).trim();
 }
+
+/**
+ * 知识点重新标注提示词模板
+ * 根据题目内容，从给定的知识点清单中选出最相关的知识点
+ */
+export const DEFAULT_TAG_SUGGEST_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
+你是一位熟悉课程大纲的{{subject}}老师。请阅读下面这道题目，从【可选知识点】中选出这道题考查的知识点。
+
+【题目】
+{{question_text}}
+
+【参考答案】
+{{answer_text}}
+
+【解析】
+{{analysis}}
+
+{{grade_instruction}}
+
+【可选知识点】
+{{allowed_tags}}
+
+【选择要求】
+1. 只能从【可选知识点】中选择，必须与清单中的名称**完全一致**，不要改写、不要自创。
+2. 选择 1 到 5 个，按相关程度从高到低排列；优先选择最能概括本题解题方法的知识点。
+3. 竞赛/思维类题目（如鸡兔同笼、植树问题、行程问题、数论、计数）优先选择对应的专题知识点。
+
+【输出格式】
+只输出一个 JSON 对象，不要输出任何其他内容：
+{"tags": ["知识点1", "知识点2"]}`;
+
+/**
+ * 生成知识点重新标注提示词
+ */
+export function generateTagSuggestPrompt(input: {
+  questionText: string;
+  answerText?: string | null;
+  analysis?: string | null;
+  subject: string;
+  allowedTags: string[];
+  gradeSemester?: string | null;
+}): string {
+  return replaceVariables(DEFAULT_TAG_SUGGEST_TEMPLATE, {
+    subject: input.subject,
+    question_text: input.questionText || '（无题目文本）',
+    answer_text: input.answerText || '（无）',
+    analysis: input.analysis || '（无）',
+    grade_instruction: (() => {
+      const grade = input.gradeSemester ? gradeSemesterToDisplayName(input.gradeSemester) : null;
+      return grade ? `【学生年级】\n${grade}` : '';
+    })(),
+    allowed_tags: input.allowedTags.map((tag) => `"${tag}"`).join('、'),
+  }).trim();
+}

@@ -261,3 +261,14 @@ describe('Gemini Provider 掌握概率评估与学科判断', () => {
         expect(result.subject).toBeUndefined();
     });
 });
+
+describe('Gemini Provider 知识点重新标注', () => {
+    it('返回清单内的知识点', async () => {
+        const provider = new GeminiProvider({ apiKey: 'test-key', model: 'gemini-2.0-flash' });
+        mockGenerateContent.mockResolvedValueOnce({ text: '```json\n{"tags": ["鸡兔同笼"]}\n```' });
+
+        const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['鸡兔同笼'] });
+
+        expect(tags).toEqual(['鸡兔同笼']);
+    });
+});

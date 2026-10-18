@@ -291,3 +291,36 @@ describe('OpenAI Provider 掌握概率评估与学科判断', () => {
         expect(result.subject).toBe('数学');
     });
 });
+
+describe('OpenAI Provider 知识点重新标注', () => {
+    it('返回清单内的知识点', async () => {
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+        mockCompletionCreate.mockResolvedValueOnce({ choices: [{ message: { content: '{"tags": ["植树问题", "不存在的"]}' } }] });
+
+        const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['植树问题'] });
+
+        expect(tags).toEqual(['植树问题']);
+    });
+});
+
+describe('OpenAI Provider 推理模型截断重试', () => {
+    it('重新解题时思考耗尽额度后用更大上限重试并成功', async () => {
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'minimax-latest' });
+        mockCompletionCreate
+            .mockResolvedValueOnce({ choices: [{ finish_reason: 'length', message: { content: '' } }] })
+            .mockResolvedValueOnce({ choices: [{ finish_reason: 'stop', message: { content: '<answer_text>x = 2</answer_text><analysis>移项</analysis><knowledge_points>方程</knowledge_points>' } }] });
+
+        const result = await provider.reanswerQuestion('求解 2x + 3 = 7', 'zh');
+
+        expect(result.answerText).toBe('x = 2');
+        expect(mockCompletionCreate.mock.calls.map((args) => args[0].max_tokens)).toEqual([8192, 32768]);
+    });
+
+    it('重试后仍为空时返回 AI_OUTPUT_TRUNCATED 而不是未知错误', async () => {
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'minimax-latest' });
+        mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'length', message: { content: '' } }] });
+
+        await expect(provider.reanswerQuestion('题目', 'zh')).rejects.toThrow('AI_OUTPUT_TRUNCATED');
+        mockCompletionCreate.mockReset();
+    });
+});

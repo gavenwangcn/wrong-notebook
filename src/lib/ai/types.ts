@@ -50,12 +50,22 @@ export interface MasteryEvaluationResult {
     reason: string;
 }
 
+export interface TagSuggestionInput {
+    questionText: string;
+    answerText?: string | null;
+    analysis?: string | null;
+    subject: string;          // 中文学科名，如「数学」
+    allowedTags: string[];    // 可选知识点（标签库中的精确名称）
+    gradeSemester?: string | null;
+}
+
 export interface AIService {
     analyzeImage(imageBase64: string, mimeType?: string, language?: 'zh' | 'en', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language?: 'zh' | 'en', difficulty?: DifficultyLevel, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
+    suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]>;
 }
 
 export interface AIConfig {

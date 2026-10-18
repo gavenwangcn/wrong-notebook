@@ -512,6 +512,7 @@ export const translations = {
             AI_NOT_FOUND: "Resource not found (404). Please check endpoint URL or model name.",
             AI_SERVICE_UNAVAILABLE: "AI service unavailable (503). No available channel.",
             AI_UNKNOWN_ERROR: "Unknown AI error occurred.",
+            AI_OUTPUT_TRUNCATED: "The AI spent its whole output budget thinking and returned no answer. Please try again, or crop the image to a single question.",
             GENERIC_ERROR: "Failed to generate question.",
             reanswer: {
                 default: "Reanswer failed",
@@ -792,6 +793,17 @@ export const translations = {
             analysisLabel: "Analysis",
             sourceLabel: "Source ID",
             notReadyHint: "Questions that failed to generate are left out of the printout.",
+        },
+        retag: {
+            notebookButton: "Regenerate Tags",
+            notebookConfirm: "AI will re-select knowledge tags for every question in this notebook from the current tag library. System tags are replaced; your custom tags are kept. Continue?",
+            progress: "Regenerating tags: {done}/{total}",
+            finished: "Tags regenerated: {success} succeeded, {failed} failed",
+            empty: "No questions in this notebook",
+            itemButton: "AI Regenerate",
+            itemRunning: "Regenerating…",
+            itemFailed: "Failed to regenerate tags",
+            noTags: "AI found no matching tags in the library",
         },
     },
     zh: {
@@ -1304,6 +1316,7 @@ export const translations = {
             AI_NOT_FOUND: "资源不存在 (404)，请检查端点 URL 或模型名称。",
             AI_SERVICE_UNAVAILABLE: "AI 服务不可用 (503)，无可用渠道。",
             AI_UNKNOWN_ERROR: "发生未知 AI 错误。",
+            AI_OUTPUT_TRUNCATED: "AI 思考过程过长，输出额度用尽仍未给出结果。请重试，或把图片裁剪到只包含一道题。",
             GENERIC_ERROR: "生成题目失败，请稍后重试。",
             reanswer: {
                 default: "重新解题失败",
@@ -1584,6 +1597,17 @@ export const translations = {
             analysisLabel: "解析",
             sourceLabel: "来源 ID",
             notReadyHint: "生成失败的题目不会出现在打印稿中。",
+        },
+        retag: {
+            notebookButton: "重新生成知识点",
+            notebookConfirm: "AI 将根据当前知识点库，为本错题本中的每道题重新选择知识点：替换原有系统标签，保留你添加的自定义标签。是否继续？",
+            progress: "正在重新生成知识点：{done}/{total}",
+            finished: "知识点已重新生成：成功 {success} 道，失败 {failed} 道",
+            empty: "错题本中还没有题目",
+            itemButton: "AI 重新生成",
+            itemRunning: "生成中…",
+            itemFailed: "重新生成知识点失败",
+            noTags: "AI 未能从知识点库中找到匹配的知识点",
         },
     }
 };

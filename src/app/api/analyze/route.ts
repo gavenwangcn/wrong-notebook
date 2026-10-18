@@ -139,7 +139,8 @@ export async function POST(req: Request) {
             error.message === 'AI_PERMISSION_DENIED' ||
             error.message === 'AI_NOT_FOUND' ||
             error.message === 'AI_SERVICE_UNAVAILABLE' ||
-            error.message === 'AI_UNKNOWN_ERROR'
+            error.message === 'AI_UNKNOWN_ERROR' ||
+            error.message === 'AI_OUTPUT_TRUNCATED'
         )) {
             // 直接传递 AI Provider 定义的错误类型 (如果是 AI_AUTH_ERROR，提取出来)
             if (error.message.includes('AI_AUTH_ERROR')) {

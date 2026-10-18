@@ -1,10 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt } from './prompts';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject } from './schema';
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt } from './prompts';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion } from './schema';
 import { getAppConfig } from '../config';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
+import { AI_OUTPUT_TRUNCATED } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
 
 const logger = createLogger('ai:gemini');
@@ -230,7 +231,7 @@ export class GeminiProvider implements AIService {
 
             logger.box('🤖 AI Raw Response', text);
 
-            if (!text) throw new Error("Empty response from AI");
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
             const parsedResult = this.parseResponse(text);
 
             logger.box('✅ Parsed & Validated Result', JSON.stringify(parsedResult, null, 2));
@@ -273,7 +274,7 @@ export class GeminiProvider implements AIService {
 
             logger.box('🤖 AI Raw Response', text);
 
-            if (!text) throw new Error("Empty response from AI");
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
             const parsedResult = this.parseResponse(text);
 
             logger.box('✅ Parsed & Validated Result', JSON.stringify(parsedResult, null, 2));
@@ -326,7 +327,7 @@ export class GeminiProvider implements AIService {
 
             logger.debug({ rawResponse: text }, 'AI raw response');
 
-            if (!text) throw new Error("Empty response from AI");
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
 
             // 解析响应
             const answerText = this.extractTag(text, "answer_text") || "";
@@ -369,7 +370,7 @@ export class GeminiProvider implements AIService {
             const text = response.text || '';
             logger.debug({ rawResponse: text }, 'GeoGebra AI raw response');
 
-            if (!text) throw new Error("Empty response from AI");
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
 
             // Extract JSON from response (handle possible markdown code blocks)
             let jsonStr = text.trim();
@@ -416,7 +417,7 @@ export class GeminiProvider implements AIService {
             const text = response.text || '';
             logger.debug({ rawResponse: text }, 'Mastery AI raw response');
 
-            if (!text) throw new Error("Empty response from AI");
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
             return parseMasteryEvaluation(text);
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during mastery evaluation');
@@ -425,9 +426,39 @@ export class GeminiProvider implements AIService {
         }
     }
 
+    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]> {
+        const prompt = generateTagSuggestPrompt(input);
+
+        logger.info({
+            provider: 'Gemini',
+            subject: input.subject,
+            allowedTagCount: input.allowedTags.length,
+        }, 'Tag Suggestion Request');
+
+        try {
+            const response = await this.retryOperation(() => this.ai.models.generateContent({
+                model: this.modelName,
+                contents: prompt
+            }));
+
+            const text = response.text || '';
+            logger.debug({ rawResponse: text }, 'Tag suggestion AI raw response');
+
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
+            return parseTagSuggestion(text, input.allowedTags);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during tag suggestion');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
     private handleError(error: unknown) {
         logger.error({ error }, 'Gemini error');
         if (error instanceof Error) {
+            if (error.message === AI_OUTPUT_TRUNCATED) {
+                throw error;
+            }
             const msg = error.message.toLowerCase();
             if (msg.includes('fetch failed') || msg.includes('network') || msg.includes('connect')) {
                 throw new Error("AI_CONNECTION_FAILED");

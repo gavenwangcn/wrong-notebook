@@ -506,3 +506,14 @@ describe('Azure OpenAI Provider 掌握概率评估', () => {
         expect(mockAzureCompletionCreate.mock.calls[0][0].model).toBe('gpt-4o');
     });
 });
+
+describe('Azure OpenAI Provider 知识点重新标注', () => {
+    it('返回清单内的知识点', async () => {
+        const provider = new AzureOpenAIProvider({ apiKey: 'test-key', endpoint: 'https://test.openai.azure.com', deploymentName: 'gpt-4o' });
+        mockAzureCompletionCreate.mockResolvedValueOnce({ choices: [{ message: { content: '{"tags": ["相遇问题"]}' } }] });
+
+        const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['相遇问题'] });
+
+        expect(tags).toEqual(['相遇问题']);
+    });
+});

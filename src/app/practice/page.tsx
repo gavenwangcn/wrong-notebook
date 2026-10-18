@@ -90,6 +90,8 @@ function PracticeContent() {
                 errorMessage = t.errors?.aiResponseError || errorMessage;
             } else if (msg.includes('AI_AUTH_ERROR')) {
                 errorMessage = t.errors?.aiAuth || errorMessage;
+            } else if (msg.includes('AI_OUTPUT_TRUNCATED')) {
+                errorMessage = t.errors?.AI_OUTPUT_TRUNCATED || errorMessage;
             } else if (msg.includes('AI_UNKNOWN_ERROR')) {
                 errorMessage = t.errors?.AI_UNKNOWN_ERROR || errorMessage;
             }

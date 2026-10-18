@@ -8,6 +8,7 @@ import {
     generateSimilarQuestionPrompt,
     generateReanswerPrompt,
     generateMasteryPrompt,
+    generateTagSuggestPrompt,
     generateGradeInstruction,
     gradeSemesterToDisplayName,
     gradeSemesterToGradeNumber,
@@ -420,5 +421,23 @@ describe('掌握概率与学科相关提示词', () => {
         const prompt = generateReanswerPrompt('zh', '1+1=?');
         expect(prompt).toContain('<subject>');
         expect(prompt).toContain('7 个 XML 标签');
+    });
+});
+
+describe('知识点重新标注提示词', () => {
+    it('包含题目、可选知识点和学生年级，不含超纲限制', () => {
+        const prompt = generateTagSuggestPrompt({
+            questionText: '鸡兔同笼，共 10 个头 28 条腿',
+            answerText: '鸡 6 兔 4',
+            subject: '数学',
+            allowedTags: ['鸡兔同笼', '植树问题'],
+            gradeSemester: '四年级上',
+        });
+
+        expect(prompt).toContain('鸡兔同笼，共 10 个头 28 条腿');
+        expect(prompt).toContain('"鸡兔同笼"、"植树问题"');
+        expect(prompt).toContain('【学生年级】');
+        expect(prompt).toContain('数学老师');
+        expect(prompt).not.toContain('禁止使用超纲知识');
     });
 });
