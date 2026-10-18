@@ -113,12 +113,12 @@ describe('题目导入自动判重（真实 SQLite）', () => {
         expect(await database.errorItem.count()).toBe(1);
     });
 
-    it('默认阈值为 99%，保存个人阈值后立即用于后续导入且不影响其他用户', async () => {
-        expect((await (await GET_PROFILE()).json()).questionDuplicateThreshold).toBe(99);
+    it('默认阈值为 90%，保存个人阈值后立即用于后续导入且不影响其他用户', async () => {
+        expect((await (await GET_PROFILE()).json()).questionDuplicateThreshold).toBe(90);
         const response = await UPDATE_PROFILE(request({ questionDuplicateThreshold: 95 }, '/api/user'));
         expect(response.status).toBe(200);
         expect((await (await GET_PROFILE()).json()).questionDuplicateThreshold).toBe(95);
-        expect((await database.user.findUniqueOrThrow({ where: { id: 'user-2' } })).questionDuplicateThreshold).toBe(99);
+        expect((await database.user.findUniqueOrThrow({ where: { id: 'user-2' } })).questionDuplicateThreshold).toBe(90);
         await existing({ questionText: '甲'.repeat(100) });
         expect((await save({ questionText: '甲'.repeat(96) + '乙'.repeat(4) })).status).toBe(200);
     });
@@ -128,7 +128,7 @@ describe('题目导入自动判重（真实 SQLite）', () => {
             const response = await UPDATE_PROFILE(request({ questionDuplicateThreshold: value }, '/api/user'));
             expect(response.status).toBe(400);
         }
-        expect((await database.user.findUniqueOrThrow({ where: { id: 'user-1' } })).questionDuplicateThreshold).toBe(99);
+        expect((await database.user.findUniqueOrThrow({ where: { id: 'user-1' } })).questionDuplicateThreshold).toBe(90);
     });
 
     it('阈值可以保存为小数，100% 时同题也不自动合并', async () => {
@@ -148,19 +148,19 @@ describe('题目导入自动判重（真实 SQLite）', () => {
         expect((await response.json()).records[0]).toMatchObject({ result: 'wrong', source: 'duplicate_import', wrongAnswerText: '新作答', mistakeAnalysis: '新错因', originalImageUrl: 'new-image' });
     });
 
-    it('恰好 99% 时仍创建新题', async () => {
+    it('恰好 90% 时仍创建新题', async () => {
         await existing({ questionText: '甲'.repeat(100) });
-        const response = await save({ questionText: '甲'.repeat(99) + '乙' });
+        const response = await save({ questionText: '甲'.repeat(90) + '乙'.repeat(10) });
         expect(response.status).toBe(201);
         expect(await database.errorItem.count()).toBe(2);
         expect(await database.practiceRecord.count()).toBe(0);
     });
 
-    it('大于 99% 时返回原题及实际分数', async () => {
-        await existing({ questionText: '甲'.repeat(101) });
-        const response = await save({ questionText: '甲'.repeat(100) + '乙' });
+    it('大于 90% 时返回原题及实际分数', async () => {
+        await existing({ questionText: '甲'.repeat(100) });
+        const response = await save({ questionText: '甲'.repeat(91) + '乙'.repeat(9) });
         expect(response.status).toBe(200);
-        expect((await response.json()).similarity).toBeCloseTo(100 / 101);
+        expect((await response.json()).similarity).toBeCloseTo(0.91);
         expect(await database.errorItem.count()).toBe(1);
     });
 
@@ -278,20 +278,20 @@ describe('两题相似度比较', () => {
         const response = await COMPARE_QUESTIONS(request({ ids: ['two', 'one'] }));
         const data = await response.json();
         expect(response.status).toBe(200);
-        expect(data).toMatchObject({ similarity: 0.5, threshold: 99, duplicate: false });
+        expect(data).toMatchObject({ similarity: 0.5, threshold: 90, duplicate: false });
         expect(data.items.map((item: { id: string }) => item.id)).toEqual(['two', 'one']);
         expect(await database.practiceRecord.count()).toBe(0);
     });
 
     it('调整阈值后比较结论与实际导入判重一致', async () => {
         await existing({ id: 'one', questionText: '甲'.repeat(100) });
-        await existing({ id: 'two', questionText: '甲'.repeat(96) + '乙'.repeat(4) });
+        await existing({ id: 'two', questionText: '甲'.repeat(92) + '乙'.repeat(8) });
         const compare = () => COMPARE_QUESTIONS(request({ ids: ['one', 'two'] }));
-        expect((await (await compare()).json()).duplicate).toBe(false);
+        expect(await (await compare()).json()).toMatchObject({ similarity: 0.92, threshold: 90, duplicate: true });
         await UPDATE_PROFILE(request({ questionDuplicateThreshold: 95 }, '/api/user'));
-        expect(await (await compare()).json()).toMatchObject({ similarity: 0.96, threshold: 95, duplicate: true });
+        expect(await (await compare()).json()).toMatchObject({ similarity: 0.92, threshold: 95, duplicate: false });
         await database.errorItem.delete({ where: { id: 'two' } });
-        expect((await save({ questionText: '甲'.repeat(96) + '乙'.repeat(4) })).status).toBe(200);
+        expect((await save({ questionText: '甲'.repeat(92) + '乙'.repeat(8) })).status).toBe(201);
     });
 
     it('拒绝选择同一题、选择数量错误和不存在或属于他人的题目', async () => {

@@ -1,10 +1,36 @@
-export const DEFAULT_QUESTION_DUPLICATE_THRESHOLD = 99;
+export const DEFAULT_QUESTION_DUPLICATE_THRESHOLD = 90;
 
-/** 仅规范化排版差异，保留大小写、数字、运算符和上下标等题意信息。 */
+// AI 识别时会在题干后另起一段描述图形（「图示：」「图示信息：」「图示说明：」等），每次措辞都不同
+const FIGURE_DESCRIPTION = /^[【[(（]?图示/u;
+
+/** 去掉题干后面的图形描述段落；第一行始终保留，避免误删以「图示」开头的题干本身。 */
+function stripFigureDescriptions(text: string): string {
+    const kept: string[] = [];
+    let seenContent = false;
+    let skipping = false;
+    for (const line of text.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed) {
+            skipping = false;
+        } else if (seenContent && FIGURE_DESCRIPTION.test(trimmed)) {
+            skipping = true;
+        }
+        if (!skipping) kept.push(line);
+        if (trimmed) seenContent = true;
+    }
+    return kept.join('\n');
+}
+
+/**
+ * 规范化排版差异，保留大小写、数字、运算符和上下标等题意信息：
+ * 忽略 AI 附加的图形描述，统一不同长度的填空横线和空括号。
+ */
 export function normalizeQuestionText(text: string): string {
-    return text.normalize('NFC')
+    return stripFigureDescriptions(text.normalize('NFC'))
         .replace(/[\uFF01-\uFF5E]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0xFEE0))
+        .replace(/\\underline\{[^}]*\}|_{2,}/g, '__')
         .replace(/\s+/gu, ' ')
+        .replace(/\( ?\)/g, '()')
         .trim();
 }
 
