@@ -11,6 +11,6 @@ export DATABASE_URL="${DATABASE_URL:-file:./ci.db}"
 npm ci --no-audit --no-fund
 npx --no-install prisma generate
 npm test
-bash -n scripts/ci.sh
+bash -n scripts/ci.sh scripts/build-image.sh
 sh -n docker-entrypoint.sh
 npm run build

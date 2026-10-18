@@ -4,7 +4,8 @@ FROM ${NODE_IMAGE} AS base
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-RUN apk add --no-cache libc6-compat
+# 测试与构建需要的系统包放在复制源码之前，源码变化时不必重新下载
+RUN apk add --no-cache libc6-compat python3 openssl bash
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager
@@ -15,16 +16,13 @@ RUN npm ci
 FROM deps AS ci
 WORKDIR /app
 COPY . .
-RUN apk add --no-cache python3 openssl
 RUN npx prisma generate \
     && npm test \
-    && sh -n docker-entrypoint.sh
+    && sh -n docker-entrypoint.sh \
+    && bash -n scripts/ci.sh scripts/build-image.sh
 
 # Rebuild the source code only after the checks pass.
 FROM ci AS builder
-
-# Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
 
 # Generate Prisma Client and Seed Database
 # We temporarily set DATABASE_URL to a local file for the build process to generate the file
