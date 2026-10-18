@@ -94,6 +94,35 @@ describe('/api/user', () => {
             expect(mocks.mockPrismaUser.update.mock.calls[0][0].select.confirmBeforeImport).toBe(true);
         });
 
+        it('应该更新「GeoGebra 动态演示」偏好，并在响应中返回该字段', async () => {
+            mocks.mockPrismaUser.update.mockResolvedValue({ enableGeogebra: true });
+
+            const request = new Request('http://localhost/api/user', {
+                method: 'PATCH',
+                body: JSON.stringify({ enableGeogebra: true }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH(request);
+
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].data).toEqual({ enableGeogebra: true });
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].select.enableGeogebra).toBe(true);
+        });
+
+        it('GeoGebra 偏好不是布尔值时拒绝更新', async () => {
+            const request = new Request('http://localhost/api/user', {
+                method: 'PATCH',
+                body: JSON.stringify({ enableGeogebra: 'yes' }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH(request);
+
+            expect(response.status).toBeGreaterThanOrEqual(400);
+            expect(mocks.mockPrismaUser.update).not.toHaveBeenCalled();
+        });
+
         it('应该成功更新用户名', async () => {
             const updatedUser = {
                 name: 'New Name',

@@ -17,6 +17,7 @@ const userUpdateSchema = z.object({
     educationStage: z.string().optional(),
     enrollmentYear: z.number().optional().nullable(),
     confirmBeforeImport: z.boolean().optional(),
+    enableGeogebra: z.boolean().optional(),
     questionDuplicateThreshold: z.number().min(1).max(100).multipleOf(0.01).optional(),
 });
 
@@ -36,6 +37,7 @@ export async function GET() {
                 educationStage: true,
                 enrollmentYear: true,
                 confirmBeforeImport: true,
+                enableGeogebra: true,
                 questionDuplicateThreshold: true,
                 // Do not return password
             }
@@ -63,7 +65,7 @@ export async function PATCH(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport, questionDuplicateThreshold } = userUpdateSchema.parse(body);
+        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport, enableGeogebra, questionDuplicateThreshold } = userUpdateSchema.parse(body);
 
         const updateData: Prisma.UserUpdateInput = {};
 
@@ -75,6 +77,9 @@ export async function PATCH(req: Request) {
         }
         if (typeof confirmBeforeImport === 'boolean') {
             updateData.confirmBeforeImport = confirmBeforeImport;
+        }
+        if (typeof enableGeogebra === 'boolean') {
+            updateData.enableGeogebra = enableGeogebra;
         }
         if (typeof questionDuplicateThreshold === 'number') {
             updateData.questionDuplicateThreshold = questionDuplicateThreshold;
@@ -107,6 +112,7 @@ export async function PATCH(req: Request) {
                 educationStage: true,
                 enrollmentYear: true,
                 confirmBeforeImport: true,
+                enableGeogebra: true,
                 questionDuplicateThreshold: true,
             }
         });

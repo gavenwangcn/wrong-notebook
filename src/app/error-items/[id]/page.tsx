@@ -74,6 +74,8 @@ export default function ErrorDetailPage() {
 
     const [isAnalyzingGeogebra, setIsAnalyzingGeogebra] = useState(false);
     const [geogebraError, setGeogebraError] = useState<string | null>(null);
+    // GeoGebra 动态演示默认关闭，用户在设置中开启后才显示
+    const [geogebraEnabled, setGeogebraEnabled] = useState(false);
     const [showQuestionImage, setShowQuestionImage] = useState(false);
     const [showReferenceImage, setShowReferenceImage] = useState(false);
     const [showOwnImage, setShowOwnImage] = useState(false);
@@ -87,6 +89,7 @@ export default function ErrorDetailPage() {
                 if (user && user.educationStage) {
                     setEducationStage(user.educationStage);
                 }
+                setGeogebraEnabled(!!user?.enableGeogebra);
             })
             .catch(err => console.error("Failed to fetch user info:", err));
 
@@ -514,7 +517,7 @@ export default function ErrorDetailPage() {
                                 <div className="space-y-3">
                                     <TagInput value={tagsInput} onChange={setTagsInput} placeholder={t.editor?.tagsPlaceholder || "Enter or select knowledge tags..."} subject={inferSubjectFromName(item.subject?.name || null) || undefined} gradeStage={educationStage} />
                                     <p className="text-xs text-muted-foreground">{t.editor?.tagsHint || "Select from standard or custom tags"}</p>
-                                    <div className="flex gap-2"><Button size="sm" onClick={saveTagsHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingTags}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div>
+                                    <div className="flex flex-wrap gap-2"><Button size="sm" onClick={saveTagsHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingTags}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button><RetagItemButton errorItemId={item.id} onSuggested={setTagsInput} /></div>
                                 </div>
                             ) : <div className="flex flex-wrap gap-2">{tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}</div>}
                         </div>
@@ -586,11 +589,11 @@ export default function ErrorDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    {item.geogebraCommands ? (
+                    {geogebraEnabled && (item.geogebraCommands ? (
                         <GeogebraDemo commands={item.geogebraCommands} height={700} showToolBar={true} showAlgebraInput={false} showMenuBar={false} onRegenerate={handleAnalyzeGeogebra} onSaveCommands={handleSaveGeogebraCommands} />
                     ) : (
                         <div className="rounded-lg border border-dashed p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-muted-foreground"><Box className="h-4 w-4" /><span>GeoGebra 动态演示</span></div><Button variant="outline" size="sm" onClick={() => handleAnalyzeGeogebra()} disabled={isAnalyzingGeogebra}>{isAnalyzingGeogebra ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />AI 分析中...</> : <><Box className="mr-2 h-4 w-4" />生成演示</>}</Button></div>{geogebraError && <p className="text-xs text-muted-foreground mt-2">{geogebraError}</p>}<p className="text-xs text-muted-foreground mt-2">AI 将判断本题是否可以用 GeoGebra 进行动态演示，如适合则自动生成交互式图形</p></div>
-                    )}
+                    ))}
 
                     <Card><CardHeader><div className="flex justify-between items-center"><CardTitle>{t.detail.yourNotes}</CardTitle>{!isEditingNotes && <Button variant="ghost" size="sm" onClick={startEditingNotes}><Edit className="h-4 w-4 mr-1" />{t.detail.editNotes || "Edit"}</Button>}</div></CardHeader><CardContent>{isEditingNotes ? (<div className="space-y-3"><Textarea value={notesInput} onChange={e => setNotesInput(e.target.value)} placeholder={t.detail.notesPlaceholder || "Enter your notes..."} rows={5} className="w-full" /><div className="flex gap-2"><Button size="sm" onClick={saveNotes}><Save className="h-4 w-4 mr-1" />{t.common.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingNotes}><X className="h-4 w-4 mr-1" />{t.common.cancel || "Cancel"}</Button></div></div>) : <div className="whitespace-pre-wrap">{item.userNotes ? <p className="text-foreground">{item.userNotes}</p> : <p className="text-muted-foreground italic">{t.detail.noNotes}</p>}</div>}</CardContent></Card>
                 </div>

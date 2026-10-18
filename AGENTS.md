@@ -10,7 +10,7 @@ wrong-notebook 是一个错题本 Web 应用：上传题目图片或文字，由
 - 样式：Tailwind CSS 4 + Radix UI（shadcn/ui 风格组件，见 `components.json`）
 - 数据：Prisma 5 + SQLite（`DATABASE_URL`，开发默认 `file:./dev.db`）
 - 认证：NextAuth v4（用户名密码；Openclaw 集成可用 API Key）
-- AI：Gemini / OpenAI / Azure，多提供商封装于 `src/lib/ai/`
+- AI：Gemini / OpenAI / Azure / Anthropic，多提供商封装于 `src/lib/ai/`
 - 测试：Vitest（单元、集成）、Playwright（E2E）、Python unittest（部署脚本）
 
 ## 目录结构
@@ -54,7 +54,7 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 - API 错误使用 `@/lib/api-errors`；日志后端用 `@/lib/logger`，前端用 `@/lib/frontend-logger`，不要直接 `console.log`。
 - 界面文本放在 `@/lib/translations.ts`，组件中用 `t.section.key`，缺省回退英文。
 - 页面须同时适配 PC 和移动端（移动优先）。
-- 修改 AI 调用时同步更新所有提供商（`gemini-provider.ts`、`openai-provider.ts`、`azure-provider.ts`），提示词集中在 `prompts.ts`。
+- 修改 AI 调用时同步更新所有提供商（`gemini-provider.ts`、`openai-provider.ts`、`azure-provider.ts`、`anthropic-provider.ts`），提示词集中在 `prompts.ts`。
 
 ## 安全
 

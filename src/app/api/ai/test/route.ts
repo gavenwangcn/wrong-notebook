@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { OpenAIProvider } from '@/lib/ai/openai-provider';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
 import { AzureOpenAIProvider } from '@/lib/ai/azure-provider';
+import { AnthropicProvider, DEFAULT_ANTHROPIC_MODEL } from '@/lib/ai/anthropic-provider';
+import { requireAdmin } from '@/lib/auth-utils';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('api:ai:test');
@@ -70,7 +72,7 @@ function parseErrorCode(error: unknown): string {
 }
 
 export interface AITestRequest {
-    provider: 'openai' | 'gemini' | 'azure';
+    provider: 'openai' | 'gemini' | 'azure' | 'anthropic';
     apiKey: string;
     baseUrl?: string;
     model?: string;
@@ -93,10 +95,13 @@ export interface AITestResponse {
 
 export async function POST(request: NextRequest) {
     try {
-        // 验证登录
+        // 验证登录；测试会让服务端请求调用方给出的地址，只允许管理员
         const session = await getServerSession(authOptions);
         if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+        if (!requireAdmin(session)) {
+            return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
         }
 
         const body: AITestRequest = await request.json();
@@ -139,6 +144,14 @@ export async function POST(request: NextRequest) {
                     textSupport = true;
                     visionSupport = true;
                     modelInfo = model || 'gemini-2.0-flash';
+                }
+            } else if (provider === 'anthropic') {
+                const anthropic = new AnthropicProvider({ apiKey, baseUrl, model });
+                const result = await anthropic.analyzeImage(TEST_IMAGE_BASE64, TEST_IMAGE_MIME, language);
+                if (result.questionText || result.analysis) {
+                    textSupport = true;
+                    visionSupport = true;
+                    modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
                 }
             } else if (provider === 'azure') {
                 if (!endpoint || !deploymentName) {
@@ -201,6 +214,13 @@ export async function POST(request: NextRequest) {
                     if (result.questionText) {
                         textSupport = true;
                         modelInfo = model || 'gemini-2.0-flash';
+                    }
+                } else if (provider === 'anthropic') {
+                    const anthropic = new AnthropicProvider({ apiKey, baseUrl, model });
+                    const result = await anthropic.generateSimilarQuestion('1+1=?', ['基础算术'], language, 'easy');
+                    if (result.questionText) {
+                        textSupport = true;
+                        modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
                     }
                 } else if (provider === 'azure') {
                     const azure = new AzureOpenAIProvider({

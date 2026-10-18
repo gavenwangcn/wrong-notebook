@@ -23,7 +23,8 @@ export async function POST(req: Request) {
             include: { subject: true }
         });
 
-        if (!errorItemWithSubject) {
+        // 只能基于自己的错题生成，否则等于间接读取他人题目
+        if (!errorItemWithSubject || errorItemWithSubject.userId !== session.user.id) {
             return notFound("Item not found");
         }
 

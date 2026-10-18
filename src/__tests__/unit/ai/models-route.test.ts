@@ -1,7 +1,7 @@
 /**
  * Models Route 单元测试
  *
- * 测试 /api/ai/models 端点的 Gemini 和 OpenAI 模型列表功能
+ * 测试 /api/ai/models 端点的权限控制及 Gemini、OpenAI、Anthropic 模型列表功能
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
@@ -21,19 +21,81 @@ vi.mock('@/lib/logger', () => ({
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
-import { GET } from '@/app/api/ai/models/route';
+const mockGetServerSession = vi.hoisted(() => vi.fn());
+vi.mock('next-auth', () => ({ getServerSession: mockGetServerSession }));
+vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+
+import { POST } from '@/app/api/ai/models/route';
+
+const adminSession = { user: { id: 'admin-1', email: 'admin@localhost', role: 'admin' }, expires: '2099-01-01' };
 
 function makeRequest(params: Record<string, string>): NextRequest {
-    const url = new URL('http://localhost/api/ai/models');
-    for (const [k, v] of Object.entries(params)) {
-        url.searchParams.set(k, v);
-    }
-    return new NextRequest(url);
+    return new NextRequest('http://localhost/api/ai/models', {
+        method: 'POST',
+        body: JSON.stringify(params),
+        headers: { 'Content-Type': 'application/json' },
+    });
 }
 
-describe('GET /api/ai/models - Gemini provider', () => {
+describe('POST /api/ai/models - 权限', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('未登录时返回 403，且不请求外部地址', async () => {
+        mockGetServerSession.mockResolvedValue(null);
+
+        const res = await POST(makeRequest({ provider: 'openai', apiKey: 'k', baseUrl: 'http://10.0.0.1' }));
+
+        expect(res.status).toBe(403);
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('普通用户返回 403，且不请求外部地址', async () => {
+        mockGetServerSession.mockResolvedValue({ user: { id: 'u1', email: 'u@localhost', role: 'user' }, expires: '2099-01-01' });
+
+        const res = await POST(makeRequest({ provider: 'openai', apiKey: 'k', baseUrl: 'http://10.0.0.1' }));
+
+        expect(res.status).toBe(403);
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+});
+
+describe('POST /api/ai/models - Anthropic provider', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetServerSession.mockResolvedValue(adminSession);
+    });
+
+    it('用 x-api-key 请求 /v1/models 并返回模型列表', async () => {
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ data: [{ id: 'claude-sonnet-5-5', display_name: 'Claude Sonnet 5.5' }] }),
+        });
+
+        const res = await POST(makeRequest({ provider: 'anthropic', apiKey: 'sk-ant-test', baseUrl: 'https://gateway.example.com/anthropic/' }));
+        const body = await res.json();
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            'https://gateway.example.com/anthropic/v1/models?limit=100',
+            expect.objectContaining({ headers: expect.objectContaining({ 'x-api-key': 'sk-ant-test' }) })
+        );
+        expect(body.models).toEqual([{ id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5', owned_by: 'Anthropic' }]);
+    });
+
+    it('未填 baseUrl 时使用官方地址', async () => {
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) });
+
+        await POST(makeRequest({ provider: 'anthropic', apiKey: 'sk-ant-test' }));
+
+        expect(mockFetch.mock.calls[0][0]).toBe('https://api.anthropic.com/v1/models?limit=100');
+    });
+});
+
+describe('POST /api/ai/models - Gemini provider', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetServerSession.mockResolvedValue(adminSession);
     });
 
     it('应该正确获取并返回 Gemini 视觉模型列表', async () => {
@@ -49,7 +111,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
         });
 
         const req = makeRequest({ provider: 'gemini', apiKey: 'test-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);
@@ -74,7 +136,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
             apiKey: 'my-key',
             baseUrl: 'https://custom.google.com',
         });
-        await GET(req);
+        await POST(req);
 
         expect(mockFetch).toHaveBeenCalledWith(
             'https://custom.google.com/v1beta/models?key=my-key',
@@ -96,7 +158,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
         });
 
         const req = makeRequest({ provider: 'gemini', apiKey: 'test-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(body.models).toHaveLength(4);
@@ -115,7 +177,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
         });
 
         const req = makeRequest({ provider: 'gemini', apiKey: 'test-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);
@@ -129,7 +191,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
         });
 
         const req = makeRequest({ provider: 'gemini', apiKey: 'test-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);
@@ -144,7 +206,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
         });
 
         const req = makeRequest({ provider: 'gemini', apiKey: 'bad-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);
@@ -154,7 +216,7 @@ describe('GET /api/ai/models - Gemini provider', () => {
 
     it('缺少 apiKey 时应返回 400', async () => {
         const req = makeRequest({ provider: 'gemini' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(400);
@@ -162,9 +224,10 @@ describe('GET /api/ai/models - Gemini provider', () => {
     });
 });
 
-describe('GET /api/ai/models - OpenAI provider', () => {
+describe('POST /api/ai/models - OpenAI provider', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetServerSession.mockResolvedValue(adminSession);
     });
 
     it('应该正确获取并返回 OpenAI 视觉模型列表', async () => {
@@ -180,7 +243,7 @@ describe('GET /api/ai/models - OpenAI provider', () => {
         });
 
         const req = makeRequest({ apiKey: 'test-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);
@@ -198,7 +261,7 @@ describe('GET /api/ai/models - OpenAI provider', () => {
         });
 
         const req = makeRequest({ apiKey: 'bad-key' });
-        const res = await GET(req);
+        const res = await POST(req);
         const body = await res.json();
 
         expect(res.status).toBe(200);

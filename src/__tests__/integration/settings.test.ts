@@ -41,16 +41,73 @@ vi.mock('@/lib/config', () => ({
     updateAppConfig: mocks.mockUpdateAppConfig,
 }));
 
+const mockGetServerSession = vi.hoisted(() => vi.fn());
+vi.mock('next-auth', () => ({ getServerSession: mockGetServerSession }));
+vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+
 // Import after mocks
 import { GET, POST } from '@/app/api/settings/route';
+
+const adminSession = { user: { id: 'admin-1', email: 'admin@localhost', role: 'admin' }, expires: '2099-01-01' };
+const userSession = { user: { id: 'user-1', email: 'user@localhost', role: 'user' }, expires: '2099-01-01' };
 
 describe('/api/settings', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetServerSession.mockResolvedValue(adminSession);
+    });
+
+    describe('访问控制', () => {
+        it('未登录时 GET 返回 401，不泄露任何配置', async () => {
+            mockGetServerSession.mockResolvedValue(null);
+
+            const response = await GET();
+            const data = await response.json();
+
+            expect(response.status).toBe(401);
+            expect(JSON.stringify(data)).not.toContain('sk-test-key');
+        });
+
+        it('普通用户 GET 只拿到非敏感字段', async () => {
+            mockGetServerSession.mockResolvedValue(userSession);
+
+            const response = await GET();
+            const data = await response.json();
+
+            expect(response.status).toBe(200);
+            expect(data.aiProvider).toBe('gemini');
+            expect(Object.keys(data).filter((key) => !['aiProvider', 'timeouts'].includes(key))).toEqual([]);
+            expect(JSON.stringify(data)).not.toContain('sk-test-key');
+            expect(JSON.stringify(data)).not.toContain('AIza-test-key');
+        });
+
+        it('未登录时 POST 返回 401，且不写配置', async () => {
+            mockGetServerSession.mockResolvedValue(null);
+
+            const response = await POST(new Request('http://localhost/api/settings', {
+                method: 'POST',
+                body: JSON.stringify({ allowRegistration: true }),
+            }));
+
+            expect(response.status).toBe(401);
+            expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
+        });
+
+        it('普通用户 POST 返回 403，且不写配置', async () => {
+            mockGetServerSession.mockResolvedValue(userSession);
+
+            const response = await POST(new Request('http://localhost/api/settings', {
+                method: 'POST',
+                body: JSON.stringify({ allowRegistration: true }),
+            }));
+
+            expect(response.status).toBe(403);
+            expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
+        });
     });
 
     describe('GET /api/settings', () => {
-        it('应该返回完整的应用配置', async () => {
+        it('管理员应该拿到完整的应用配置', async () => {
             const response = await GET();
             const data = await response.json();
 

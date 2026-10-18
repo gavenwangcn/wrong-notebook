@@ -61,6 +61,8 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
     const [isSaving, setIsSaving] = useState(false);
     const [isAnalyzingGeogebra, setIsAnalyzingGeogebra] = useState(false);
     const [geogebraError, setGeogebraError] = useState<string | null>(null);
+    // GeoGebra 动态演示默认关闭，用户在设置中开启后才显示
+    const [geogebraEnabled, setGeogebraEnabled] = useState(false);
 
     const [educationStage, setEducationStage] = useState<string | undefined>(undefined);
     const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -76,6 +78,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
         apiClient.get<UserProfile>("/api/user")
             .then(user => {
+                setGeogebraEnabled(!!user?.enableGeogebra);
                 if (user && user.educationStage && user.enrollmentYear) {
                     const grade = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), language);
                     setData(prev => ({ ...prev, gradeSemester: grade }));
@@ -409,7 +412,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                     </Card>
 
                     {/* GeoGebra Dynamic Demo */}
-                    {data.geogebraCommands ? (
+                    {!geogebraEnabled ? null : data.geogebraCommands ? (
                         <GeogebraDemo commands={data.geogebraCommands} height={350} onRegenerate={handleAnalyzeGeogebra} />
                     ) : data.questionText.trim() && data.answerText.trim() ? (
                         <div className="rounded-lg border border-dashed p-4">

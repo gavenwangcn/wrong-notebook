@@ -16,7 +16,7 @@ export interface OpenAIInstance {
 }
 
 export interface AppConfig {
-    aiProvider: 'gemini' | 'openai' | 'azure';
+    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic';
     allowRegistration?: boolean;
     openai?: {
         instances?: OpenAIInstance[];
@@ -33,6 +33,12 @@ export interface AppConfig {
         deploymentName?: string; // 部署名称
         apiVersion?: string;     // API 版本
         model?: string;          // 显示用模型名
+    };
+    // Anthropic 及兼容接口（baseUrl 不含 /v1，如 https://api.anthropic.com）
+    anthropic?: {
+        apiKey?: string;
+        baseUrl?: string;
+        model?: string;
     };
     prompts?: {
         analyze?: string;
@@ -88,7 +94,7 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
 }
 
 const DEFAULT_CONFIG: AppConfig = {
-    aiProvider: (process.env.AI_PROVIDER as 'gemini' | 'openai' | 'azure') || 'gemini',
+    aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'gemini',
     allowRegistration: true,
     openai: {
         instances: process.env.OPENAI_API_KEY ? [{
@@ -111,6 +117,11 @@ const DEFAULT_CONFIG: AppConfig = {
         deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT,
         apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
         model: process.env.AZURE_OPENAI_MODEL || 'gpt-4o',
+    },
+    anthropic: {
+        apiKey: process.env.ANTHROPIC_API_KEY,
+        baseUrl: process.env.ANTHROPIC_BASE_URL,
+        model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
     },
     prompts: {
         analyze: '',
@@ -151,6 +162,7 @@ export function getAppConfig(): AppConfig {
                 },
                 gemini: { ...DEFAULT_CONFIG.gemini, ...userConfig.gemini },
                 azure: { ...DEFAULT_CONFIG.azure, ...userConfig.azure },
+                anthropic: { ...DEFAULT_CONFIG.anthropic, ...userConfig.anthropic },
                 prompts: { ...DEFAULT_CONFIG.prompts, ...userConfig.prompts },
                 timeouts: { ...DEFAULT_CONFIG.timeouts, ...userConfig.timeouts },
             };
@@ -173,6 +185,7 @@ export function updateAppConfig(newConfig: Partial<AppConfig>) {
         },
         gemini: { ...currentConfig.gemini, ...newConfig.gemini },
         azure: { ...currentConfig.azure, ...newConfig.azure },
+        anthropic: { ...currentConfig.anthropic, ...newConfig.anthropic },
         prompts: { ...currentConfig.prompts, ...newConfig.prompts },
         timeouts: { ...currentConfig.timeouts, ...newConfig.timeouts },
     };

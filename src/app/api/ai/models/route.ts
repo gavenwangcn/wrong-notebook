@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { requireAdmin } from '@/lib/auth-utils';
+import { forbidden } from '@/lib/api-errors';
+import { DEFAULT_ANTHROPIC_BASE_URL } from '@/lib/ai/anthropic-provider';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('api:ai:models');
@@ -65,12 +70,40 @@ async function fetchOpenAIModels(apiKey: string, baseUrl: string): Promise<Model
         }));
 }
 
-export async function GET(req: NextRequest) {
+async function fetchAnthropicModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
+    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/v1/models?limit=100`, {
+        headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+        },
+    });
+
+    if (!response.ok) {
+        logger.error({ status: response.status }, 'Anthropic models API error');
+        throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return (data.data || []).map((model: { id: string; display_name?: string }) => ({
+        id: model.id,
+        name: model.display_name || model.id,
+        owned_by: 'Anthropic',
+    }));
+}
+
+/**
+ * POST /api/ai/models
+ * 用填写的 API Key 拉取模型列表（仅管理员；服务端会请求调用方给出的地址，必须限制使用者）。
+ * 用 POST 传参，避免 API Key 出现在 URL 和访问日志中。
+ */
+export async function POST(req: NextRequest) {
+    const session = await getServerSession(authOptions);
+    if (!requireAdmin(session)) {
+        return forbidden('Admin access required');
+    }
+
     try {
-        const { searchParams } = new URL(req.url);
-        const provider = searchParams.get('provider');
-        const apiKey = searchParams.get('apiKey');
-        const baseUrl = searchParams.get('baseUrl');
+        const { provider, apiKey, baseUrl } = await req.json() as { provider?: string; apiKey?: string; baseUrl?: string };
 
         if (!apiKey) {
             return NextResponse.json(
@@ -81,7 +114,9 @@ export async function GET(req: NextRequest) {
 
         let models: ModelInfo[] = [];
 
-        if (provider === 'gemini') {
+        if (provider === 'anthropic') {
+            models = await fetchAnthropicModels(apiKey, baseUrl || DEFAULT_ANTHROPIC_BASE_URL);
+        } else if (provider === 'gemini') {
             const effectiveBaseUrl = baseUrl || 'https://generativelanguage.googleapis.com';
             models = await fetchGeminiModels(apiKey, effectiveBaseUrl);
         } else {

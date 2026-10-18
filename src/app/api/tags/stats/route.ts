@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/current-user";
+import { unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger('api:tags:stats');
@@ -9,12 +11,18 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/tags/stats
- * 获取标签使用频率统计
+ * 获取当前用户的标签使用频率统计
  */
-export async function GET(req: Request) {
+export async function GET() {
     try {
-        // 获取所有错题的知识点
+        const user = await getCurrentUser();
+        if (!user) {
+            return unauthorized("Authentication required");
+        }
+
+        // 只统计当前用户自己的错题
         const errorItems = await prisma.errorItem.findMany({
+            where: { userId: user.id },
             select: {
                 knowledgePoints: true,
             },

@@ -48,6 +48,33 @@ describe('知识点重新生成', () => {
         mocks.getMathTagsFromDB.mockResolvedValue(['鸡兔同笼', '假设法解鸡兔同笼', '植树问题']);
     });
 
+    it('preview 模式只返回建议的知识点（含保留的自定义标签），不写数据库', async () => {
+        mocks.errorItem.findUnique.mockResolvedValue(item);
+        mocks.suggestKnowledgeTags.mockResolvedValue(['鸡兔同笼']);
+        mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
+
+        const response = await RETAG_ITEM(new Request('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ preview: true }),
+        }), params('e1'));
+
+        expect(response.status).toBe(200);
+        expect((await response.json()).tags).toEqual(['鸡兔同笼', '易错']);
+        expect(mocks.errorItem.update).not.toHaveBeenCalled();
+    });
+
+    it('preview 模式同样不能读取其他用户的题目', async () => {
+        mocks.errorItem.findUnique.mockResolvedValue({ ...item, userId: 'other-user' });
+
+        const response = await RETAG_ITEM(new Request('http://localhost', {
+            method: 'POST',
+            body: JSON.stringify({ preview: true }),
+        }), params('e1'));
+
+        expect(response.status).toBe(404);
+        expect(mocks.suggestKnowledgeTags).not.toHaveBeenCalled();
+    });
+
     it('替换系统标签、保留自定义标签，并按学生年级取数学知识点', async () => {
         mocks.errorItem.findUnique.mockResolvedValue(item);
         mocks.suggestKnowledgeTags.mockResolvedValue(['假设法解鸡兔同笼', '鸡兔同笼']);

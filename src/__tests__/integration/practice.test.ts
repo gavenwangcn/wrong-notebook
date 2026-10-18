@@ -61,6 +61,7 @@ describe('/api/practice', () => {
     describe('POST /api/practice/generate (生成类似题目)', () => {
         const mockErrorItem = {
             id: 'error-item-1',
+            userId: 'user-123',
             questionText: '求解 x + 2 = 5',
             knowledgePoints: '["一元一次方程", "移项"]',
             subject: { id: 'math', name: '数学' },
@@ -201,6 +202,21 @@ describe('/api/practice', () => {
                 'medium',
                 undefined
             );
+        });
+
+        it('不能基于其他用户的错题生成（返回 404，且不调用 AI）', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ ...mockErrorItem, userId: 'other-user' });
+
+            const request = new Request('http://localhost/api/practice/generate', {
+                method: 'POST',
+                body: JSON.stringify({ errorItemId: 'error-item-1', language: 'zh' }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await GENERATE_POST(request);
+
+            expect(response.status).toBe(404);
+            expect(mocks.mockAIService.generateSimilarQuestion).not.toHaveBeenCalled();
         });
 
         it('应该处理无效的知识点 JSON', async () => {

@@ -388,6 +388,7 @@ export const translations = {
                 update: "Update Profile",
             },
             ai: {
+                anthropicBaseUrlHint: "Leave empty for the official API. For compatible services enter the base URL without /v1 (e.g. https://api.example.com/anthropic).",
                 save: "Save AI Settings",
                 instances: "Instances",
                 addInstance: "Add",
@@ -704,6 +705,8 @@ export const translations = {
             continueUpload: "Upload another",
             confirmBeforeImport: "Review before importing",
             confirmBeforeImportDesc: "When off, recognized questions are saved to the notebook directly.",
+            enableGeogebra: "GeoGebra interactive demo",
+            enableGeogebraDesc: "When on, question pages show the GeoGebra demo section, where AI can generate an interactive figure for the question.",
             preferenceSaved: "Preference saved",
             preferenceSaveFailed: "Failed to save preference",
             thresholdLabel: "Duplicate question threshold",
@@ -826,6 +829,8 @@ export const translations = {
             itemRunning: "Regenerating…",
             itemFailed: "Failed to regenerate tags",
             noTags: "AI found no matching tags in the library",
+            suggestButton: "AI Suggest Tags",
+            suggestRunning: "Suggesting…",
         },
     },
     zh: {
@@ -1215,6 +1220,7 @@ export const translations = {
                 update: "更新个人信息",
             },
             ai: {
+                anthropicBaseUrlHint: "留空使用官方接口；兼容服务请填写不含 /v1 的地址（如 https://api.example.com/anthropic）。",
                 save: "保存 AI 设置",
                 instances: "配置实例",
                 addInstance: "添加",
@@ -1530,6 +1536,8 @@ export const translations = {
             continueUpload: "继续上传",
             confirmBeforeImport: "导入前人工确认",
             confirmBeforeImportDesc: "关闭时，识别完成的题目会直接保存到错题本。",
+            enableGeogebra: "GeoGebra 动态演示",
+            enableGeogebraDesc: "开启后，题目页面会显示 GeoGebra 动态演示区域，可由 AI 为题目生成交互式图形。",
             preferenceSaved: "设置已保存",
             preferenceSaveFailed: "保存设置失败",
             thresholdLabel: "题目判重相似度阈值",
@@ -1652,6 +1660,8 @@ export const translations = {
             itemRunning: "生成中…",
             itemFailed: "重新生成知识点失败",
             noTags: "AI 未能从知识点库中找到匹配的知识点",
+            suggestButton: "AI 识别标签",
+            suggestRunning: "识别中…",
         },
     }
 };

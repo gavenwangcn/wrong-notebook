@@ -31,6 +31,8 @@ import { AppConfig, UserProfile, UpdateUserProfileRequest, OpenAIInstance } from
 import { ModelSelector } from "@/components/ui/model-selector";
 import { PromptSettings } from "@/components/settings/prompt-settings";
 import { ImportPreferenceSetting } from "@/components/settings/import-preference-setting";
+import { GeogebraPreferenceSetting } from "@/components/settings/geogebra-preference-setting";
+import { AnthropicSettings } from "@/components/settings/anthropic-settings";
 import { DuplicateThresholdSetting } from "@/components/settings/duplicate-threshold-setting";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
@@ -55,6 +57,7 @@ interface ProfileFormState {
 
 export function SettingsDialog() {
     const { data: session } = useSession();
+    const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin';
     const { t, language, setLanguage } = useLanguage();
     const [open, setOpen] = useState(false);
     const dialogContentRef = useRef<HTMLDivElement>(null);
@@ -616,6 +619,19 @@ export function SettingsDialog() {
                     model: config.gemini.model,
                     language: language
                 };
+            } else if (config.aiProvider === 'anthropic') {
+                if (!config.anthropic?.apiKey) {
+                    setTestResult({ success: false, textSupport: false, visionSupport: false, textError: t.settings?.ai?.validationApiKeyRequired || 'API Key is required' });
+                    setTesting(false);
+                    return;
+                }
+                requestBody = {
+                    provider: 'anthropic',
+                    apiKey: config.anthropic.apiKey,
+                    baseUrl: config.anthropic.baseUrl,
+                    model: config.anthropic.model,
+                    language: language
+                };
             } else if (config.aiProvider === 'azure') {
                 if (!config.azure?.apiKey || !config.azure?.endpoint || !config.azure?.deploymentName) {
                     setTestResult({ success: false, textSupport: false, visionSupport: false, textError: t.settings?.ai?.validationAzureEndpointRequired || 'Azure config is incomplete' });
@@ -731,6 +747,8 @@ export function SettingsDialog() {
                                 </Select>
                             </div>
 
+                            {/* AI 超时是全局配置，只有管理员可以修改 */}
+                            {isAdmin && (
                             <div className="space-y-2 pt-4 border-t">
                                 <Label>{t.settings?.general?.timeoutLabel || "AI Analysis Timeout (Seconds)"}</Label>
                                 <Input
@@ -771,14 +789,18 @@ export function SettingsDialog() {
                                     {t.settings?.general?.timeoutDesc || "Increase this value if you experience frequent timeouts during AI analysis."}
                                 </p>
                             </div>
+                            )}
 
                             <ImportPreferenceSetting />
+                            <GeogebraPreferenceSetting />
                             <DuplicateThresholdSetting />
                         </div>
-                        <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
-                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t.settings?.save || "Save Settings"}
-                        </Button>
+                        {isAdmin && (
+                            <Button onClick={handleSaveSettings} disabled={saving} className="w-full">
+                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {t.settings?.save || "Save Settings"}
+                            </Button>
+                        )}
                     </TabsContent>
 
                     {/* Account Tab */}
@@ -915,7 +937,7 @@ export function SettingsDialog() {
                                     <Label>{t.settings?.tabs?.ai || "AI Provider"}</Label>
                                     <Select
                                         value={config.aiProvider}
-                                        onValueChange={(val: 'gemini' | 'openai' | 'azure') => setConfig(prev => ({ ...prev, aiProvider: val }))}
+                                        onValueChange={(val: AppConfig['aiProvider']) => setConfig(prev => ({ ...prev, aiProvider: val }))}
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
@@ -924,6 +946,7 @@ export function SettingsDialog() {
                                             <SelectItem value="gemini">Google Gemini</SelectItem>
                                             <SelectItem value="openai">OpenAI / Compatible</SelectItem>
                                             <SelectItem value="azure">Azure OpenAI</SelectItem>
+                                            <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1093,6 +1116,13 @@ export function SettingsDialog() {
                                             onModelChange={(model) => updateConfig('gemini', 'model', model)}
                                         />
                                     </div>
+                                )}
+
+                                {config.aiProvider === 'anthropic' && (
+                                    <AnthropicSettings
+                                        value={config.anthropic}
+                                        onChange={(anthropic) => setConfig(prev => ({ ...prev, anthropic }))}
+                                    />
                                 )}
 
                                 {config.aiProvider === 'azure' && (

@@ -20,10 +20,16 @@ export interface RetagResult {
     tags: string[];
 }
 
+interface TagSuggestion {
+    tagNames: string[];                  // 新系统标签 + 保留的自定义标签
+    newTagIds: string[];
+    oldSystemTags: { id: string; name: string }[];
+}
+
 /**
- * 用 AI 从当前知识点库中为一道题重新选取知识点：替换原有系统标签，保留自定义标签
+ * 用 AI 从当前知识点库中为一道题选取知识点（不保存）：系统标签换成 AI 选出的，保留自定义标签
  */
-export async function retagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
+async function suggestTagsForItem(errorItemId: string, userId: string): Promise<TagSuggestion> {
     const item = await prisma.errorItem.findUnique({
         where: { id: errorItemId },
         select: {
@@ -80,10 +86,28 @@ export async function retagErrorItem(errorItemId: string, userId: string): Promi
         if (!tagIdByName.has(tag.name)) tagIdByName.set(tag.name, tag.id);
     }
     const newTags = chosen.filter((name) => tagIdByName.has(name));
-
     const customTags = item.tags.filter((tag) => !tag.isSystem);
-    const oldSystemTags = item.tags.filter((tag) => tag.isSystem);
-    const tagNames = [...newTags, ...customTags.map((tag) => tag.name).filter((name) => !newTags.includes(name))];
+
+    return {
+        tagNames: [...newTags, ...customTags.map((tag) => tag.name).filter((name) => !newTags.includes(name))],
+        newTagIds: newTags.map((name) => tagIdByName.get(name)!),
+        oldSystemTags: item.tags.filter((tag) => tag.isSystem).map(({ id, name }) => ({ id, name })),
+    };
+}
+
+/**
+ * 只返回 AI 建议的知识点、不保存，供编辑标签时预填
+ */
+export async function previewRetagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
+    const { tagNames } = await suggestTagsForItem(errorItemId, userId);
+    return { errorItemId, tags: tagNames };
+}
+
+/**
+ * 用 AI 从当前知识点库中为一道题重新选取知识点并保存：替换原有系统标签，保留自定义标签
+ */
+export async function retagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
+    const { tagNames, newTagIds, oldSystemTags } = await suggestTagsForItem(errorItemId, userId);
 
     await prisma.errorItem.update({
         where: { id: errorItemId },
@@ -91,12 +115,12 @@ export async function retagErrorItem(errorItemId: string, userId: string): Promi
             knowledgePoints: JSON.stringify(tagNames),
             tags: {
                 disconnect: oldSystemTags.map((tag) => ({ id: tag.id })),
-                connect: newTags.map((name) => ({ id: tagIdByName.get(name)! })),
+                connect: newTagIds.map((id) => ({ id })),
             },
         },
     });
 
-    logger.info({ errorItemId, before: oldSystemTags.map((tag) => tag.name), after: newTags }, 'Error item retagged');
+    logger.info({ errorItemId, before: oldSystemTags.map((tag) => tag.name), after: tagNames }, 'Error item retagged');
     return { errorItemId, tags: tagNames };
 }
 

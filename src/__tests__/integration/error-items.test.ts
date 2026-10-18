@@ -674,6 +674,39 @@ describe('/api/error-items', () => {
     });
 
     describe('PATCH /api/error-items/[id]/notes (更新笔记)', () => {
+        beforeEach(() => {
+            // 默认题目属于当前用户
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ userId: 'user-123' });
+        });
+
+        it('不能修改其他用户题目的笔记', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ userId: 'other-user' });
+
+            const request = new Request('http://localhost/api/error-items/error-item-1/notes', {
+                method: 'PATCH',
+                body: JSON.stringify({ userNotes: '篡改' }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH_NOTES(request, { params: Promise.resolve({ id: 'error-item-1' }) });
+
+            expect(response.status).toBe(404);
+            expect(mocks.mockPrismaErrorItem.update).not.toHaveBeenCalled();
+        });
+
+        it('笔记不是字符串时返回 400', async () => {
+            const request = new Request('http://localhost/api/error-items/error-item-1/notes', {
+                method: 'PATCH',
+                body: JSON.stringify({ userNotes: { html: '<b>x</b>' } }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH_NOTES(request, { params: Promise.resolve({ id: 'error-item-1' }) });
+
+            expect(response.status).toBe(400);
+            expect(mocks.mockPrismaErrorItem.update).not.toHaveBeenCalled();
+        });
+
         it('应该成功更新用户笔记', async () => {
             const existingItem = {
                 id: 'error-item-1',

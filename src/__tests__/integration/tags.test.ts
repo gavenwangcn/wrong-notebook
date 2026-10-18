@@ -49,6 +49,30 @@ describe('/api/tags', () => {
     });
 
     describe('GET /api/tags/stats (标签统计)', () => {
+        beforeEach(() => {
+            mocks.mockGetServerSession.mockResolvedValue({ user: { email: 'user@example.com' }, expires: '2099-01-01' });
+            mocks.mockPrismaUser.findUnique.mockResolvedValue({ id: 'user-1', email: 'user@example.com' });
+        });
+
+        it('未登录时返回 401，且不查询错题', async () => {
+            mocks.mockGetServerSession.mockResolvedValue(null);
+
+            const response = await GET_STATS();
+
+            expect(response.status).toBe(401);
+            expect(mocks.mockPrismaErrorItem.findMany).not.toHaveBeenCalled();
+        });
+
+        it('只统计当前用户的错题', async () => {
+            mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
+
+            await GET_STATS();
+
+            expect(mocks.mockPrismaErrorItem.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ where: { userId: 'user-1' } })
+            );
+        });
+
         it('应该返回标签使用频率统计', async () => {
             const errorItems = [
                 { knowledgePoints: '["一元一次方程", "移项"]' },
@@ -57,8 +81,7 @@ describe('/api/tags', () => {
             ];
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -82,8 +105,7 @@ describe('/api/tags', () => {
             ];
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -100,8 +122,7 @@ describe('/api/tags', () => {
         it('应该处理空的错题列表', async () => {
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -117,8 +138,7 @@ describe('/api/tags', () => {
             ];
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -135,8 +155,7 @@ describe('/api/tags', () => {
             ];
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -150,8 +169,7 @@ describe('/api/tags', () => {
             ];
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -164,8 +182,7 @@ describe('/api/tags', () => {
                 new Error('Database connection failed')
             );
 
-            const request = new Request('http://localhost/api/tags/stats');
-            const response = await GET_STATS(request);
+            const response = await GET_STATS();
             const data = await response.json();
 
             expect(response.status).toBe(500);

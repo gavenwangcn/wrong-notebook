@@ -40,7 +40,7 @@
 - **UI 库**: [React 19](https://react.dev/)
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Shadcn UI](https://ui.shadcn.com/)
-- **AI**: Google Gemini API / OpenAI API / Azure OpenAI
+- **AI**: Google Gemini API / OpenAI API / Azure OpenAI / Anthropic API
 - **认证**: [NextAuth.js](https://next-auth.js.org/)
 
 ## 🚀 快速开始
@@ -126,7 +126,7 @@ cp .env.example .env
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai` 或 `azure` |
+| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure` 或 `anthropic` |
 
 **Gemini 配置**
 
@@ -153,6 +153,14 @@ cp .env.example .env
 | `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称，如 `gpt-4o` |
 | `AZURE_OPENAI_API_VERSION` | API 版本 | `2024-02-15-preview` | 可选，Azure API 版本 |
 | `AZURE_OPENAI_MODEL` | Azure 模型 | `gpt-4o` | 可选，显示用的模型名称 |
+
+**Anthropic 配置**
+
+| 环境变量 | 描述 | 默认值 | 说明 |
+| :--- | :--- | :--- | :--- |
+| `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 使用 Anthropic 时必填，从 [Claude Console](https://platform.claude.com/) 获取 |
+| `ANTHROPIC_BASE_URL` | API 地址 | 无 | 可选，默认 `https://api.anthropic.com`；兼容服务填写不含 `/v1` 的地址 |
+| `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 可选，如 `claude-opus-5-5`、`claude-haiku-5-5` |
 
 #### 5. 初始化数据库
 
@@ -182,7 +190,7 @@ npm run dev
 本项目支持动态配置 AI 模型，无需重启服务器。
 
 1.  **进入设置**：点击首页右上角的设置图标。
-2.  **选择提供商**：支持 Google Gemini、OpenAI 和 **Azure OpenAI**。
+2.  **选择提供商**：支持 Google Gemini、OpenAI、**Azure OpenAI** 和 **Anthropic**（含兼容接口）。
 3.  **填写参数**：
     *   **通用参数**: API Key、Base URL（或 Endpoint）、Model Name（或 Deployment Name）。
     *   **Azure 特有**: Deployment Name（部署名称）、API Version（API 版本）。
@@ -221,6 +229,18 @@ npm run dev
 | 部署名称 | Azure 中配置的模型部署名称，如 `gpt-4o` |
 | API 版本 | 默认 `2024-02-15-preview` |
 | 模型 | 显示用的模型名称，如 `gpt-4o` |
+
+#### Anthropic
+
+| 参数 | 获取方式 |
+| :--- | :--- |
+| API Key | [Claude Console](https://platform.claude.com/) → API Keys |
+| Base URL | 默认 `https://api.anthropic.com`，通常无需修改 |
+| 模型 | `claude-sonnet-5-5`（推荐）、`claude-opus-5-5`、`claude-haiku-5-5` 等 |
+
+> **兼容模式**：Anthropic 提供商同样可以接入兼容 Anthropic Messages API 的第三方服务。Base URL 填写服务商提供的地址（不含 `/v1`，程序会自动拼接 `/v1/messages`），模型名称填写对应平台的模型 ID。推理模型返回的思考内容会被自动忽略。
+
+> **权限**：AI 设置、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、GeoGebra 动态演示、判重阈值）。
 
 ## 🛠️ 实用脚本
 
