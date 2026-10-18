@@ -52,7 +52,8 @@ beforeAll(() => {
     });
     database = new PrismaClient({ datasources: { db: { url } } });
     mocks.prisma = database;
-}, 30000);
+// 迁移通过子进程执行 Prisma CLI，CI 中与其他测试文件并行时较慢，留足时间
+}, 120000);
 
 beforeEach(async () => {
     await database.user.deleteMany();
