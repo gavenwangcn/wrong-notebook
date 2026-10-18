@@ -69,3 +69,7 @@ upload_test_output*.txt
 # data
 /data/
 .next-prebuilt/
+
+# Deployment script checks
+__pycache__/
+*.pyc

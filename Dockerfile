@@ -1,4 +1,5 @@
-FROM node:22-alpine AS base
+ARG NODE_IMAGE=node:22-alpine
+FROM ${NODE_IMAGE} AS base
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -10,11 +11,17 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Rebuild the source code only when needed
-FROM base AS builder
+# CI uses the same Node version and native dependencies as production builds.
+FROM deps AS ci
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN apk add --no-cache python3 openssl
+RUN npx prisma generate \
+    && npm test \
+    && sh -n docker-entrypoint.sh
+
+# Rebuild the source code only after the checks pass.
+FROM ci AS builder
 
 # Install OpenSSL for Prisma
 RUN apk add --no-cache openssl
@@ -42,6 +49,13 @@ RUN npm run build
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
+
+ARG APP_REVISION=unknown
+ENV APP_REVISION=${APP_REVISION}
+# Existing installations keep their accounts and tag IDs during deployment.
+ENV PRESERVE_EXISTING_DATA=true
+LABEL org.opencontainers.image.source="https://github.com/margrop/wrong-notebook" \
+      org.opencontainers.image.revision="${APP_REVISION}"
 
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
@@ -81,6 +95,9 @@ COPY --chown=nextjs:nodejs --chmod=755 docker-entrypoint.sh ./
 COPY --chown=nextjs:nodejs https-server.js ./
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=45s --retries=4 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(async r=>{if(!r.ok||(await r.json()).status!=='ok')process.exit(1)}).catch(()=>process.exit(1))"
 
 ENV PORT=3000
 # set hostname to localhost

@@ -17,9 +17,7 @@ dist
 .env
 .env.*
 
-# 单元/集成测试文件
-src/__tests__
-vitest.config.ts
+# 构建阶段运行单元/集成测试；最终 standalone 镜像不复制测试目录
 coverage
 
 # E2E 测试文件 (Playwright)
@@ -35,6 +33,9 @@ test_output*.txt
 .idea
 *.log
 .github
+.gitea
+__pycache__
+*.pyc
 *.tsbuildinfo
 
 # 本地数据库
