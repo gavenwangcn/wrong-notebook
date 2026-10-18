@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
+import type { GradeLevel } from './types';
 
 const logger = createLogger('ai:tag-service');
 
@@ -17,25 +18,38 @@ interface TagTreeNode {
 
 /**
  * 从数据库获取指定年级的数学标签
- * @param grade - 年级 (7-9:初中, 10-12:高中) 或 null
+ * @param grade - 年级 (1-6:小学, 7-9:初中, 10-12:高中) 或 null
  * @returns 标签名称数组
  */
-export async function getMathTagsFromDB(grade: 7 | 8 | 9 | 10 | 11 | 12 | null): Promise<string[]> {
+export async function getMathTagsFromDB(grade: GradeLevel | null): Promise<string[]> {
     const gradeToSemesterMap: Record<number, string[]> = {
+        1: ['一年级'],
+        2: ['二年级'],
+        3: ['三年级'],
+        4: ['四年级'],
+        5: ['五年级'],
+        6: ['六年级'],
         7: ['七年级上', '七年级下'],
         8: ['八年级上', '八年级下'],
         9: ['九年级上', '九年级下'],
         10: ['高一上', '高一下'],
         11: ['高二上', '高二下'],
-        12: ['高三上', '高三下'],
+        12: ['高三上', '高三下', '高三'],
     };
 
     // 确定要查询的年级学期
-    let semesterNames: string[] = [];
+    const semesterNames: string[] = [];
 
     if (!grade) {
-        // 无年级信息，返回所有标签
-        semesterNames = Object.values(gradeToSemesterMap).flat();
+        // 无年级信息，返回初中和高中全部标签（与以往行为一致，不含小学）
+        for (let g = 7; g <= 12; g++) {
+            semesterNames.push(...gradeToSemesterMap[g]);
+        }
+    } else if (grade <= 6) {
+        // 小学累进式：一年级到当前年级（含课内与课外拓展）
+        for (let g = 1; g <= grade; g++) {
+            semesterNames.push(...gradeToSemesterMap[g]);
+        }
     } else if (grade >= 7 && grade <= 9) {
         // 初中累进式：当前年级及之前
         for (let g = 7; g <= grade; g++) {

@@ -1,5 +1,5 @@
 import { AzureOpenAI } from "openai";
-import { AIService, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult } from "./types";
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt, generateMasteryPrompt } from './prompts';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject } from './schema';
@@ -143,7 +143,7 @@ export class AzureOpenAIProvider implements AIService {
         imageBase64: string,
         mimeType: string = 'image/jpeg',
         language: 'zh' | 'en' = 'zh',
-        grade?: 7 | 8 | 9 | 10 | 11 | 12 | null,
+        grade?: GradeLevel | null,
         subject?: string | null,
         gradeSemester?: string | null
     ): Promise<ParsedQuestion> {

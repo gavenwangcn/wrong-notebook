@@ -3,6 +3,8 @@
  * This module provides centralized prompt management
  */
 
+import type { GradeLevel } from './types';
+
 /**
  * 将 gradeSemester 字符串转换为年级数字（用于标签过滤）
  * 支持格式：初一/七年级/7年级/小学三年级/高一 等
@@ -293,7 +295,7 @@ function replaceVariables(template: string, variables: Record<string, string>): 
  * @returns 标签数组
  */
 export function getMathTagsForGrade(
-  grade: 7 | 8 | 9 | 10 | 11 | 12 | null,
+  grade: GradeLevel | null,
   prefetchedTags?: string[]
 ): string[] {
   // 必须使用预获取的数据库标签
@@ -314,7 +316,7 @@ export function getMathTagsForGrade(
  */
 export function generateAnalyzePrompt(
   language: 'zh' | 'en',
-  grade?: 7 | 8 | 9 | 10 | 11 | 12 | null,
+  grade?: GradeLevel | null,
   subject?: string | null,
   options?: PromptOptions,
   gradeSemester?: string | null
@@ -344,7 +346,7 @@ export function generateAnalyzePrompt(
 
   if (subject === '数学') {
     tagsSection = `**数学标签 (Math Tags):**
-使用人教版课程大纲中的**精确标签名称**，可选标签如下：
+使用课程大纲（人教版课内知识点，小学另含高思竞赛数学课外拓展知识点）中的**精确标签名称**，可选标签如下：
 ${mathTagsString}
 
 **重要提示**：

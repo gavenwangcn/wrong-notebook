@@ -6,6 +6,7 @@ import { calculateGradeNumber, inferSubjectFromName } from "@/lib/knowledge-tags
 import { calculateGrade } from "@/lib/grade-calculator";
 import { prisma } from "@/lib/prisma";
 import { badRequest, internalError, createErrorResponse, ErrorCode } from "@/lib/api-errors";
+import type { GradeLevel } from "@/lib/ai/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger('api:analyze');
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
         }
 
         // 先获取用户年级信息，用于动态生成 AI prompt 中的标签列表
-        let userGrade: 7 | 8 | 9 | 10 | 11 | 12 | null = null;
+        let userGrade: GradeLevel | null = null;
         let userGradeSemester: string | null = null;
         let subjectName: 'math' | 'physics' | 'chemistry' | 'biology' | 'english' | 'chinese' | 'history' | 'geography' | 'politics' | null = null;
 
