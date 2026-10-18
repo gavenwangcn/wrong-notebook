@@ -4,8 +4,9 @@ import { useCallback, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { UploadCloud, Loader2, Monitor } from "lucide-react";
+import { UploadCloud, Loader2, Monitor, ClipboardPaste } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 // 添加 CaptureController 类型声明
 declare global {
@@ -56,6 +57,81 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
         maxFiles: 1,
         disabled: isAnalyzing,
     });
+    // 将剪贴板中的图片 Blob 转为 File 并交给父组件
+    const selectClipboardImage = useCallback(
+        (blob: Blob) => {
+            const type = blob.type || "image/png";
+            const ext = type.split("/")[1] || "png";
+            const file = blob instanceof File && blob.name
+                ? blob
+                : new File([blob], `clipboard-${Date.now()}.${ext}`, { type });
+            onImageSelect(file);
+        },
+        [onImageSelect]
+    );
+
+    // 监听 Ctrl/Cmd+V 粘贴图片
+    useEffect(() => {
+        const handlePaste = (event: ClipboardEvent) => {
+            if (isAnalyzing) return;
+
+            // 在输入框中粘贴时不拦截
+            const target = event.target as HTMLElement | null;
+            if (target && (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName))) {
+                return;
+            }
+
+            const items = Array.from(event.clipboardData?.items ?? []);
+            const imageItem = items.find((item) => item.kind === "file" && item.type.startsWith("image/"));
+            const file = imageItem?.getAsFile();
+            if (!file) return;
+
+            event.preventDefault();
+            selectClipboardImage(file);
+        };
+
+        window.addEventListener("paste", handlePaste);
+        return () => window.removeEventListener("paste", handlePaste);
+    }, [isAnalyzing, selectClipboardImage]);
+
+    // 检查是否支持通过按钮读取剪贴板（需要安全上下文）
+    const isClipboardReadSupported = () => {
+        return isClient &&
+            typeof navigator !== 'undefined' &&
+            !!navigator.clipboard &&
+            typeof navigator.clipboard.read === 'function';
+    };
+
+    // 点击按钮读取剪贴板图片
+    const handleClipboardRead = async () => {
+        if (!isClipboardReadSupported()) {
+            alert(t.upload.pasteNotSupported);
+            return;
+        }
+
+        try {
+            const clipboardItems = await navigator.clipboard.read();
+            for (const item of clipboardItems) {
+                const imageType = item.types.find((type) => type.startsWith("image/"));
+                if (imageType) {
+                    const blob = await item.getType(imageType);
+                    selectClipboardImage(blob);
+                    return;
+                }
+            }
+            alert(t.upload.pasteNoImage);
+        } catch (error) {
+            frontendLogger.warn('[UploadZone]', 'Clipboard read failed', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+            if (error instanceof Error && error.name === 'NotAllowedError') {
+                alert(t.upload.pastePermissionDenied);
+            } else {
+                alert(t.upload.pasteFailed);
+            }
+        }
+    };
+
     // 检查是否支持屏幕截图
     const isScreenshotSupported = () => {
         return isClient &&
@@ -206,6 +282,24 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                     </div>
                 </CardContent>
             </Card>
+            <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-start justify-center gap-4">
+            {/* 剪贴板粘贴按钮 - 只在客户端渲染 */}
+            {isClient && (
+                <div className="flex flex-col items-center gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handleClipboardRead}
+                        disabled={isAnalyzing}
+                        className="flex items-center gap-2 w-full sm:w-auto"
+                    >
+                        <ClipboardPaste className="h-4 w-4" />
+                        {t.upload.paste}
+                    </Button>
+                    <p className="text-xs text-muted-foreground text-center">
+                        {t.upload.pasteDesc}
+                    </p>
+                </div>
+            )}
             {/* 屏幕截图按钮 - 只在客户端渲染 */}
             {isScreenshotSupported() && (
                 <div className="flex flex-col items-center gap-2">
@@ -213,7 +307,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                         variant="outline"
                         onClick={handleScreenshot}
                         disabled={isAnalyzing || isScreenshotting}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 w-full sm:w-auto"
                     >
                         {isScreenshotting ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -227,6 +321,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                     </p>
                 </div>
             )}
+            </div>
         </div>
     );
 }
