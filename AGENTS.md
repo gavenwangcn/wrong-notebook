@@ -38,7 +38,7 @@ npm run test:unit
 npm run test:integration
 npm test                    # 全部 Vitest 测试
 npm run test:e2e            # Playwright
-bash scripts/ci.sh          # 完整 CI（要求 Node.js 22，含生产构建）
+bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生产构建）
 ```
 
 ## 语言

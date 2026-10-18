@@ -2,8 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [[ $(node -p 'process.versions.node.split(".")[0]') != 22 ]]; then
-    echo "CI requires Node.js 22." >&2
+if (( $(node -p 'process.versions.node.split(".")[0]') < 22 )); then
+    echo "CI requires Node.js 22 or later." >&2
     exit 1
 fi
 export NEXT_TELEMETRY_DISABLED=1
