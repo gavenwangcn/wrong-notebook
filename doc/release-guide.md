@@ -4,13 +4,15 @@
 
 ## 版本标签策略
 
-项目使用语义化版本（Semantic Versioning），格式：`v主版本.次版本.补丁版本`
+项目以发布日期作为版本号，格式：`v年.月.日`，例如 `v2026.10.19`。
 
-| 版本类型 | 示例 | 说明 |
-|---------|------|------|
-| 主版本 | v2.0.0 | 不兼容的 API 变更 |
-| 次版本 | v1.1.0 | 新增功能，向下兼容 |
-| 补丁版本 | v1.0.1 | Bug 修复 |
+- 月、日不补零：2026 年 1 月 5 日写作 `v2026.1.5`，不能写成 `v2026.01.05`（npm 版本号不允许前导零）。
+- 同一天需要再次发布时，可追加预发布后缀，如 `v2026.10.19-1`（带 `-` 的标签不会更新 `latest`）。
+- `package.json` 的 `version` 字段与标签保持一致（不含 `v`），设置页「关于」中显示为 `v` + 版本号。可用以下命令修改：
+
+```bash
+npm version 2026.10.19 --no-git-tag-version
+```
 
 ## 发布操作流程
 
@@ -26,17 +28,17 @@ git push origin main
 ### 2. 创建版本标签
 
 ```bash
-# 创建标签（从 v1.0.0 开始）
-git tag v1.0.0
+# 创建标签（使用当天日期）
+git tag v2026.10.19
 
 # 或指定提交创建标签
-git tag v1.0.0 <commit-sha>
+git tag v2026.10.19 <commit-sha>
 ```
 
 ### 3. 推送标签触发构建
 
 ```bash
-git push origin v1.0.0
+git push origin v2026.10.19
 ```
 
 ### 4. 查看构建状态
@@ -45,13 +47,13 @@ git push origin v1.0.0
 
 ## 自动生成的镜像标签
 
-推送 `v1.0.0` 标签后，CI 自动生成以下镜像标签：
+推送 `v2026.10.19` 标签后，CI 自动生成以下镜像标签：
 
 | 标签 | 说明 |
 |------|------|
-| `1.0.0` | 精确版本号 |
-| `1.0` | 次版本号（自动更新到最新 1.0.x） |
-| `1` | 主版本号（自动更新到最新 1.x.x） |
+| `2026.10.19` | 精确版本号 |
+| `2026.10` | 当月最新版本 |
+| `2026` | 当年最新版本 |
 | `latest` | 最新版本 |
 | `sha-xxxxxxx` | Git commit 短哈希 |
 
@@ -62,10 +64,10 @@ git push origin v1.0.0
 services:
   wrong-notebook:
     # 推荐：锁定精确版本
-    image: ghcr.io/wttwins/wrong-notebook:1.0.0
+    image: ghcr.io/wttwins/wrong-notebook:2026.10.19
     
-    # 或：自动获取补丁更新
-    image: ghcr.io/wttwins/wrong-notebook:1.0
+    # 或：自动获取当月更新
+    image: ghcr.io/wttwins/wrong-notebook:2026.10
     
     # 不推荐：始终最新（生产环境慎用）
     image: ghcr.io/wttwins/wrong-notebook:latest
@@ -78,11 +80,11 @@ services:
 git tag -l
 
 # 删除本地标签
-git tag -d v1.0.0
+git tag -d v2026.10.19
 
 # 删除远程标签
-git push origin --delete v1.0.0
+git push origin --delete v2026.10.19
 
 # 查看标签对应的提交
-git show v1.0.0
+git show v2026.10.19
 ```
