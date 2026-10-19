@@ -11,7 +11,11 @@ const mocks = vi.hoisted(() => ({
     },
     mockPrismaPracticeRecord: {
         create: vi.fn(),
+        findUnique: vi.fn(),
+        delete: vi.fn(),
     },
+    getCurrentUser: vi.fn(),
+    scheduleMasteryEvaluation: vi.fn(),
     mockAIService: {
         generateSimilarQuestion: vi.fn(),
     },
@@ -47,9 +51,17 @@ vi.mock('@/lib/auth', () => ({
     authOptions: {},
 }));
 
+vi.mock('@/lib/current-user', () => ({ getCurrentUser: mocks.getCurrentUser }));
+
+vi.mock('@/lib/mastery', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/mastery')>()),
+    scheduleMasteryEvaluation: mocks.scheduleMasteryEvaluation,
+}));
+
 // Import after mocks
 import { POST as GENERATE_POST } from '@/app/api/practice/generate/route';
 import { POST as RECORD_POST } from '@/app/api/practice/record/route';
+import { DELETE as RECORD_DELETE } from '@/app/api/practice/record/[id]/route';
 import { getServerSession } from 'next-auth';
 
 describe('/api/practice', () => {
@@ -396,6 +408,40 @@ describe('/api/practice', () => {
     });
 
     describe('POST /api/practice/record (记录练习结果)', () => {
+        it('直接录入结果：使用指定日期，来源为手动录入并补全错题本名称', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ userId: 'user-123', subject: { name: '数学' } });
+            mocks.mockPrismaPracticeRecord.create.mockResolvedValue({ id: 'record-1' });
+
+            const response = await RECORD_POST(new Request('http://localhost/api/practice/record', {
+                method: 'POST',
+                body: JSON.stringify({ errorItemId: 'error-item-1', result: 'not_attempted', source: 'manual', takenAt: '2026-10-18T04:00:00.000Z' }),
+            }));
+
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaPracticeRecord.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({
+                    userId: 'user-123',
+                    errorItemId: 'error-item-1',
+                    result: 'not_attempted',
+                    isCorrect: false,
+                    subject: '数学',
+                    source: 'manual',
+                    createdAt: new Date('2026-10-18T04:00:00.000Z'),
+                }),
+            });
+            expect(mocks.scheduleMasteryEvaluation).toHaveBeenCalledWith(['error-item-1']);
+        });
+
+        it('拒绝未知的记录来源', async () => {
+            const response = await RECORD_POST(new Request('http://localhost/api/practice/record', {
+                method: 'POST',
+                body: JSON.stringify({ errorItemId: 'error-item-1', result: 'correct', source: 'exam' }),
+            }));
+
+            expect(response.status).toBe(400);
+            expect(mocks.mockPrismaPracticeRecord.create).not.toHaveBeenCalled();
+        });
+
         it('举一反三新题的配图净化后随记录保存', async () => {
             mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ userId: 'user-123' });
             mocks.mockPrismaPracticeRecord.create.mockResolvedValue({ id: 'record-1' });
@@ -563,6 +609,41 @@ describe('/api/practice', () => {
 
             expect(response.status).toBe(500);
             expect(data.message).toBe('Failed to save record');
+        });
+    });
+
+    describe('DELETE /api/practice/record/:id (删除记录)', () => {
+        const params = (id: string) => ({ params: Promise.resolve({ id }) });
+
+        beforeEach(() => {
+            mocks.getCurrentUser.mockResolvedValue({ id: 'user-123' });
+        });
+
+        it('删除自己的记录并重新评估原题', async () => {
+            mocks.mockPrismaPracticeRecord.findUnique.mockResolvedValue({ userId: 'user-123', errorItemId: 'error-item-1' });
+
+            const response = await RECORD_DELETE(new Request('http://localhost'), params('record-1'));
+
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaPracticeRecord.delete).toHaveBeenCalledWith({ where: { id: 'record-1' } });
+            expect(mocks.scheduleMasteryEvaluation).toHaveBeenCalledWith(['error-item-1']);
+        });
+
+        it('不能删除他人的记录', async () => {
+            mocks.mockPrismaPracticeRecord.findUnique.mockResolvedValue({ userId: 'other', errorItemId: 'error-item-1' });
+
+            const response = await RECORD_DELETE(new Request('http://localhost'), params('record-1'));
+
+            expect(response.status).toBe(404);
+            expect(mocks.mockPrismaPracticeRecord.delete).not.toHaveBeenCalled();
+        });
+
+        it('未登录返回 401', async () => {
+            mocks.getCurrentUser.mockResolvedValue(null);
+
+            const response = await RECORD_DELETE(new Request('http://localhost'), params('record-1'));
+
+            expect(response.status).toBe(401);
         });
     });
 });

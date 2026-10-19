@@ -60,7 +60,7 @@ export async function evaluateErrorItemMastery(errorItemId: string): Promise<voi
             tags: { select: { name: true } },
             practiceRecords: {
                 where: { result: { not: null } },
-                orderBy: { createdAt: 'asc' },
+                orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
                 select: { result: true, difficulty: true, source: true, createdAt: true },
             },
         },

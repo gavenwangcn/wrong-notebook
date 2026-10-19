@@ -43,7 +43,7 @@ export async function GET() {
                 requestedCount: true,
                 resultsRecordedAt: true,
                 createdAt: true,
-                questions: { select: { status: true, practiceRecordId: true } },
+                questions: { select: { status: true, _count: { select: { practiceRecords: true } } } },
             },
         });
 
@@ -51,7 +51,7 @@ export async function GET() {
             ...paper,
             questionCount: questions.length,
             readyCount: questions.filter((question) => question.status === 'ready').length,
-            recordedCount: questions.filter((question) => question.practiceRecordId).length,
+            recordedCount: questions.filter((question) => question._count.practiceRecords > 0).length,
         })));
     } catch (error) {
         logger.error({ error }, 'Error listing exam papers');

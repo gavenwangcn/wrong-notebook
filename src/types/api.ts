@@ -333,8 +333,14 @@ export interface ExamQuestionDetail {
     figureSvg?: string | null;
     error: string | null;
     notebookName: string | null;
-    result: PracticeResult | null;
-    resultAt: string | null;
+    /** 历次录入的结果，按时间正序 */
+    attempts: ExamQuestionAttempt[];
+}
+
+export interface ExamQuestionAttempt {
+    id: string;
+    result: PracticeResult;
+    createdAt: string;
 }
 
 export interface ExamPaperDetail {

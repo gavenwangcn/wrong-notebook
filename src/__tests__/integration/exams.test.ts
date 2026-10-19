@@ -44,7 +44,7 @@ vi.mock('@/lib/config', () => ({ getAppTimeZone: vi.fn(() => 'Asia/Shanghai') })
 
 import { POST as CREATE, GET as LIST } from '@/app/api/exams/route';
 import { GET as DETAIL, DELETE } from '@/app/api/exams/[id]/route';
-import { PUT as RESULTS } from '@/app/api/exams/[id]/results/route';
+import { POST as RESULTS } from '@/app/api/exams/[id]/results/route';
 import { generateExamPaper } from '@/lib/exam';
 import { getAppTimeZone } from '@/lib/config';
 
@@ -135,7 +135,7 @@ describe('/api/exams', () => {
         mocks.examPaper.findMany.mockResolvedValue([{
             id: 'p1',
             title: '测试',
-            questions: [{ status: 'ready', practiceRecordId: 'r1' }, { status: 'failed', practiceRecordId: null }],
+            questions: [{ status: 'ready', _count: { practiceRecords: 2 } }, { status: 'failed', _count: { practiceRecords: 0 } }],
         }]);
 
         const data = await (await LIST()).json();
@@ -161,23 +161,22 @@ describe('/api/exams', () => {
         expect(mocks.examPaper.delete).toHaveBeenCalledWith({ where: { id: 'p1' } });
     });
 
-    describe('PUT 录入结果', () => {
+    describe('POST 录入结果', () => {
         const paper = {
             userId: 'user-1',
             difficulty: 'medium',
             questions: [
-                { id: 'q1', errorItemId: 'e1', questionText: '题1', answerText: 'A', analysis: '解1', practiceRecordId: null, errorItem: { subject: { name: '数学' } } },
-                { id: 'q2', errorItemId: 'e2', questionText: '题2', answerText: 'B', analysis: '解2', practiceRecordId: 'r2', errorItem: { subject: { name: '数学' } } },
-                { id: 'q3', errorItemId: 'e3', questionText: '题3', answerText: 'C', analysis: '解3', practiceRecordId: 'r3', errorItem: null },
-                { id: 'q4', errorItemId: null, questionText: '题4', answerText: 'D', analysis: '解4', practiceRecordId: null, errorItem: null },
+                { id: 'q1', errorItemId: 'e1', questionText: '题1', answerText: 'A', analysis: '解1', errorItem: { subject: { name: '数学' } } },
+                { id: 'q2', errorItemId: 'e2', questionText: '题2', answerText: 'B', analysis: '解2', errorItem: { subject: { name: '数学' } } },
+                { id: 'q3', errorItemId: 'e3', questionText: '题3', answerText: 'C', analysis: '解3', errorItem: null },
+                { id: 'q4', errorItemId: null, questionText: '题4', answerText: 'D', analysis: '解4', errorItem: null },
             ],
         };
 
-        it('新建、更新、删除举一反三记录并触发重新评估', async () => {
+        it('每次录入为每题新增一条举一反三记录并触发重新评估', async () => {
             mocks.examPaper.findUnique.mockResolvedValue(paper);
-            mocks.tx.practiceRecord.create.mockResolvedValue({ id: 'r1' });
 
-            const response = await RESULTS(json('http://localhost', 'PUT', {
+            const response = await RESULTS(json('http://localhost', 'POST', {
                 takenAt: '2026-10-18T04:00:00.000Z',
                 results: [
                     { questionId: 'q1', result: 'correct' },
@@ -192,29 +191,41 @@ describe('/api/exams', () => {
                 data: expect.objectContaining({
                     userId: 'user-1',
                     errorItemId: 'e1',
+                    examQuestionId: 'q1',
                     source: 'exam',
                     result: 'correct',
                     isCorrect: true,
                     difficulty: 'medium',
+                    subject: '数学',
                     questionText: '题1',
                     createdAt: new Date('2026-10-18T04:00:00.000Z'),
                 }),
             });
-            expect(mocks.tx.examQuestion.update).toHaveBeenCalledWith({ where: { id: 'q1' }, data: { practiceRecordId: 'r1' } });
-            expect(mocks.tx.practiceRecord.update).toHaveBeenCalledWith({
-                where: { id: 'r2' },
-                data: { result: 'not_attempted', isCorrect: false, createdAt: new Date('2026-10-18T04:00:00.000Z') },
+            expect(mocks.tx.practiceRecord.create).toHaveBeenCalledWith({
+                data: expect.objectContaining({ examQuestionId: 'q2', result: 'not_attempted', isCorrect: false }),
             });
-            expect(mocks.tx.practiceRecord.delete).toHaveBeenCalledWith({ where: { id: 'r3' } });
-            // 原题已删除的题目不写记录
-            expect(mocks.tx.practiceRecord.create).toHaveBeenCalledTimes(1);
-            expect(mocks.scheduleMasteryEvaluation).toHaveBeenCalledWith(['e1', 'e2', 'e3']);
+            // 未选择结果、原题已删除的题目不写记录，已有记录不被修改或删除
+            expect(mocks.tx.practiceRecord.create).toHaveBeenCalledTimes(2);
+            expect(mocks.tx.practiceRecord.update).not.toHaveBeenCalled();
+            expect(mocks.tx.practiceRecord.delete).not.toHaveBeenCalled();
+            expect(mocks.tx.examPaper.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { resultsRecordedAt: expect.any(Date) } });
+            expect(mocks.scheduleMasteryEvaluation).toHaveBeenCalledWith(['e1', 'e2']);
+        });
+
+        it('同一题再次录入会追加新记录', async () => {
+            mocks.examPaper.findUnique.mockResolvedValue(paper);
+
+            await RESULTS(json('http://localhost', 'POST', { takenAt: '2026-10-18T04:00:00.000Z', results: [{ questionId: 'q1', result: 'wrong' }] }), params('p1'));
+            await RESULTS(json('http://localhost', 'POST', { takenAt: '2026-10-19T04:00:00.000Z', results: [{ questionId: 'q1', result: 'correct' }] }), params('p1'));
+
+            expect(mocks.tx.practiceRecord.create).toHaveBeenCalledTimes(2);
+            expect(mocks.tx.practiceRecord.create.mock.calls.map(([arg]) => [arg.data.examQuestionId, arg.data.result])).toEqual([['q1', 'wrong'], ['q1', 'correct']]);
         });
 
         it('他人的试卷返回 404', async () => {
             mocks.examPaper.findUnique.mockResolvedValue({ ...paper, userId: 'other' });
 
-            const response = await RESULTS(json('http://localhost', 'PUT', { results: [{ questionId: 'q1', result: 'correct' }] }), params('p1'));
+            const response = await RESULTS(json('http://localhost', 'POST', { results: [{ questionId: 'q1', result: 'correct' }] }), params('p1'));
 
             expect(response.status).toBe(404);
             expect(mocks.transaction).not.toHaveBeenCalled();

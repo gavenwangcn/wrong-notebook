@@ -178,7 +178,7 @@ export interface ExamResultInput {
 }
 
 /**
- * 录入试卷结果：每题结果写入对应原题的举一反三记录（已存在则更新，清空则删除），
+ * 录入试卷结果：同一题可多次录入，每次作为一条新的举一反三记录写入原题历史（未选择结果的题目跳过），
  * 返回需要重新评估掌握概率的原题 ID
  */
 export async function recordExamResults(paperId: string, userId: string, takenAt: Date, results: ExamResultInput[]): Promise<string[]> {
@@ -195,7 +195,6 @@ export async function recordExamResults(paperId: string, userId: string, takenAt
                     answerText: true,
                     analysis: true,
                     figureSvg: true,
-                    practiceRecordId: true,
                     errorItem: { select: { subject: { select: { name: true } } } },
                 },
             },
@@ -212,39 +211,30 @@ export async function recordExamResults(paperId: string, userId: string, takenAt
         for (const { questionId, result } of results) {
             const question = questionMap.get(questionId);
             // 原题已删除的题目无法计入举一反三记录
-            if (!question?.errorItemId) continue;
+            if (!question?.errorItemId || result === null) continue;
 
-            if (result === null) {
-                if (question.practiceRecordId) {
-                    await tx.practiceRecord.delete({ where: { id: question.practiceRecordId } });
-                    affected.add(question.errorItemId);
-                }
-                continue;
-            }
-
-            const data = { result, isCorrect: result === 'correct', createdAt: takenAt };
-            if (question.practiceRecordId) {
-                await tx.practiceRecord.update({ where: { id: question.practiceRecordId }, data });
-            } else {
-                const record = await tx.practiceRecord.create({
-                    data: {
-                        ...data,
-                        userId,
-                        errorItemId: question.errorItemId,
-                        source: 'exam',
-                        difficulty: paper.difficulty,
-                        subject: question.errorItem?.subject?.name ?? null,
-                        questionText: question.questionText,
-                        answerText: question.answerText,
-                        analysis: question.analysis,
-                        figureSvg: question.figureSvg,
-                    },
-                });
-                await tx.examQuestion.update({ where: { id: questionId }, data: { practiceRecordId: record.id } });
-            }
+            await tx.practiceRecord.create({
+                data: {
+                    userId,
+                    errorItemId: question.errorItemId,
+                    examQuestionId: question.id,
+                    source: 'exam',
+                    result,
+                    isCorrect: result === 'correct',
+                    createdAt: takenAt,
+                    difficulty: paper.difficulty,
+                    subject: question.errorItem?.subject?.name ?? null,
+                    questionText: question.questionText,
+                    answerText: question.answerText,
+                    analysis: question.analysis,
+                    figureSvg: question.figureSvg,
+                },
+            });
             affected.add(question.errorItemId);
         }
-        await tx.examPaper.update({ where: { id: paperId }, data: { resultsRecordedAt: new Date() } });
+        if (affected.size > 0) {
+            await tx.examPaper.update({ where: { id: paperId }, data: { resultsRecordedAt: new Date() } });
+        }
     });
 
     return [...affected];

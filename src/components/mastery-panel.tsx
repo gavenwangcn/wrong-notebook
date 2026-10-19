@@ -4,10 +4,12 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
-import { ChevronDown, ChevronUp, Loader2, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { PracticeRecordForm } from "@/components/practice-record-form";
 import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
@@ -34,6 +36,7 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
     const [data, setData] = useState<PracticeHistoryResponse | null>(null);
     const [expanded, setExpanded] = useState<string | null>(null);
     const [polls, setPolls] = useState(0);
+    const [adding, setAdding] = useState(false);
 
     const load = useCallback(() => {
         apiClient.get<PracticeHistoryResponse>(`/api/error-items/${errorItemId}/practice-records`)
@@ -46,6 +49,22 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
     }, [errorItemId, onMasteryLevelChange]);
 
     useEffect(load, [load]);
+
+    // 新增或删除记录后重新加载，并重新开始等待后台评估
+    const reload = () => {
+        setPolls(0);
+        load();
+    };
+
+    const deleteRecord = async (recordId: string) => {
+        if (!confirm(t.mastery.deleteRecordConfirm)) return;
+        try {
+            await apiClient.delete(`/api/practice/record/${recordId}`);
+            reload();
+        } catch {
+            alert(t.mastery.deleteRecordFailed);
+        }
+    };
 
     const latest = data?.records[0];
     const isPending = !!latest && (!data?.masteryEvaluatedAt || new Date(latest.createdAt) > new Date(data.masteryEvaluatedAt));
@@ -96,32 +115,61 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
                 )}
 
                 <div className="space-y-2 border-t pt-4">
-                    <h4 className="text-sm font-semibold">{t.mastery.history}</h4>
+                    <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold">{t.mastery.history}</h4>
+                        {!adding && (
+                            <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+                                <Plus className="mr-1 h-4 w-4" />
+                                {t.mastery.addRecord}
+                            </Button>
+                        )}
+                    </div>
+                    {adding && (
+                        <PracticeRecordForm
+                            errorItemId={errorItemId}
+                            onCancel={() => setAdding(false)}
+                            onSaved={() => {
+                                setAdding(false);
+                                reload();
+                            }}
+                        />
+                    )}
                     {data.records.length === 0 ? (
                         <p className="text-sm text-muted-foreground italic">{t.mastery.noHistory}</p>
                     ) : (
                         <ul className="divide-y rounded-md border">
                             {data.records.map((record) => (
                                 <li key={record.id} className="p-3 text-sm space-y-2">
-                                    <button
-                                        type="button"
-                                        className="flex w-full flex-wrap items-center gap-2 text-left"
-                                        onClick={() => setExpanded(expanded === record.id ? null : record.id)}
-                                    >
-                                        <span className="text-muted-foreground tabular-nums">{formatDateTime(record.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
-                                        <Badge variant="outline" className={RESULT_BADGE_CLASS[record.result] || ""}>
-                                            {t.mastery.results[record.result as keyof typeof t.mastery.results] || record.result}
-                                        </Badge>
-                                        {record.difficulty && <Badge variant="secondary">{difficultyLabels[record.difficulty] || record.difficulty}</Badge>}
-                                        <span className="text-xs text-muted-foreground">
-                                            {record.exam ? `${t.mastery.sources.exam} · ${record.exam.title}` : t.mastery.sources[record.source as keyof typeof t.mastery.sources] || t.mastery.sources.practice}
-                                        </span>
-                                        {record.questionText && (
-                                            <span className="ml-auto text-muted-foreground">
-                                                {expanded === record.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                    <div className="flex items-start gap-2">
+                                        <button
+                                            type="button"
+                                            className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-left"
+                                            onClick={() => setExpanded(expanded === record.id ? null : record.id)}
+                                        >
+                                            <span className="text-muted-foreground tabular-nums">{formatDateTime(record.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
+                                            <Badge variant="outline" className={RESULT_BADGE_CLASS[record.result] || ""}>
+                                                {t.mastery.results[record.result as keyof typeof t.mastery.results] || record.result}
+                                            </Badge>
+                                            {record.difficulty && <Badge variant="secondary">{difficultyLabels[record.difficulty] || record.difficulty}</Badge>}
+                                            <span className="text-xs text-muted-foreground">
+                                                {record.exam ? `${t.mastery.sources.exam} · ${record.exam.title}` : t.mastery.sources[record.source as keyof typeof t.mastery.sources] || t.mastery.sources.practice}
                                             </span>
-                                        )}
-                                    </button>
+                                            {record.questionText && (
+                                                <span className="ml-auto text-muted-foreground">
+                                                    {expanded === record.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                </span>
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label={t.mastery.deleteRecord}
+                                            title={t.mastery.deleteRecord}
+                                            className="shrink-0 rounded p-1 text-muted-foreground hover:bg-red-50 hover:text-red-600"
+                                            onClick={() => deleteRecord(record.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                     {expanded === record.id && record.questionText && (
                                         <div className="space-y-2 rounded-md bg-muted/40 p-3">
                                             <MarkdownRenderer content={record.questionText} />

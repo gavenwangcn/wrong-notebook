@@ -20,6 +20,9 @@ const recordSchema = z.object({
     answerText: z.string().max(20000).nullable().optional(),
     analysis: z.string().max(50000).nullable().optional(),
     figureSvg: z.string().max(MAX_FIGURE_SVG_LENGTH).nullable().optional(),
+    // manual：在错题详情中直接录入结果，不附带新题
+    source: z.enum(['practice', 'manual']).optional(),
+    takenAt: z.string().datetime({ offset: true }).optional(),
 });
 
 export async function POST(req: Request) {
@@ -34,7 +37,9 @@ export async function POST(req: Request) {
         if (!parsed.success) {
             return validationError("Invalid practice record", parsed.error.issues);
         }
-        const { errorItemId, subject, difficulty, questionText, answerText, analysis } = parsed.data;
+        const { errorItemId, difficulty, questionText, answerText, analysis } = parsed.data;
+        let subject = parsed.data.subject;
+        const source = parsed.data.source ?? 'practice';
         const figureSvg = sanitizeFigureSvg(parsed.data.figureSvg);
         // 兼容旧客户端只传 isCorrect 的情况
         const result = parsed.data.result
@@ -47,11 +52,12 @@ export async function POST(req: Request) {
         if (errorItemId) {
             const item = await prisma.errorItem.findUnique({
                 where: { id: errorItemId },
-                select: { userId: true },
+                select: { userId: true, subject: { select: { name: true } } },
             });
             if (!item || item.userId !== userId) {
                 return notFound("Item not found");
             }
+            subject ??= item.subject?.name ?? null;
         }
 
         const isCorrect = result ? result === 'correct' : parsed.data.isCorrect;
@@ -69,8 +75,9 @@ export async function POST(req: Request) {
                     answerText,
                     analysis,
                     figureSvg,
-                    source: 'practice',
+                    source,
                 } : {}),
+                ...(parsed.data.takenAt ? { createdAt: new Date(parsed.data.takenAt) } : {}),
             },
         });
 

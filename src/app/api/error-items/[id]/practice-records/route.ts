@@ -33,7 +33,7 @@ export async function GET(
                 masteryEvaluatedAt: true,
                 practiceRecords: {
                     where: { result: { not: null } },
-                    orderBy: { createdAt: 'desc' },
+                    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
                     select: {
                         id: true,
                         result: true,

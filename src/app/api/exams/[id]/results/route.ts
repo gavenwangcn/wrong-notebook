@@ -17,10 +17,10 @@ const resultsSchema = z.object({
 });
 
 /**
- * PUT /api/exams/:id/results
- * 录入试卷结果，同步写入原题的举一反三记录并触发掌握概率重新评估
+ * POST /api/exams/:id/results
+ * 录入一次试卷结果（同一题可多次录入），写入原题的举一反三记录并触发掌握概率重新评估
  */
-export async function PUT(
+export async function POST(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {

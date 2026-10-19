@@ -169,12 +169,15 @@ model PracticeRecord {
   mistakeAnalysis String?
   originalImageUrl String?
   figureSvg    String?  // 举一反三新题的 SVG 配图
-  source       String   @default("practice") // practice | exam | duplicate_import
-  examQuestion ExamQuestion?
+  source       String   @default("practice") // practice | manual | exam | duplicate_import
+  // 试卷题目可多次录入结果，每次一条记录
+  examQuestionId String?
+  examQuestion   ExamQuestion? @relation(fields: [examQuestionId], references: [id], onDelete: SetNull)
   
   createdAt DateTime @default(now())
 
   @@index([errorItemId, createdAt])
+  @@index([examQuestionId])
 }
 
 // 随机错题试卷
@@ -213,8 +216,7 @@ model ExamQuestion {
   analysis      String?
   figureSvg     String?    // 新题的 SVG 配图
   error         String?
-  practiceRecordId String? @unique
-  practiceRecord   PracticeRecord? @relation(fields: [practiceRecordId], references: [id], onDelete: SetNull)
+  practiceRecords PracticeRecord[]
 
   @@index([paperId, order])
 }

@@ -59,21 +59,25 @@ export default function ExamDetailPage() {
     const hasFailed = paper.questions.some((question) => question.status === "failed");
     const recordable = paper.questions.filter((question) => question.status === "ready" && question.errorItemId);
 
+    const selectedCount = draft ? recordable.filter((question) => draft[question.id]).length : 0;
+
+    // 每次录入都是新的一次作答，从空白开始
     const startRecording = () => {
         setMessage(null);
-        setDraft(Object.fromEntries(paper.questions.map((question) => [question.id, question.result])));
-        const recordedAt = paper.questions.find((question) => question.resultAt)?.resultAt;
-        setTakenAt(formatDateTime(recordedAt || new Date(), "yyyy-MM-dd", timeZone));
+        setDraft({});
+        setTakenAt(formatDateTime(new Date(), "yyyy-MM-dd", timeZone));
     };
 
     const saveResults = async () => {
-        if (!draft) return;
+        if (!draft || selectedCount === 0) return;
         setSaving(true);
         setMessage(null);
         try {
-            await apiClient.put(`/api/exams/${paper.id}/results`, {
+            await apiClient.post(`/api/exams/${paper.id}/results`, {
                 takenAt: dateInputToISOString(takenAt, timeZone),
-                results: recordable.map((question) => ({ questionId: question.id, result: draft[question.id] ?? null })),
+                results: recordable
+                    .filter((question) => draft[question.id])
+                    .map((question) => ({ questionId: question.id, result: draft[question.id] })),
             });
             setDraft(null);
             setMessage(t.exam.resultsSaved);
@@ -82,6 +86,16 @@ export default function ExamDetailPage() {
             setMessage(t.exam.resultsSaveFailed);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const deleteAttempt = async (attemptId: string) => {
+        if (!confirm(t.mastery.deleteRecordConfirm)) return;
+        try {
+            await apiClient.delete(`/api/practice/record/${attemptId}`);
+            await load();
+        } catch {
+            setMessage(t.mastery.deleteRecordFailed);
         }
     };
 
@@ -144,9 +158,12 @@ export default function ExamDetailPage() {
                 {message && <p className="rounded-md border p-3 text-sm">{message}</p>}
 
                 {draft && (
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-md border bg-muted/30 p-3">
-                        <label htmlFor="exam-taken-at" className="text-sm font-medium">{t.exam.takenAt}</label>
-                        <Input id="exam-taken-at" type="date" value={takenAt} onChange={(e) => setTakenAt(e.target.value)} className="sm:w-48" />
+                    <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <label htmlFor="exam-taken-at" className="text-sm font-medium">{t.exam.takenAt}</label>
+                            <Input id="exam-taken-at" type="date" value={takenAt} onChange={(e) => setTakenAt(e.target.value)} className="sm:w-48" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">{t.exam.recordHint}</p>
                     </div>
                 )}
 
@@ -157,15 +174,17 @@ export default function ExamDetailPage() {
                             question={question}
                             editingResult={draft ? draft[question.id] ?? null : undefined}
                             onResultChange={(result) => setDraft((prev) => (prev ? { ...prev, [question.id]: result } : prev))}
+                            onDeleteAttempt={deleteAttempt}
                         />
                     ))}
                 </div>
 
                 {draft && (
                     <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 p-3 backdrop-blur">
-                        <div className="max-w-4xl mx-auto flex justify-end gap-2">
+                        <div className="max-w-4xl mx-auto flex items-center justify-end gap-2">
+                            {selectedCount === 0 && <span className="mr-auto text-xs text-muted-foreground">{t.exam.noResultSelected}</span>}
                             <Button variant="outline" onClick={() => setDraft(null)} disabled={saving}>{t.exam.cancel}</Button>
-                            <Button onClick={saveResults} disabled={saving || !takenAt}>
+                            <Button onClick={saveResults} disabled={saving || !takenAt || selectedCount === 0}>
                                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                 {t.exam.saveResults}
                             </Button>

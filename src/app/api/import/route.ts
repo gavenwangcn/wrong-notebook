@@ -383,7 +383,7 @@ export async function POST(req: Request) {
                             wrongAnswerText: record.wrongAnswerText,
                             mistakeAnalysis: record.mistakeAnalysis,
                             originalImageUrl: record.originalImageUrl,
-                            source: ['practice', 'exam', 'duplicate_import'].includes(record.source || '') ? record.source : 'practice',
+                            source: ['practice', 'manual', 'exam', 'duplicate_import'].includes(record.source || '') ? record.source : 'practice',
                         } : {}),
                         createdAt: safeParseDate(record.createdAt),
                     },

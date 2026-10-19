@@ -9,7 +9,7 @@ const logger = createLogger('api:exams:id');
 
 /**
  * GET /api/exams/:id
- * 试卷详情，含每题内容、来源短 ID 与已录入的结果
+ * 试卷详情，含每题内容、来源短 ID 与历次录入的结果
  */
 export async function GET(
     req: Request,
@@ -30,7 +30,7 @@ export async function GET(
                     orderBy: { order: 'asc' },
                     include: {
                         errorItem: { select: { id: true, subject: { select: { name: true } } } },
-                        practiceRecord: { select: { result: true, createdAt: true } },
+                        practiceRecords: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { id: true, result: true, createdAt: true } },
                     },
                 },
             },
@@ -47,11 +47,10 @@ export async function GET(
         const { userId: _userId, questions, ...rest } = paper;
         return NextResponse.json({
             ...rest,
-            questions: questions.map(({ errorItem, practiceRecord, ...question }) => ({
+            questions: questions.map(({ errorItem, practiceRecords, ...question }) => ({
                 ...question,
                 notebookName: errorItem?.subject?.name ?? null,
-                result: practiceRecord?.result ?? null,
-                resultAt: practiceRecord?.createdAt ?? null,
+                attempts: practiceRecords,
             })),
         });
     } catch (error) {

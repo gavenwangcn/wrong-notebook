@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
+import { ChevronDown, ChevronUp, Loader2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -17,10 +19,13 @@ interface ExamQuestionCardProps {
     /** 录入模式下的待保存结果；undefined 表示非录入模式 */
     editingResult?: PracticeResult | null;
     onResultChange?: (result: PracticeResult) => void;
+    /** 录入模式下删除某次已录入的结果 */
+    onDeleteAttempt?: (attemptId: string) => void;
 }
 
-export function ExamQuestionCard({ question, editingResult, onResultChange }: ExamQuestionCardProps) {
+export function ExamQuestionCard({ question, editingResult, onResultChange, onDeleteAttempt }: ExamQuestionCardProps) {
     const { t } = useLanguage();
+    const { timeZone } = useTimeZone();
     const [showAnswer, setShowAnswer] = useState(false);
     const isEditing = editingResult !== undefined;
     // AI 错误码（如 AI_AUTH_ERROR: ...）映射为界面提示
@@ -47,12 +52,29 @@ export function ExamQuestionCard({ question, editingResult, onResultChange }: Ex
                         </span>
                     )}
                     {question.notebookName && <Badge variant="secondary">{question.notebookName}</Badge>}
-                    {!isEditing && question.result && (
-                        <Badge variant="outline" className={`ml-auto ${RESULT_BADGE_CLASS[question.result] || ""}`}>
-                            {t.mastery.results[question.result]}
-                        </Badge>
-                    )}
                 </div>
+
+                {question.attempts.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {question.attempts.map((attempt, index) => (
+                            <Badge key={attempt.id} variant="outline" className={`gap-1 font-normal ${RESULT_BADGE_CLASS[attempt.result] || ""}`}>
+                                <span>{t.exam.attemptLabel.replace("{n}", String(index + 1))}</span>
+                                <span className="tabular-nums">{formatDateTime(attempt.createdAt, "MM-dd", timeZone)}</span>
+                                <span className="font-semibold">{t.mastery.results[attempt.result]}</span>
+                                {isEditing && onDeleteAttempt && (
+                                    <button
+                                        type="button"
+                                        aria-label={t.mastery.deleteRecord}
+                                        className="-mr-1 rounded hover:bg-black/10"
+                                        onClick={() => onDeleteAttempt(attempt.id)}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                )}
+                            </Badge>
+                        ))}
+                    </div>
+                )}
 
                 {question.status === "pending" && (
                     <p className="flex items-center gap-2 text-sm text-muted-foreground">
