@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Clapperboard, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import { Clapperboard, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SvgAnimationPlayer } from "@/components/svg-animation-player";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
-import { figureSvgToDataUri } from "@/lib/figure-svg";
 
 /** 动画 SVG 较长，AI 通常需要几分钟才能写完，前端等待上限与服务端 AI 请求超时一致 */
 const GENERATE_TIMEOUT_MS = 10 * 60 * 1000;
@@ -19,17 +19,13 @@ interface SvgAnimationExplainerProps {
 }
 
 /**
- * 题目的 SVG 动画讲解：未生成时显示生成入口；已生成时可重播、重新生成和删除（删除需二次确认）。
- * 用 <img> 加载 data URI，SVG 中的 SMIL/CSS 动画照常播放，脚本不会执行。
+ * 题目的 SVG 动画讲解：未生成时显示生成入口；已生成时可播放/暂停、拖动进度、重新生成和删除（删除需二次确认）。
  */
 export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: SvgAnimationExplainerProps) {
     const { t } = useLanguage();
     const [generating, setGenerating] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    // 每次重播改变 <img> 的地址（末尾追加注释），浏览器重新加载 SVG，动画从头播放；
-    // 地址不变时浏览器可能复用已加载的图片，动画不会重新开始
-    const [playKey, setPlayKey] = useState(0);
 
     const handleGenerate = async () => {
         setGenerating(true);
@@ -37,7 +33,6 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
         try {
             const result = await apiClient.post<{ svgAnimation: string }>(`/api/error-items/${errorItemId}/svg-animation`, {}, { timeout: GENERATE_TIMEOUT_MS });
             onChange(result.svgAnimation);
-            setPlayKey((key) => key + 1);
         } catch (err) {
             const code = (err as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
@@ -95,10 +90,6 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
                     {busy && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => setPlayKey((key) => key + 1)} disabled={busy}>
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        <span>{t.svgAnimation.replay}</span>
-                    </Button>
                     <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={handleGenerate} disabled={busy}>
                         {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
                         <span>{generating ? t.svgAnimation.generating : t.svgAnimation.regenerate}</span>
@@ -111,12 +102,7 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
             </div>
             {error && <p className="px-3 pt-2 text-xs text-destructive">{error}</p>}
             <div className="p-2 sm:p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element -- data URI 的 SVG 动画，无需图片优化 */}
-                <img
-                    src={figureSvgToDataUri(`${svgAnimation}<!--${playKey}-->`)}
-                    alt={t.svgAnimation.alt}
-                    className="mx-auto block h-auto w-full max-w-3xl rounded border bg-white"
-                />
+                <SvgAnimationPlayer svg={svgAnimation} />
             </div>
         </div>
     );

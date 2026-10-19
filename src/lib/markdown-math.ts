@@ -43,14 +43,31 @@ function normalizeText(text: string): string {
         .replace(/\s*###PRESERVE_BREAK###\s*/g, '\n\n');
 }
 
+/** 一个公式片段：source 为统一定界符后的源码（$…$ 或 $$…$$） */
+export interface MathSegment {
+    source: string;
+    tex: string;
+    displayMode: boolean;
+}
+
+/**
+ * 取出内容中的公式片段，masked 为把公式换成占位符后的其余文字
+ */
+export function extractMathSegments(content: string | null | undefined): { masked: string; segments: MathSegment[] } {
+    const segments: MathSegment[] = [];
+    const masked = (content ?? '').replace(MATH_SEGMENT, (raw) => {
+        const source = normalizeMathSegment(raw);
+        const displayMode = source.startsWith('$$');
+        segments.push({ source, tex: source.slice(displayMode ? 2 : 1, displayMode ? -2 : -1), displayMode });
+        return PLACEHOLDER(segments.length - 1);
+    });
+    return { masked, segments };
+}
+
 /**
  * 预处理要交给 react-markdown + remark-math 渲染的内容
  */
 export function prepareMarkdownMath(content: string | null | undefined): string {
-    const segments: string[] = [];
-    const masked = (content ?? '').replace(MATH_SEGMENT, (segment) => {
-        segments.push(normalizeMathSegment(segment));
-        return PLACEHOLDER(segments.length - 1);
-    });
-    return normalizeText(masked).replace(PLACEHOLDER_PATTERN, (_match, index: string) => segments[Number(index)]);
+    const { masked, segments } = extractMathSegments(content);
+    return normalizeText(masked).replace(PLACEHOLDER_PATTERN, (_match, index: string) => segments[Number(index)].source);
 }

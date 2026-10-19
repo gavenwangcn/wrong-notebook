@@ -27,6 +27,8 @@ import { QuestionFigure } from "@/components/question-figure";
 import { RegenerateFigureButton } from "@/components/regenerate-figure-button";
 import { MasteryPanel } from "@/components/mastery-panel";
 import { RetagItemButton } from "@/components/retag-item-button";
+import { RegenerateAnswerButton } from "@/components/regenerate-answer-button";
+import { FixLatexButton } from "@/components/fix-latex-button";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 
@@ -191,6 +193,14 @@ export default function ErrorDetailPage() {
         await apiClient.delete(`/api/error-items/${item.id}/geogebra`);
         setItem((current) => current && { ...current, geogebraCommands: null });
     };
+
+    const handleAnswerRegenerated = useCallback((updated: { answerText: string | null; analysis: string | null }) => {
+        setItem((current) => current && { ...current, answerText: updated.answerText ?? "", analysis: updated.analysis ?? "" });
+    }, []);
+
+    const handleLatexFixed = useCallback((updated: Partial<Pick<ErrorItemDetail, "questionText" | "answerText" | "analysis" | "wrongAnswerText" | "mistakeAnalysis">>) => {
+        setItem((current) => current && { ...current, ...updated });
+    }, []);
 
     const handleSvgAnimationChange = useCallback((svgAnimation: string | null) => {
         setItem((current) => current && { ...current, svgAnimation });
@@ -509,6 +519,7 @@ export default function ErrorDetailPage() {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                        <FixLatexButton errorItemId={item.id} fields={item} onDone={handleLatexFixed} />
                         <Link href={`/practice?id=${item.id}`}>
                             <Button variant="outline" size="sm">
                                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -602,7 +613,7 @@ export default function ErrorDetailPage() {
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card className="border-primary/20">
-                        <CardHeader><div className="flex justify-between items-center"><CardTitle className="text-primary">{t.detail.correctAnswer}</CardTitle>{!isEditingAnswer && <Button variant="ghost" size="sm" onClick={startEditingAnswer}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader>
+                        <CardHeader><div className="flex justify-between items-center"><CardTitle className="text-primary">{t.detail.correctAnswer}</CardTitle>{!isEditingAnswer && <div className="flex flex-wrap justify-end"><RegenerateAnswerButton errorItemId={item.id} onDone={handleAnswerRegenerated} /><Button variant="ghost" size="sm" onClick={startEditingAnswer}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button></div>}</div></CardHeader>
                         <CardContent className="space-y-4">
                             {isEditingAnswer ? (
                                 <div className="space-y-3"><MarkdownEditor value={answerInput} onChange={setAnswerInput} placeholder="Enter answer..." rows={5} className="w-full font-mono text-sm" /><div className="flex gap-2"><Button size="sm" onClick={saveAnswerHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingAnswer}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div></div>

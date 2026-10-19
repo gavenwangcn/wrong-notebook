@@ -1,7 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
+import { parseLatexFix } from './latex-fix';
+import type { LatexFixInput, LatexFixResult } from './latex-fix';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { getAppConfig } from '../config';
 import { prefetchSubjectTags } from './tag-service';
@@ -470,6 +472,28 @@ export class GeminiProvider implements AIService {
             return parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg"));
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async fixLatex(input: LatexFixInput): Promise<LatexFixResult> {
+        const prompt = generateLatexFixPrompt(input);
+        logger.info({ provider: 'Gemini', model: this.modelName, fields: Object.keys(input) }, 'LaTeX Fix Request');
+
+        try {
+            const response = await this.retryOperation(() => this.ai.models.generateContent({
+                model: this.modelName,
+                contents: [{ text: prompt }, { text: "请修复上述内容中的 LaTeX 语法。" }],
+            }));
+
+            const text = response.text || '';
+            logger.debug({ rawResponse: text }, 'LaTeX fix AI raw response');
+
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
+            return parseLatexFix(text, input);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during LaTeX fix');
             this.handleError(error);
             throw error;
         }

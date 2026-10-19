@@ -139,6 +139,16 @@ export const FIGURE_SVG_RULES = `- 输出一个完整的 <svg> 元素，包含 x
 - 只使用基本图形元素：line、polyline、polygon、rect、circle、ellipse、path、text、g、defs、marker。
 - 严禁使用 <image>、<script>、<foreignObject>、外部链接、外部字体或事件属性。`;
 
+/**
+ * LaTeX 书写规则：页面用 KaTeX 渲染，只支持其中的命令（识别、举一反三、重新解题、修复公式共用）
+ */
+export const LATEX_RULES = String.raw`- 行内公式用 $...$，独立公式用 $$...$$；不要用 \(...\) 或 \[...\]，每个 $ 必须成对出现。
+- 所有 LaTeX 命令（如 \frac、\sqrt、\times、\angle）都必须写在 $...$ 内，公式外不能出现反斜杠命令。
+- 只使用 KaTeX 支持的命令和环境：方程组用 \begin{cases}...\end{cases}，多行推导用 \begin{aligned}...\end{aligned}（放在 $$...$$ 中），不要用 align、eqnarray、\newcommand、\usepackage、\label、\tag 等。
+- 大括号 {} 必须成对，\left 与 \right 必须成对，\begin{...} 与 \end{...} 必须对应。
+- 公式中的中文写在 \text{...} 里，或放到公式外；百分号写成 \%，美元符号写成 \$。
+- 反斜杠只写一个（\frac），不要写成 \\frac；换行符 \\ 只能用在 cases、aligned 等环境里。`;
+
 export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
 你是一位世界顶尖的、经验丰富的、专业的跨学科考试分析专家（Interdisciplinary Exam Analysis Expert）。你的核心任务是极致准确地分析用户提供的考试题目图片，全面理解所有文本、图表和隐含约束，并提供一个完整、高度结构化且专业的解决方案。
 
@@ -255,6 +265,8 @@ ${DIFFICULTY_STARS_RULES}
 2. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 3. **内容完整**：如果包含子问题，请在 question_text 中完整列出。
 4. **禁止图片**：严禁包含任何图片链接或 markdown 图片语法。
+5. **LaTeX 规范**：
+${LATEX_RULES}
 
 {{grade_instruction}}
 {{provider_hints}}`;
@@ -310,6 +322,8 @@ export const DEFAULT_SIMILAR_TEMPLATE = `你是一位资深的K12教育题目生
 
 ###关键格式与内容约束 (CRITICAL RULES) !!!
 1. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
+2. **LaTeX 规范**：
+${LATEX_RULES}
 
 {{grade_instruction}}
 {{provider_hints}}`;
@@ -624,6 +638,9 @@ ${DIFFICULTY_STARS_RULES}
 1. **格式严格**：必须严格包含上述 8 个 XML 标签，不要输出其他内容。
 2. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 3. **题目不变**：不要修改或重复题目内容，只提供答案和解析。
+4. **解答完整**：答案要给出每一小问的最终结果；解析要写出完整的解题步骤，不要省略中间推导。
+5. **LaTeX 规范**：
+${LATEX_RULES}
 
 {{grade_instruction}}
 {{provider_hints}}`;
@@ -752,6 +769,56 @@ export function generateGeogebraPrompt(
     }
 
     return prompt;
+}
+
+/** 修复 LaTeX 时各字段对应的输出标签 */
+export const LATEX_FIX_TAGS = {
+  questionText: 'question_text',
+  answerText: 'answer_text',
+  analysis: 'analysis',
+  wrongAnswerText: 'wrong_answer_text',
+  mistakeAnalysis: 'mistake_analysis',
+} as const;
+
+export type LatexFixField = keyof typeof LATEX_FIX_TAGS;
+
+const LATEX_FIX_LABELS: Record<LatexFixField, string> = {
+  questionText: '题目',
+  answerText: '答案',
+  analysis: '解析',
+  wrongAnswerText: '错误解答',
+  mistakeAnalysis: '错因分析',
+};
+
+/**
+ * 修复 LaTeX 语法的提示词：只改公式写法，不改内容
+ */
+export function generateLatexFixPrompt(
+  fields: Partial<Record<LatexFixField, { text: string; issues: string[] }>>
+): string {
+  const entries = (Object.keys(LATEX_FIX_TAGS) as LatexFixField[]).filter((field) => fields[field]);
+  const sections = entries.map((field) => {
+    const { text, issues } = fields[field]!;
+    const tag = LATEX_FIX_TAGS[field];
+    return `【${LATEX_FIX_LABELS[field]}】\n检测到的问题：\n${issues.map((issue) => `- ${issue}`).join('\n')}\n原文：\n<${tag}>\n${text}\n</${tag}>`;
+  });
+  const outputTags = entries.map((field) => `<${LATEX_FIX_TAGS[field]}>\n修复后的完整${LATEX_FIX_LABELS[field]}\n</${LATEX_FIX_TAGS[field]}>`);
+
+  return `【角色与核心任务 (ROLE AND CORE TASK)】
+你是一位熟悉 LaTeX 和 KaTeX 的数学编辑。下面的内容中有 LaTeX 公式语法错误，页面无法正常显示。请只修复公式的写法，使其符合规范并能被 KaTeX 渲染。
+
+【修复要求】
+- 只修改公式的写法（定界符、命令、括号、环境等），不要改动文字内容、解题思路、数值和答案，不要增删句子，不要重新解题。
+- 没有问题的部分保持原样，Markdown 格式（段落、列表、表格）保持不变。
+- 修复后必须符合以下规范：
+${LATEX_RULES}
+
+${sections.join('\n\n')}
+
+【输出格式】
+只输出以下标签，每个标签内是修复后的完整内容，不要用 Markdown 代码块包裹，不要输出其他内容：
+
+${outputTags.join('\n\n')}`;
 }
 
 /**

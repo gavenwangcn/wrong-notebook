@@ -221,3 +221,15 @@ describe('Anthropic Provider SVG 动画讲解', () => {
         expect(svg).not.toContain('<script');
     });
 });
+
+describe('Anthropic Provider 修复 LaTeX', () => {
+    const latexInput = { answerText: { text: '$\\frac{1}{2$', issues: ['Expected }'] } };
+
+    it('解析修复结果', async () => {
+        mocks.create.mockResolvedValue(message('<answer_text>$\\frac{1}{2}$</answer_text>'));
+        const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
+
+        expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
+        expect(mocks.create.mock.calls.at(-1)?.[0].system).toContain('Expected }');
+    });
+});

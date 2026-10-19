@@ -1,7 +1,9 @@
 import OpenAI from "openai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
+import { parseLatexFix } from './latex-fix';
+import type { LatexFixInput, LatexFixResult } from './latex-fix';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
@@ -579,6 +581,32 @@ export class OpenAIProvider implements AIService {
             return parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg"));
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async fixLatex(input: LatexFixInput): Promise<LatexFixResult> {
+        const prompt = generateLatexFixPrompt(input);
+        logger.info({ provider: 'OpenAI', model: this.model, fields: Object.keys(input) }, 'LaTeX Fix Request');
+
+        try {
+            const response = await withTruncationRetry((maxTokens) => this.openai.chat.completions.create({
+                model: this.model,
+                messages: [
+                    { role: "system", content: prompt },
+                    { role: "user", content: "请修复上述内容中的 LaTeX 语法。" },
+                ],
+                max_tokens: maxTokens,
+            }), 8192, () => logger.warn('Output truncated by reasoning, retrying with larger max_tokens'));
+
+            const text = response.choices[0]?.message?.content || '';
+            logger.debug({ rawResponse: text }, 'LaTeX fix AI raw response');
+
+            if (!text) throw new Error("Empty response from AI");
+            return parseLatexFix(text, input);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during LaTeX fix');
             this.handleError(error);
             throw error;
         }

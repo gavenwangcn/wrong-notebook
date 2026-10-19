@@ -55,3 +55,42 @@ describe('generateSvgAnimationPrompt', () => {
         expect(generateSvgAnimationPrompt('求面积', '6', '解析')).not.toContain('题目配图');
     });
 });
+
+import { buildSvgAnimationDocument, getSvgAnimationDuration, getSvgAspectRatio, parseClockValue } from '@/lib/svg-animation';
+
+describe('SVG 动画时长与画面', () => {
+    it('解析 SMIL 时钟值', () => {
+        expect(parseClockValue('2s')).toBe(2);
+        expect(parseClockValue('500ms')).toBe(0.5);
+        expect(parseClockValue('1.5')).toBe(1.5);
+        expect(parseClockValue('1min')).toBe(60);
+        expect(parseClockValue('0:05')).toBe(5);
+        expect(parseClockValue('a.end')).toBeNull();
+        expect(parseClockValue(null)).toBeNull();
+    });
+
+    it('总时长取 begin + dur × repeatCount 的最大值，跳过无限循环和引用其他元素的动画', () => {
+        const svg = '<svg viewBox="0 0 800 500">'
+            + '<animate attributeName="x" dur="2s"/>'
+            + '<set attributeName="opacity" to="1" begin="10s"/>'
+            + "<animate attributeName='r' begin='4s;a.end' dur='3s' repeatCount='2'/>"
+            + '<animate attributeName="y" dur="1s" repeatCount="indefinite"/>'
+            + '<animate attributeName="z" begin="a.end" dur="100s"/>'
+            + '</svg>';
+        expect(getSvgAnimationDuration(svg)).toBe(10);
+        expect(getSvgAnimationDuration(animation)).toBe(3);
+        expect(getSvgAnimationDuration('<svg><rect/></svg>')).toBe(0);
+    });
+
+    it('宽高比取 viewBox，其次 width/height，缺省 8:5', () => {
+        expect(getSvgAspectRatio('<svg viewBox="0 0 800 400">')).toBe(2);
+        expect(getSvgAspectRatio('<svg width="300" height="300">')).toBe(1);
+        expect(getSvgAspectRatio('<svg>')).toBe(1.6);
+    });
+
+    it('iframe 文档禁止加载外部资源', () => {
+        const doc = buildSvgAnimationDocument(animation);
+        expect(doc).toContain("default-src 'none'");
+        expect(doc).toContain(animation);
+    });
+});

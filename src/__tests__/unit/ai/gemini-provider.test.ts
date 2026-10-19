@@ -298,3 +298,14 @@ describe('Gemini Provider SVG 动画讲解', () => {
         expect(await provider.generateSvgAnimation('求面积', '6', '解析')).toContain('<circle');
     });
 });
+
+describe('Gemini Provider 修复 LaTeX', () => {
+    const latexInput = { answerText: { text: '$\\frac{1}{2$', issues: ['Expected }'] } };
+
+    it('解析修复结果', async () => {
+        mockGenerateContent.mockResolvedValue({ text: '<answer_text>$\\frac{1}{2}$</answer_text>' });
+        const provider = new GeminiProvider({ apiKey: 'test-key' });
+
+        expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
+    });
+});

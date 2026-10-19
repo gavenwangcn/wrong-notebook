@@ -542,3 +542,14 @@ describe('Azure OpenAI Provider SVG 动画讲解', () => {
         expect(svg).not.toContain('<script');
     });
 });
+
+describe('Azure OpenAI Provider 修复 LaTeX', () => {
+    const latexInput = { answerText: { text: '$\\frac{1}{2$', issues: ['Expected }'] } };
+
+    it('解析修复结果', async () => {
+        mockAzureCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<answer_text>$\\frac{1}{2}$</answer_text>' } }] });
+        const provider = new AzureOpenAIProvider({ apiKey: 'test-key', endpoint: 'https://test.openai.azure.com', deploymentName: 'gpt-4o' });
+
+        expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
+    });
+});

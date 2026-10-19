@@ -1,7 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
+import { parseLatexFix } from './latex-fix';
+import type { LatexFixInput, LatexFixResult } from './latex-fix';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
@@ -303,6 +305,20 @@ export class AnthropicProvider implements AIService {
             return parseFigure(extractTag(text, "has_figure"), extractTag(text, "figure_svg"));
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async fixLatex(input: LatexFixInput): Promise<LatexFixResult> {
+        logger.info({ provider: 'Anthropic', model: this.model, fields: Object.keys(input) }, 'LaTeX Fix Request');
+
+        try {
+            const text = await this.complete(generateLatexFixPrompt(input), "请修复上述内容中的 LaTeX 语法。", 8192);
+            logger.debug({ rawResponse: text }, 'LaTeX fix AI raw response');
+            return parseLatexFix(text, input);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during LaTeX fix');
             this.handleError(error);
             throw error;
         }

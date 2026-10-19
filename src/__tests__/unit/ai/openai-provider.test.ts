@@ -399,3 +399,15 @@ describe('OpenAI Provider SVG 动画讲解', () => {
         expect(await provider.generateSvgAnimation('题目', '', '')).toBeNull();
     });
 });
+
+describe('OpenAI Provider 修复 LaTeX', () => {
+    const latexInput = { answerText: { text: '$\\frac{1}{2$', issues: ['Expected }'] } };
+
+    it('发送原文和问题，解析修复结果', async () => {
+        mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<answer_text>$\\frac{1}{2}$</answer_text>' } }] });
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+
+        expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
+        expect(mockCompletionCreate.mock.calls.at(-1)?.[0].messages[0].content).toContain('Expected }');
+    });
+});

@@ -23,6 +23,8 @@ export interface ReanswerQuestionResult {
 }
 
 export type { FigureResult } from './schema';
+export type { LatexFixInput, LatexFixResult } from './latex-fix';
+import type { LatexFixInput, LatexFixResult } from './latex-fix';
 import type { FigureResult } from './schema';
 
 export interface GeogebraAnalysisResult {
@@ -80,6 +82,8 @@ export interface AIService {
     generateFigureSvg(imageBase64: string, mimeType: string, questionText?: string | null): Promise<FigureResult>;
     reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
+    /** 只修复各字段中的 LaTeX 语法，返回 AI 修复后的字段内容 */
+    fixLatex(input: LatexFixInput): Promise<LatexFixResult>;
     /** 生成 SVG 动画讲解（已净化），无有效 SVG 时返回 null；figureSvg 为题目配图 */
     generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
