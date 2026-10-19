@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
+import { useState, useRef } from "react";
+import ReactCrop from "react-image-crop";
+import type { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,29 +20,8 @@ interface ImageCropperProps {
     onMultiCropComplete?: (croppedImageBlobs: Blob[]) => void;
 }
 
-// Helper to center the crop initially
-function centerAspectCrop(
-    mediaWidth: number,
-    mediaHeight: number,
-    aspect: number,
-) {
-    return centerCrop(
-        makeAspectCrop(
-            {
-                unit: '%',
-                width: 90,
-            },
-            aspect,
-            mediaWidth,
-            mediaHeight,
-        ),
-        mediaWidth,
-        mediaHeight,
-    )
-}
-
 export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiCropComplete }: ImageCropperProps) {
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     const [crop, setCrop] = useState<Crop>();
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const imgRef = useRef<HTMLImageElement>(null);
@@ -64,20 +44,9 @@ export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiC
 
     function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
         const { width, height } = e.currentTarget;
-        // Start with a centered crop covering most of the image
-        // Since we want free aspect, we just make a box
-        const initialCrop = centerCrop(
-            {
-                unit: '%',
-                width: 80,
-                height: 50,
-                x: 10,
-                y: 25
-            },
-            width,
-            height
-        );
-        setCrop(initialCrop);
+        // 默认框选整张图片；同时设置像素裁剪结果，不拖动直接确认即为整图
+        setCrop({ unit: '%', x: 0, y: 0, width: 100, height: 100 });
+        setCompletedCrop({ unit: 'px', x: 0, y: 0, width, height });
     }
 
     const getCroppedImg = async (
