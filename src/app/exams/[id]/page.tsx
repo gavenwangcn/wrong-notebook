@@ -9,6 +9,7 @@ import { ClipboardCheck, Loader2, Printer, RotateCcw, Save, Trash2 } from "lucid
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BackButton } from "@/components/ui/back-button";
+import { PageLoading } from "@/components/ui/page-loading";
 import { ExamQuestionCard } from "@/components/exam/exam-question-card";
 import { ExamStatusBadge } from "@/components/exam/exam-status-badge";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -54,7 +55,7 @@ export default function ExamDetailPage() {
     }, [paper, load]);
 
     if (notFound) return <div className="p-8 text-center">{t.exam.notFound}</div>;
-    if (!paper) return <div className="p-8 text-center">{t.common.loading}</div>;
+    if (!paper) return <PageLoading label={t.common.loading} />;
 
     const readyCount = paper.questions.filter((question) => question.status === "ready").length;
     const hasFailed = paper.questions.some((question) => question.status === "failed");
@@ -112,12 +113,12 @@ export default function ExamDetailPage() {
     };
 
     return (
-        <main className="min-h-screen p-4 md:p-8 bg-background">
-            <div className="max-w-4xl mx-auto space-y-6 pb-24">
-                <div className="flex items-start gap-4">
-                    <BackButton fallbackUrl="/exams" />
+        <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 md:px-8 md:py-8">
+            <div className="space-y-6 pb-24">
+                <div className="flex items-start gap-3">
+                    <BackButton fallbackUrl="/exams" className="-ml-2 shrink-0" />
                     <div className="flex-1 min-w-0 space-y-2">
-                        <h1 className="text-xl sm:text-2xl font-bold break-words">{paper.title}</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{paper.title}</h1>
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                             <ExamStatusBadge status={paper.status} />
                             <span>{t.exam.progress.replace("{ready}", String(readyCount)).replace("{total}", String(paper.questions.length))}</span>
@@ -181,7 +182,7 @@ export default function ExamDetailPage() {
                 </div>
 
                 {draft && (
-                    <div className="fixed inset-x-0 bottom-0 z-20 border-t bg-background/95 p-3 backdrop-blur">
+                    <div className="fixed inset-x-0 bottom-16 z-30 border-t bg-background/95 p-3 backdrop-blur md:bottom-0">
                         <div className="max-w-4xl mx-auto flex items-center justify-end gap-2">
                             {selectedCount === 0 && <span className="mr-auto text-xs text-muted-foreground">{t.exam.noResultSelected}</span>}
                             <Button variant="outline" onClick={() => setDraft(null)} disabled={saving}>{t.exam.cancel}</Button>

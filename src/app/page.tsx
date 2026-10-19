@@ -16,6 +16,7 @@ import { Camera, PenLine, Sparkles } from "lucide-react";
 
 import { PageLoading } from "@/components/ui/page-loading";
 import { ProgressFeedback } from "@/components/ui/progress-feedback";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { TextInputZone } from "@/components/text-input-zone";
@@ -450,9 +451,9 @@ function HomeContent() {
     const targetNotebookName = targetNotebookId ? notebooks.find(n => n.id === targetNotebookId)?.name : undefined;
     const totalItems = notebooks.reduce((sum, n) => sum + (n._count?.errorItems || 0), 0);
     const inputModes = [
-        { key: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
-        { key: "text" as const, icon: Sparkles, label: t.app?.manualInput || "AI解题" },
-        { key: "direct" as const, icon: PenLine, label: t.app?.directInput || "直接录入" },
+        { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
+        { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "AI解题" },
+        { value: "direct" as const, icon: PenLine, label: t.app?.directInput || "直接录入" },
     ];
 
     return (
@@ -469,25 +470,7 @@ function HomeContent() {
                         />
 
                         <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1" role="tablist">
-                                {inputModes.map(({ key, icon: Icon, label }) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        role="tab"
-                                        aria-selected={inputMode === key}
-                                        className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-sm font-medium transition-all ${
-                                            inputMode === key
-                                                ? "bg-card text-primary shadow-sm"
-                                                : "text-muted-foreground hover:text-foreground"
-                                        }`}
-                                        onClick={() => setInputMode(key)}
-                                    >
-                                        <Icon className="h-4 w-4 shrink-0" />
-                                        <span className="truncate">{label}</span>
-                                    </button>
-                                ))}
-                            </div>
+                            <SegmentedControl options={inputModes} value={inputMode} onChange={setInputMode} />
 
                             {lastImported && (
                                 <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />

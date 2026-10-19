@@ -318,7 +318,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                             size="sm"
                             onClick={handleReanswer}
                             disabled={isReanswering || !data.questionText.trim()}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium"
+                            className="w-full bg-gradient-to-r from-indigo-600 to-violet-500 hover:from-indigo-700 hover:to-violet-600 text-white font-medium"
                         >
                             {isReanswering ? (
                                 <>

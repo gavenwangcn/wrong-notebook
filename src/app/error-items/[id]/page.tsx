@@ -3,9 +3,11 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageLoading } from "@/components/ui/page-loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, XCircle, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, Eye, EyeOff, ImageIcon } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, Eye, EyeOff, ImageIcon, FileQuestion } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -505,8 +507,8 @@ export default function ErrorDetailPage() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    if (loading) return <div className="p-8 text-center">{t.common.loading}</div>;
-    if (!item) return <div className="p-8 text-center">{t.detail.notFound || "Item not found"}</div>;
+    if (loading) return <PageLoading label={t.common.loading} />;
+    if (!item) return <EmptyState icon={FileQuestion} title={t.detail.notFound || "Item not found"} className="m-4 md:m-8" />;
 
     // 优先从 tags 关联获取，回退到 knowledgePoints
     let tags: string[] = [];
@@ -522,16 +524,16 @@ export default function ErrorDetailPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background">
-            <div className="container mx-auto p-4 space-y-6 pb-20">
+        <main className="min-h-screen">
+            <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Link href={item.subjectId ? `/notebooks/${item.subjectId}` : "/notebooks"}>
-                            <Button variant="ghost" size="icon">
-                                <ArrowLeft className="w-4 h-4" />
+                            <Button variant="ghost" size="icon" className="-ml-2">
+                                <ArrowLeft className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <h1 className="text-2xl font-bold">{t.detail.title}</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t.detail.title}</h1>
                         <ShortIdBadge shortId={item.shortId} />
                         <DifficultyStars size="md" value={item.difficultyStars} onChange={handleDifficultyChange} disabled={savingDifficulty} />
                     </div>
@@ -547,7 +549,7 @@ export default function ErrorDetailPage() {
                         <Button
                             size="sm"
                             variant={item.masteryLevel > 0 ? "default" : "default"}
-                            className={item.masteryLevel > 0 ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+                            className={item.masteryLevel > 0 ? "bg-success text-white hover:bg-success/90" : ""}
                             onClick={toggleMastery}
                         >
                             {item.masteryLevel > 0 ? (

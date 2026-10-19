@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth-shell";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
@@ -86,17 +87,17 @@ export default function RegisterPage() {
     // 加载中状态
     if (allowRegistration === null) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+            <AuthShell>
+                <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+            </AuthShell>
         );
     }
 
     // 注册已禁用
     if (allowRegistration === false) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <Card className="w-full max-w-md">
+            <AuthShell>
+                <Card className="w-full rounded-2xl border-0 shadow-xl shadow-indigo-500/5 ring-1 ring-border">
                     <CardHeader>
                         <CardTitle className="text-2xl text-center">
                             {t.auth?.register?.disabled || 'Registration Disabled'}
@@ -116,13 +117,13 @@ export default function RegisterPage() {
                         </div>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthShell>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <Card className="w-full max-w-md">
+        <AuthShell>
+            <Card className="w-full rounded-2xl border-0 shadow-xl shadow-indigo-500/5 ring-1 ring-border">
                 <CardHeader>
                     <CardTitle className="text-2xl text-center">
                         {t.auth?.register?.title || 'Create an Account'}
@@ -254,9 +255,9 @@ export default function RegisterPage() {
                             />
                         </div>
                         {error && (
-                            <div className="text-red-500 text-sm text-center">{error}</div>
+                            <div className="rounded-lg bg-destructive/10 px-3 py-2 text-center text-sm text-destructive">{error}</div>
                         )}
-                        <Button type="submit" className="w-full" disabled={loading}>
+                        <Button type="submit" size="lg" className="w-full" disabled={loading}>
                             {loading
                                 ? (t.auth?.register?.registering || 'Registering...')
                                 : (t.auth?.register?.action || 'Register')}
@@ -270,6 +271,6 @@ export default function RegisterPage() {
                     </form>
                 </CardContent>
             </Card>
-        </div>
+        </AuthShell>
     );
 }

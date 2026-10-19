@@ -5,39 +5,22 @@ import { usePageTitle } from "@/lib/page-title";
 import { WrongAnswerStats } from "@/components/wrong-answer-stats";
 import { PracticeStats } from "@/components/practice-stats";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/ui/back-button";
-import { BarChart3, TrendingUp, Activity, House } from "lucide-react";
-import Link from "next/link";
+import { PageHeader } from "@/components/ui/page-header";
+import { TrendingUp, Activity } from "lucide-react";
 
 export default function StatsPage() {
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     usePageTitle(t.stats.headerTitle);
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <div className="flex items-center gap-4 mb-6">
-                <BackButton fallbackUrl="/" />
-                <div>
-                    <h1 className="text-3xl font-bold flex items-center gap-2">
-                        <BarChart3 className="h-8 w-8" />
-                        {t.stats?.headerTitle || "Statistics Center"}
-                    </h1>
-                    <p className="text-muted-foreground mt-1">
-                        {t.stats?.headerDesc || "View your learning progress and data analysis"}
-                    </p>
-                </div>
-                <div className="ml-auto flex items-center">
-                    <Link href="/">
-                        <Button variant="ghost" size="icon">
-                            <House className="h-5 w-5" />
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+            <PageHeader
+                title={t.stats?.headerTitle || "Statistics Center"}
+                description={t.stats?.headerDesc || "View your learning progress and data analysis"}
+            />
 
             <Tabs defaultValue="wrong" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-6 sm:w-auto sm:inline-grid">
                     <TabsTrigger value="wrong" className="flex items-center gap-2">
                         <Activity className="h-4 w-4" />
                         {t.wrongAnswerStats?.title || "Wrong Answer Stats"}
@@ -55,6 +38,6 @@ export default function StatsPage() {
                     <PracticeStats />
                 </TabsContent>
             </Tabs>
-        </div>
+        </main>
     );
 }

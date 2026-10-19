@@ -2,10 +2,9 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, RefreshCw, CheckCircle, Eye, Send, XCircle, ArrowLeft, House } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle, Eye, Send, XCircle, ArrowLeft } from "lucide-react";
 import { ParsedQuestion } from "@/lib/ai/types";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
@@ -151,11 +150,6 @@ function PracticeContent() {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     {t.common?.back || "返回"}
                 </Button>
-                <Link href="/">
-                    <Button variant="ghost" size="icon">
-                        <House className="h-5 w-5" />
-                    </Button>
-                </Link>
             </div>
             <div className="text-center space-y-4">
                 <h1 className="text-3xl font-bold">{t.practice.title}</h1>
@@ -164,7 +158,7 @@ function PracticeContent() {
                 </p>
 
                 {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <div className="relative rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-destructive" role="alert">
                         <strong className="font-bold">{t.common?.error || "Error"}: </strong>
                         <span className="block whitespace-pre-wrap"> {error}</span>
                     </div>
@@ -384,7 +378,7 @@ function PracticeContent() {
 
 export default function PracticePage() {
     return (
-        <main className="min-h-screen p-8 bg-background">
+        <main className="min-h-screen px-4 py-6 md:px-8 md:py-8">
             <Suspense fallback={
                 <div className="flex justify-center p-8">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

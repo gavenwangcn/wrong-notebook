@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/ui/back-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageLoading } from "@/components/ui/page-loading";
 import { ShortIdLocator } from "@/components/short-id-locator";
-import { Plus, House } from "lucide-react";
-import Link from "next/link";
+import { BookOpen, Plus } from "lucide-react";
 import { NotebookCard } from "@/components/notebook-card";
 import { CreateNotebookDialog, type CreateNotebookInput } from "@/components/create-notebook-dialog";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
@@ -17,8 +18,6 @@ import { apiClient } from "@/lib/api-client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { toast, confirmDialog } from "@/lib/feedback";
-
-// ... imports
 
 export default function NotebooksPage() {
     const router = useRouter();
@@ -84,54 +83,38 @@ export default function NotebooksPage() {
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-muted-foreground">{t.common.loading}</p>
-            </div>
-        );
+        return <PageLoading label={t.common.loading} />;
     }
 
     return (
-        <main className="min-h-screen p-4 md:p-8 bg-background">
-            <div className="max-w-6xl mx-auto space-y-8">
-                <div className="flex items-start gap-4">
-                    <BackButton fallbackUrl="/" />
-                    <div className="flex-1 space-y-1">
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{t.notebooks?.title || "My Notebooks"}</h1>
-                        <p className="text-muted-foreground text-sm sm:text-base">
-                            {t.notebooks?.subtitle || "Manage your mistakes by subject"}
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <Button onClick={() => setDialogOpen(true)} size="sm" className="hidden sm:flex">
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t.notebooks?.create || "New Notebook"}
-                        </Button>
-                        <Button onClick={() => setDialogOpen(true)} size="icon" className="sm:hidden">
+        <main className="mx-auto min-h-screen max-w-6xl px-4 py-6 md:px-8 md:py-8">
+            <div className="space-y-6">
+                <PageHeader
+                    title={t.notebooks?.title || "My Notebooks"}
+                    description={t.notebooks?.subtitle || "Manage your mistakes by subject"}
+                    actions={
+                        <Button onClick={() => setDialogOpen(true)} aria-label={t.notebooks?.create || "New Notebook"}>
                             <Plus className="h-4 w-4" />
+                            <span className="hidden sm:inline">{t.notebooks?.create || "New Notebook"}</span>
                         </Button>
-                        <Link href="/">
-                            <Button variant="ghost" size="icon">
-                                <House className="h-5 w-5" />
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
+                    }
+                />
 
                 <ShortIdLocator />
 
                 {notebooks.length === 0 ? (
-                    <div className="text-center py-12 border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground mb-4">
-                            {t.notebooks?.empty || "No notebooks yet."}
-                        </p>
-                        <Button onClick={() => setDialogOpen(true)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            {t.notebooks?.createFirst || "Create Notebook"}
-                        </Button>
-                    </div>
+                    <EmptyState
+                        icon={BookOpen}
+                        title={t.notebooks?.empty || "No notebooks yet."}
+                        action={
+                            <Button onClick={() => setDialogOpen(true)}>
+                                <Plus className="h-4 w-4" />
+                                {t.notebooks?.createFirst || "Create Notebook"}
+                            </Button>
+                        }
+                    />
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {notebooks.map((notebook) => (
                             <NotebookCard
                                 key={notebook.id}
@@ -162,7 +145,7 @@ export default function NotebooksPage() {
                     currentName={renameTarget?.name || ""}
                     onRename={handleRename}
                 />
-            </div >
-        </main >
+            </div>
+        </main>
     );
 }

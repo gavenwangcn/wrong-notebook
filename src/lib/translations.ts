@@ -185,6 +185,8 @@ export const translations = {
             placeholder: "Supports Markdown and LaTeX...",
         },
         notebook: {
+            emptyList: "No mistakes found",
+            emptyListHint: "Try other filters, or add a new mistake to this notebook.",
             title: "My Notebook",
             subtitle: "Review and master your past mistakes.",
             addNew: "Add New Wrong Answer",
@@ -1188,6 +1190,8 @@ export const translations = {
             placeholder: "支持 Markdown 和 LaTeX...",
         },
         notebook: {
+            emptyList: "暂无错题",
+            emptyListHint: "换个筛选条件试试，或者往错题本里录入新的错题。",
             title: "我的错题本",
             subtitle: "温故知新，查漏补缺。",
             addNew: "添加错题",

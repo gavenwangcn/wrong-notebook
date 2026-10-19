@@ -258,26 +258,26 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
         <div className="space-y-4">
             <Card
                 {...getRootProps()}
-                className={`border-2 border-dashed cursor-pointer transition-colors hover:border-primary/50 ${isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                className={`group cursor-pointer rounded-2xl border-2 border-dashed shadow-none transition-all hover:border-primary/60 hover:bg-accent/40 ${isDragActive ? "border-primary bg-accent/60" : "border-border bg-card"
                     }`}
             >
-                <CardContent className="flex flex-col items-center justify-center py-12 space-y-4 text-center min-h-[300px]">
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-center space-y-4 py-10 text-center md:min-h-[300px]">
                     <input {...getInputProps()} />
-                    <div className="p-4 bg-muted rounded-full">
+                    <div className="rounded-2xl bg-accent p-4 text-primary transition-transform group-hover:scale-105">
                         {isAnalyzing ? (
-                            <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                            <Loader2 className="h-10 w-10 animate-spin" />
                         ) : (
-                            <UploadCloud className="h-10 w-10 text-muted-foreground" />
+                            <UploadCloud className="h-10 w-10" />
                         )}
                     </div>
                     <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">
+                        <h3 className="text-lg font-semibold">
                             {isAnalyzing ? t.app.analyzing : t.upload.analyze}
                         </h3>
                         <p className="text-sm text-muted-foreground">
                             {isAnalyzing ? t.app.analyzing : t.app.dragDrop}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="mt-2 text-xs text-muted-foreground">
                             {t.upload.support}
                         </p>
                     </div>

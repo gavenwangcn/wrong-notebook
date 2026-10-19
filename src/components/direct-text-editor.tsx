@@ -135,7 +135,7 @@ export function DirectTextEditor({ onSubmit, defaultNotebookId, defaultNotebookN
     ];
 
     return (
-        <Card className="border-dashed border-2 hover:border-primary/30 transition-colors">
+        <Card className="rounded-2xl">
             <CardContent className="p-6 space-y-5">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export function DirectTextEditor({ onSubmit, defaultNotebookId, defaultNotebookN
                     <Button
                         onClick={handleSubmit}
                         disabled={!questionText.trim() || !subjectId || isSaving}
-                        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium"
+                        className="w-full bg-gradient-to-r from-indigo-600 to-violet-500 hover:from-indigo-700 hover:to-violet-600 text-white font-medium"
                         size="lg"
                     >
                         {isSaving ? (

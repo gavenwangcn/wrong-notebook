@@ -34,7 +34,7 @@ export function TextInputZone({ onSubmit, isAnalyzing, defaultNotebookName }: Te
     };
 
     return (
-        <Card className="border-dashed border-2 hover:border-primary/30 transition-colors">
+        <Card className="rounded-2xl">
             <CardContent className="p-6 space-y-4">
                 <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <PenLine className="h-5 w-5" />
@@ -70,7 +70,7 @@ export function TextInputZone({ onSubmit, isAnalyzing, defaultNotebookName }: Te
                 <Button
                     onClick={handleSubmit}
                     disabled={!questionText.trim() || isAnalyzing}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-violet-500 font-medium text-white hover:from-indigo-700 hover:to-violet-600"
                     size="lg"
                 >
                     {isAnalyzing ? (

@@ -6,10 +6,9 @@ import { usePageTitle } from "@/lib/page-title";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Link from "next/link";
-import { TrendingUp, Plus, Trash2, ChevronDown, ChevronRight, House, Loader2 } from "lucide-react";
+import { TrendingUp, Plus, Trash2, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BackButton } from "@/components/ui/back-button";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
@@ -456,23 +455,11 @@ export default function TagsPage() {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
-            <div className="flex items-center gap-4 mb-6">
-                <BackButton fallbackUrl="/" />
-                <div>
-                    <h1 className="text-3xl font-bold">{t.tags?.title || "Tag Management"}</h1>
-                    <p className="text-muted-foreground mt-1">
-                        {t.tags?.subtitle || "View and manage knowledge point tags"}
-                    </p>
-                </div>
-                <div className="ml-auto flex items-center">
-                    <Link href="/">
-                        <Button variant="ghost" size="icon">
-                            <House className="h-5 w-5" />
-                        </Button>
-                    </Link>
-                </div>
-            </div>
+        <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+            <PageHeader
+                title={t.tags?.title || "Tag Management"}
+                description={t.tags?.subtitle || "View and manage knowledge point tags"}
+            />
 
             <Tabs defaultValue="standard" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-6">
@@ -485,6 +472,6 @@ export default function TagsPage() {
                 <TabsContent value="custom">{renderCustomTags()}</TabsContent>
                 <TabsContent value="stats">{renderStats()}</TabsContent>
             </Tabs>
-        </div>
+        </main>
     );
 }

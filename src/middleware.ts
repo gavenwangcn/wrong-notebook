@@ -67,7 +67,8 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
+         * - icons/、manifest.webmanifest（PWA 图标与清单，登录页也要能加载）
          */
-        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest).*)",
     ],
 };

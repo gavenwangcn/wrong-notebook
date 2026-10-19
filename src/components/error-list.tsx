@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, GitCompareArrows } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, GitCompareArrows, Inbox } from "lucide-react";
 import Link from "next/link";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
@@ -47,7 +48,7 @@ type KnowledgeFilterChange = {
 export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
     const { timeZone } = useTimeZone();
     const [items, setItems] = useState<ErrorItem[]>([]);
-    const [, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [masteryFilter, setMasteryFilter] = useState<"all" | "mastered" | "unmastered">("all");
     const [timeFilter, setTimeFilter] = useState<"all" | "week" | "month">("all");
@@ -237,13 +238,13 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
 
     return (
         <div className={`space-y-6 ${isSelectMode ? "pb-40 sm:pb-24" : ""}`}>
-            <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative w-full sm:flex-1">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col gap-3 lg:flex-row">
+                <div className="relative w-full lg:flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder={t.notebook.search}
                         title={t.shortId.searchHint}
-                        className="pl-9"
+                        className="h-10 rounded-xl bg-card pl-9"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         onKeyDown={async (e) => {
@@ -255,9 +256,10 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                         }}
                     />
                 </div>
+                <div className="flex flex-wrap gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
+                        <Button variant="outline" size="sm" className="h-10">
                             <Filter className="mr-2 h-4 w-4" />
                             {t.notebook.filter}
                             <ChevronDown className="ml-2 h-4 w-4" />
@@ -289,23 +291,26 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" onClick={handleExportPrint}>
+                <Button variant="outline" size="sm" className="h-10" onClick={handleExportPrint}>
                     <Printer className="mr-2 h-4 w-4" />
                     {t.notebook?.exportPrint || "导出打印"}
                 </Button>
                 {!isSelectMode && (
-                    <Button variant="outline" onClick={toggleSelectMode}>
+                    <Button variant="outline" size="sm" className="h-10" onClick={toggleSelectMode}>
                         <GitCompareArrows className="mr-2 h-4 w-4" />
                         {t.questionSimilarity.title}
                     </Button>
                 )}
                 <Button
                     variant={isSelectMode ? "secondary" : "outline"}
+                    size="sm"
+                    className="h-10"
                     onClick={toggleSelectMode}
                 >
                     <ListChecks className="mr-2 h-4 w-4" />
                     {isSelectMode ? (t.notebook?.cancelSelect || "取消") : (t.notebook?.selectMode || "多选")}
                 </Button>
+                </div>
             </div>
 
             {/* Advanced Filters Row */}
@@ -320,29 +325,33 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button
-                        variant={paperLevelFilter === "all" ? "secondary" : "outline"}
+                        variant={paperLevelFilter === "all" ? "default" : "outline"}
                         size="sm"
+                        className="rounded-full"
                         onClick={() => setPaperLevelFilter("all")}
                     >
                         {t.filter.all || "All"}
                     </Button>
                     <Button
-                        variant={paperLevelFilter === "a" ? "secondary" : "outline"}
+                        variant={paperLevelFilter === "a" ? "default" : "outline"}
                         size="sm"
+                        className="rounded-full"
                         onClick={() => setPaperLevelFilter("a")}
                     >
                         {t.editor.paperLevels?.a || "Paper A"}
                     </Button>
                     <Button
-                        variant={paperLevelFilter === "b" ? "secondary" : "outline"}
+                        variant={paperLevelFilter === "b" ? "default" : "outline"}
                         size="sm"
+                        className="rounded-full"
                         onClick={() => setPaperLevelFilter("b")}
                     >
                         {t.editor.paperLevels?.b || "Paper B"}
                     </Button>
                     <Button
-                        variant={paperLevelFilter === "other" ? "secondary" : "outline"}
+                        variant={paperLevelFilter === "other" ? "default" : "outline"}
                         size="sm"
+                        className="rounded-full"
                         onClick={() => setPaperLevelFilter("other")}
                     >
                         {t.editor.paperLevels?.other || "Other"}
@@ -362,7 +371,19 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                 </div>
             )}
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {!loading && filteredItems.length === 0 && (
+                <EmptyState icon={Inbox} title={t.notebook.emptyList} description={t.notebook.emptyListHint} />
+            )}
+
+            {loading && filteredItems.length === 0 && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 6 }, (_, i) => (
+                        <div key={i} className="h-44 animate-pulse rounded-2xl bg-muted" />
+                    ))}
+                </div>
+            )}
+
+            <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 transition-opacity ${loading ? "opacity-60" : ""}`}>
                 {filteredItems.map((item) => {
                     // 优先使用 tags 关联，回退到 knowledgePoints
                     let tags: string[] = [];
@@ -376,7 +397,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                         }
                     }
                     return (
-                        <div key={item.id} className="relative">
+                        <div key={item.id} className="relative animate-in fade-in duration-300">
                             {/* 选择模式下的复选框 */}
                             {isSelectMode && (
                                 <div
@@ -391,12 +412,12 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                 </div>
                             )}
                             <Link href={isSelectMode ? "#" : `/error-items/${item.id}`} onClick={(e) => isSelectMode && e.preventDefault()}>
-                                <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer gap-2 pt-4">
+                                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${item.masteryLevel > 0 ? "border-l-success/70" : "border-l-warning/70"} ${isSelectMode && selectedIds.has(item.id) ? "ring-2 ring-primary" : "hover:border-primary/40"}`}>
                                     <CardHeader className="pb-0">
-                                        <div className="flex justify-between items-start">
+                                        <div className={`flex justify-between items-start ${isSelectMode ? "pl-7" : ""}`}>
                                             <Badge
-                                                variant={item.masteryLevel > 0 ? "default" : "secondary"}
-                                                className={item.masteryLevel > 0 ? "bg-green-600 hover:bg-green-700" : ""}
+                                                variant="secondary"
+                                                className={item.masteryLevel > 0 ? "bg-success/15 text-success" : "bg-warning/15 text-amber-700 dark:text-warning"}
                                             >
                                                 {item.masteryLevel > 0 ? (
                                                     <span className="flex items-center gap-1">

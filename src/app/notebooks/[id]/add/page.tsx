@@ -2,19 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { UploadZone } from "@/components/upload-zone";
 import { CorrectionEditor } from "@/components/correction-editor";
 import { ImageCropper } from "@/components/image-cropper";
 import { ParsedQuestion } from "@/lib/ai";
 import { apiClient } from "@/lib/api-client";
 import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { processImageFile } from "@/lib/image-utils";
-import { ArrowLeft, Upload, PenLine } from "lucide-react";
+import { Camera, Sparkles } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { ProgressFeedback } from "@/components/ui/progress-feedback";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import type { ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { TextInputZone } from "@/components/text-input-zone";
@@ -359,48 +359,27 @@ export default function AddErrorPage() {
     }
 
     return (
-        <main className="min-h-screen bg-background">
+        <main className="min-h-screen">
             <ProgressFeedback status={analysisStep} />
 
-            <div className="container mx-auto p-4 space-y-8 pb-20">
-                {/* Header Section */}
-                <div className="flex items-center gap-4">
-                    <Link href={`/notebooks/${notebookId}`}>
-                        <Button variant="ghost" size="icon">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    </Link>
-                    <h1 className="text-2xl font-bold">{t.app.addError}</h1>
-                </div>
+            <div className={`mx-auto space-y-6 px-4 py-6 md:px-8 md:py-8 ${step === "review" ? "max-w-6xl" : "max-w-4xl"}`}>
+                <PageHeader
+                    backHref={`/notebooks/${notebookId}`}
+                    title={t.app.addError}
+                    description={notebook?.name}
+                />
 
                 {/* Main Content */}
                 {step === "upload" && (
                     <div className="space-y-4">
-                        {/* Input mode tabs */}
-                        <div className="flex gap-2 border-b">
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                                    inputMode === "image"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                }`}
-                                onClick={() => setInputMode("image")}
-                            >
-                                <Upload className="h-4 w-4" />
-                                {t.app?.uploadImage || "拍照上传"}
-                            </button>
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                                    inputMode === "text"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                }`}
-                                onClick={() => setInputMode("text")}
-                            >
-                                <PenLine className="h-4 w-4" />
-                                {t.app?.manualInput || "手动输入"}
-                            </button>
-                        </div>
+                        <SegmentedControl
+                            options={[
+                                { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
+                                { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "手动输入" },
+                            ]}
+                            value={inputMode}
+                            onChange={setInputMode}
+                        />
 
                         {lastImported && (
                             <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />

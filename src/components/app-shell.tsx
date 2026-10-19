@@ -55,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur-md supports-[backdrop-filter]:bg-card/70 print:hidden">
                 <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4 md:h-16 md:px-8">
                     <Link href="/" className="flex shrink-0 items-center gap-2">
-                        <Image src="/icons/icon.png" alt="" width={32} height={32} className="rounded-lg" priority />
+                        <Image src="/icons/icon.png" alt="" width={32} height={32} className="rounded-lg" priority unoptimized />
                         <span className="text-base font-semibold tracking-tight">{t.pageTitle.base}</span>
                     </Link>
 
