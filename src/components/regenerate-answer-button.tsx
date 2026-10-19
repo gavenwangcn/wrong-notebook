@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 /** 完整解答较长，等待上限与生成动画讲解一致 */
 const REANSWER_TIMEOUT_MS = 10 * 60 * 1000;
@@ -22,7 +23,7 @@ export function RegenerateAnswerButton({ errorItemId, onDone }: RegenerateAnswer
     const [running, setRunning] = useState(false);
 
     const handleClick = async () => {
-        if (!confirm(t.reanswerItem.confirm)) return;
+        if (!(await confirmDialog(t.reanswerItem.confirm))) return;
         setRunning(true);
         try {
             const updated = await apiClient.post<{ answerText: string | null; analysis: string | null }>(
@@ -33,7 +34,7 @@ export function RegenerateAnswerButton({ errorItemId, onDone }: RegenerateAnswer
             const code = (error as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
             frontendLogger.error('[RegenerateAnswer]', 'Failed to regenerate answer', { code });
-            alert(code === "NO_QUESTION_TEXT" ? t.reanswerItem.noQuestionText : typeof mapped === "string" ? mapped : t.reanswerItem.failed);
+            toast.error(code === "NO_QUESTION_TEXT" ? t.reanswerItem.noQuestionText : typeof mapped === "string" ? mapped : t.reanswerItem.failed);
         } finally {
             setRunning(false);
         }

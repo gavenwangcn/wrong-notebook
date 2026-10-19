@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateInputToISOString, DEFAULT_TIME_ZONE, formatDateTime, getDayRange, getMonthStart, isValidTimeZone, shiftCalendarDate } from '@/lib/date-time';
+import { answeredDateToISOString, dateInputToISOString, DEFAULT_TIME_ZONE, formatDateTime, getDayRange, getMonthStart, isValidTimeZone, shiftCalendarDate } from '@/lib/date-time';
 import { calculateGrade } from '@/lib/grade-calculator';
 
 describe('应用时区', () => {
@@ -38,6 +38,15 @@ describe('应用时区', () => {
         expect(dateInputToISOString('2026-10-19')).toBe('2026-10-19T04:00:00.000Z');
         expect(dateInputToISOString('2026-10-19', 'America/New_York')).toBe('2026-10-19T16:00:00.000Z');
         expect(formatDateTime(shiftCalendarDate(new Date('2026-03-07T17:00:00Z'), 'America/New_York', 1), 'HH:mm', 'America/New_York')).toBe('12:00');
+    });
+
+    it('作答日期为今天时记录当前时间，补录以前的日期按中午保存', () => {
+        const now = new Date('2026-10-19T03:27:00Z');
+        expect(answeredDateToISOString('2026-10-19', 'Asia/Shanghai', now)).toBe('2026-10-19T03:27:00.000Z');
+        expect(answeredDateToISOString('2026-10-18', 'Asia/Shanghai', now)).toBe('2026-10-18T04:00:00.000Z');
+        // 纽约此时仍是 10 月 18 日
+        expect(answeredDateToISOString('2026-10-18', 'America/New_York', now)).toBe('2026-10-19T03:27:00.000Z');
+        expect(answeredDateToISOString('2026-10-19', 'America/New_York', now)).toBe('2026-10-19T16:00:00.000Z');
     });
 
     it('九月开学边界按应用时区计算年级', () => {

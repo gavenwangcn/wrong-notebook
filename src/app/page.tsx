@@ -2,23 +2,19 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { UploadZone } from "@/components/upload-zone";
 import { CorrectionEditor } from "@/components/correction-editor";
 import { ImageCropper } from "@/components/image-cropper";
 import { ParsedQuestion } from "@/lib/ai";
-import { UserWelcome } from "@/components/user-welcome";
+import { HomeHero } from "@/components/home-hero";
 import { apiClient } from "@/lib/api-client";
 import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { processImageFile } from "@/lib/image-utils";
-import { Upload, BookOpen, Tags, LogOut, BarChart3, PenLine, FileText } from "lucide-react";
-import { SettingsDialog } from "@/components/settings-dialog";
-import { BroadcastNotification } from "@/components/broadcast-notification";
-import { signOut } from "next-auth/react";
+import { Camera, PenLine, Sparkles } from "lucide-react";
 
+import { PageLoading } from "@/components/ui/page-loading";
 import { ProgressFeedback } from "@/components/ui/progress-feedback";
 import type { ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
@@ -28,6 +24,7 @@ import { BatchImportPanel } from "@/components/batch-import-panel";
 import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
 import type { ImportedQuestion } from "@/lib/question-import";
 import { DirectTextEditor } from "@/components/direct-text-editor";
+import { toast } from "@/lib/feedback";
 
 function HomeContent() {
     const [step, setStep] = useState<"upload" | "review">("upload");
@@ -39,7 +36,7 @@ function HomeContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const initialNotebookId = searchParams.get("notebook");
-    const [notebooks, setNotebooks] = useState<{ id: string; name: string }[]>([]);
+    const [notebooks, setNotebooks] = useState<Notebook[]>([]);
     const [autoSelectedNotebookId, setAutoSelectedNotebookId] = useState<string | null>(null);
 
     const [config, setConfig] = useState<AppConfig | null>(null);
@@ -250,12 +247,12 @@ function HomeContent() {
                     }
                 }
 
-                alert(errorMessage);
+                toast.error(errorMessage);
             } catch (innerError) {
                 frontendLogger.error('[HomeError]', 'Failed to process error message', {
                     innerError: String(innerError)
                 });
-                alert('Analysis failed. Please try again.');
+                toast.error('Analysis failed. Please try again.');
             }
         } finally {
             // Always reset analysis state, even if setState throws
@@ -290,7 +287,7 @@ function HomeContent() {
             setStep("upload");
             setParsedData(null);
             setCurrentImage(null);
-            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
+            toast.success(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
 
             // Redirect to notebook page if subjectId is present
             if (result.duplicate) {
@@ -304,7 +301,7 @@ function HomeContent() {
                 errorMessage: error?.data?.message || error?.message || String(error),
                 errorData: error?.data,
             });
-            alert(t.common?.messages?.saveFailed || 'Failed to save');
+            toast.error(t.common?.messages?.saveFailed || 'Failed to save');
         }
     };
 
@@ -383,9 +380,9 @@ function HomeContent() {
                         errorMessage = backendErrorType;
                     }
                 }
-                alert(errorMessage);
+                toast.error(errorMessage);
             } catch {
-                alert('Analysis failed. Please try again.');
+                toast.error('Analysis failed. Please try again.');
             }
         } finally {
             setAnalysisStep('idle');
@@ -432,7 +429,7 @@ function HomeContent() {
 
             frontendLogger.info('[HomeDirectSave]', 'Save successful');
             setAnalysisStep('idle');
-            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
+            toast.success(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
 
             if (result.duplicate) {
                 router.push(`/error-items/${result.id}`);
@@ -445,180 +442,82 @@ function HomeContent() {
                 errorMessage: error?.data?.message || error?.message || String(error),
             });
             setAnalysisStep('idle');
-            alert(t.common?.messages?.saveFailed || 'Failed to save');
+            toast.error(t.common?.messages?.saveFailed || 'Failed to save');
         }
     };
 
+    const targetNotebookId = initialNotebookId || autoSelectedNotebookId;
+    const targetNotebookName = targetNotebookId ? notebooks.find(n => n.id === targetNotebookId)?.name : undefined;
+    const totalItems = notebooks.reduce((sum, n) => sum + (n._count?.errorItems || 0), 0);
+    const inputModes = [
+        { key: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
+        { key: "text" as const, icon: Sparkles, label: t.app?.manualInput || "AI解题" },
+        { key: "direct" as const, icon: PenLine, label: t.app?.directInput || "直接录入" },
+    ];
+
     return (
-        <main className="min-h-screen bg-background">
+        <main className="min-h-screen">
             <ProgressFeedback status={analysisStep} />
 
-            <div className="container mx-auto p-4 space-y-8 pb-20">
-                {/* Header Section */}
-                <div className="flex justify-between items-start gap-4">
-                    <UserWelcome />
-
-                    <div className="flex items-center gap-2 bg-card p-2 rounded-lg border shadow-sm shrink-0">
-                        <BroadcastNotification />
-                        <SettingsDialog />
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full text-muted-foreground hover:text-destructive"
-                            onClick={() => signOut({ callbackUrl: '/login' })}
-                            title={t.app?.logout || 'Logout'}
-                        >
-                            <LogOut className="h-5 w-5" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Action Center */}
-                <div className={initialNotebookId ? "flex justify-center mb-6" : "grid grid-cols-2 md:grid-cols-5 gap-4"}>
-                    <Button
-                        size="lg"
-                        className={`h-auto py-4 text-base shadow-sm hover:shadow-md transition-all ${initialNotebookId ? "w-full max-w-md" : ""}`}
-                        variant={step === "upload" ? "default" : "secondary"}
-                        onClick={() => { setStep("upload"); setInputMode("image"); }}
-                    >
-                        <div className="flex items-center gap-2">
-                            <Upload className="h-5 w-5" />
-                            <span>{t.app.uploadNew}</span>
-                        </div>
-                    </Button>
-
-                    {!initialNotebookId && (
-                        <>
-                            <Link href="/notebooks" className="w-full">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-full h-auto py-4 text-base shadow-sm hover:shadow-md transition-all border hover:border-primary/50 hover:bg-accent/50"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <BookOpen className="h-5 w-5" />
-                                        <span>{t.app.viewNotebook}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-
-                            <Link href="/tags" className="w-full">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-full h-auto py-4 text-base shadow-sm hover:shadow-md transition-all border hover:border-primary/50 hover:bg-accent/50"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Tags className="h-5 w-5" />
-                                        <span>{t.app?.tags || 'Tags'}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-
-                            <Link href="/stats" className="w-full">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-full h-auto py-4 text-base shadow-sm hover:shadow-md transition-all border hover:border-primary/50 hover:bg-accent/50"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <BarChart3 className="h-5 w-5" />
-                                        <span>{t.app?.stats || 'Stats'}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-
-                            <Link href="/exams" className="w-full col-span-2 md:col-span-1">
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className="w-full h-auto py-4 text-base shadow-sm hover:shadow-md transition-all border hover:border-primary/50 hover:bg-accent/50"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <FileText className="h-5 w-5" />
-                                        <span>{t.exam.nav}</span>
-                                    </div>
-                                </Button>
-                            </Link>
-                        </>
-                    )}
-                </div>
-
+            <div className={`mx-auto space-y-6 px-4 py-6 md:px-8 md:py-8 ${step === "review" ? "max-w-6xl" : "max-w-4xl"}`}>
                 {step === "upload" && (
-                    <div className="space-y-4">
-                        {/* Input mode tabs */}
-                        <div className="flex gap-2 border-b">
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                                    inputMode === "image"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                }`}
-                                onClick={() => setInputMode("image")}
-                            >
-                                <Upload className="h-4 w-4" />
-                                {t.app?.uploadImage || "拍照上传"}
-                            </button>
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                                    inputMode === "text"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                }`}
-                                onClick={() => setInputMode("text")}
-                            >
-                                <PenLine className="h-4 w-4" />
-                                {t.app?.manualInput || "AI解题"}
-                            </button>
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                                    inputMode === "direct"
-                                        ? "border-primary text-primary"
-                                        : "border-transparent text-muted-foreground hover:text-foreground"
-                                }`}
-                                onClick={() => setInputMode("direct")}
-                            >
-                                <PenLine className="h-4 w-4" />
-                                直接录入
-                            </button>
+                    <>
+                        <HomeHero
+                            notebookCount={notebooks.length}
+                            itemCount={totalItems}
+                            targetNotebook={initialNotebookId ? targetNotebookName : undefined}
+                        />
+
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1" role="tablist">
+                                {inputModes.map(({ key, icon: Icon, label }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={inputMode === key}
+                                        className={`flex items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-sm font-medium transition-all ${
+                                            inputMode === key
+                                                ? "bg-card text-primary shadow-sm"
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                        onClick={() => setInputMode(key)}
+                                    >
+                                        <Icon className="h-4 w-4 shrink-0" />
+                                        <span className="truncate">{label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {lastImported && (
+                                <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />
+                            )}
+
+                            {batchBlobs ? (
+                                <BatchImportPanel
+                                    blobs={batchBlobs}
+                                    subjectId={initialNotebookId}
+                                    timeout={aiTimeout}
+                                    onClose={() => setBatchBlobs(null)}
+                                />
+                            ) : inputMode === "image" ? (
+                                <UploadZone onImageSelect={onImageSelect} isAnalyzing={analysisStep !== 'idle'} />
+                            ) : inputMode === "text" ? (
+                                <TextInputZone
+                                    onSubmit={handleTextSubmit}
+                                    isAnalyzing={analysisStep !== 'idle'}
+                                    defaultNotebookName={targetNotebookName}
+                                />
+                            ) : (
+                                <DirectTextEditor
+                                    onSubmit={handleDirectSave}
+                                    defaultNotebookId={targetNotebookId || undefined}
+                                    defaultNotebookName={targetNotebookName}
+                                    isSaving={analysisStep === 'saving'}
+                                />
+                            )}
                         </div>
-
-                        {lastImported && (
-                            <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />
-                        )}
-
-                        {batchBlobs ? (
-                            <BatchImportPanel
-                                blobs={batchBlobs}
-                                subjectId={initialNotebookId}
-                                timeout={aiTimeout}
-                                onClose={() => setBatchBlobs(null)}
-                            />
-                        ) : inputMode === "image" ? (
-                            <UploadZone onImageSelect={onImageSelect} isAnalyzing={analysisStep !== 'idle'} />
-                        ) : inputMode === "text" ? (
-                            <TextInputZone
-                                onSubmit={handleTextSubmit}
-                                isAnalyzing={analysisStep !== 'idle'}
-                                defaultNotebookName={
-                                    (initialNotebookId || autoSelectedNotebookId)
-                                        ? notebooks.find(n => n.id === (initialNotebookId || autoSelectedNotebookId))?.name
-                                        : undefined
-                                }
-                            />
-                        ) : (
-                            <DirectTextEditor
-                                onSubmit={handleDirectSave}
-                                defaultNotebookId={initialNotebookId || autoSelectedNotebookId || undefined}
-                                defaultNotebookName={
-                                    (initialNotebookId || autoSelectedNotebookId)
-                                        ? notebooks.find(n => n.id === (initialNotebookId || autoSelectedNotebookId))?.name
-                                        : undefined
-                                }
-                                isSaving={analysisStep === 'saving'}
-                            />
-                        )}
-                    </div>
+                    </>
                 )}
 
                 {croppingImage && (
@@ -649,7 +548,7 @@ function HomeContent() {
 
 export default function Home() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<PageLoading />}>
             <HomeContent />
         </Suspense>
     );

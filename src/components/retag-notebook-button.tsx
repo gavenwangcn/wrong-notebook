@@ -5,6 +5,7 @@ import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
+import { confirmDialog } from "@/lib/feedback";
 
 interface RetagJobStatus {
     total: number;
@@ -50,7 +51,7 @@ export function RetagNotebookButton({ notebookId, onFinished }: RetagNotebookBut
     }, [job, fetchStatus]);
 
     const start = async () => {
-        if (!confirm(t.retag.notebookConfirm)) return;
+        if (!(await confirmDialog(t.retag.notebookConfirm))) return;
         setError(null);
         try {
             const status = await apiClient.post<RetagJobStatus>(`/api/notebooks/${notebookId}/retag`, {});

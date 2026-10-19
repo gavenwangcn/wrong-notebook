@@ -8,6 +8,7 @@ import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { countLatexIssues, findLatexIssuesByField } from "@/lib/latex-check";
 import type { LatexField } from "@/lib/latex-check";
+import { toast } from "@/lib/feedback";
 
 const FIX_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -40,7 +41,7 @@ export function FixLatexButton({ errorItemId, fields, onDone }: FixLatexButtonPr
             const result = await apiClient.post<FixLatexResponse>(`/api/error-items/${errorItemId}/fix-latex`, {}, { timeout: FIX_TIMEOUT_MS });
             onDone(result.updated);
             const fieldNames = result.fixedFields.map((field) => t.fixLatex.fields[field]).join("、");
-            alert(
+            toast.info(
                 result.issuesBefore === 0 ? t.fixLatex.noIssues
                     : result.fixedFields.length === 0 ? t.fixLatex.notFixed
                         : result.issuesAfter === 0 ? t.fixLatex.fixedAll.replace("{fields}", fieldNames)
@@ -50,7 +51,7 @@ export function FixLatexButton({ errorItemId, fields, onDone }: FixLatexButtonPr
             const code = (error as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
             frontendLogger.error('[FixLatex]', 'Failed to fix LaTeX', { code });
-            alert(typeof mapped === "string" ? mapped : t.fixLatex.failed);
+            toast.error(typeof mapped === "string" ? mapped : t.fixLatex.failed);
         } finally {
             setRunning(false);
         }

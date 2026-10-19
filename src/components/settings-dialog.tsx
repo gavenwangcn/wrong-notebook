@@ -40,6 +40,7 @@ import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
+import { toast, confirmDialog } from "@/lib/feedback";
 const MAX_OPENAI_INSTANCES = 10;
 
 // 生成唯一 ID
@@ -191,20 +192,20 @@ export function SettingsDialog() {
 
     const handleSaveSettings = async () => {
         if (!isValidTimeZone(config.timeZone ?? DEFAULT_TIME_ZONE)) {
-            alert(t.settings.general.invalidTimeZone);
+            toast.error(t.settings.general.invalidTimeZone);
             return;
         }
         // 验证 OpenAI 实例必填字段
         const openaiValidationError = validateOpenAIInstances();
         if (openaiValidationError) {
-            alert(openaiValidationError);
+            toast.error(openaiValidationError);
             return;
         }
 
         // 验证 Azure 必填字段
         const azureValidationError = validateAzureConfig();
         if (azureValidationError) {
-            alert(azureValidationError);
+            toast.error(azureValidationError);
             return;
         }
 
@@ -213,12 +214,12 @@ export function SettingsDialog() {
             const updated = await apiClient.post<AppConfig>("/api/settings", config);
             setConfig(updated);
             setTimeZone(updated.timeZone || DEFAULT_TIME_ZONE);
-            alert(t.settings?.messages?.saved || "Settings saved");
+            toast.success(t.settings?.messages?.saved || "Settings saved");
             // 保存成功后滚动到顶部，方便关闭对话框
             dialogContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Failed to save settings', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.messages?.saveFailed || "Failed to save");
+            toast.error(t.settings?.messages?.saveFailed || "Failed to save");
         } finally {
             setSaving(false);
         }
@@ -229,7 +230,7 @@ export function SettingsDialog() {
         try {
             // 验证密码一致性（如果用户输入了密码）
             if (profile.password && profile.password !== confirmPassword) {
-                alert(t.settings?.messages?.passwordMismatch || 'Passwords do not match');
+                toast.error(t.settings?.messages?.passwordMismatch || 'Passwords do not match');
                 setProfileSaving(false);
                 return;
             }
@@ -250,7 +251,7 @@ export function SettingsDialog() {
 
             await apiClient.patch("/api/user", payload);
 
-            alert(t.settings?.messages?.profileUpdated || "Profile updated");
+            toast.success(t.settings?.messages?.profileUpdated || "Profile updated");
             setProfile(prev => ({ ...prev, password: "" })); // Clear password field
             setConfirmPassword(""); // Clear confirm password field
             setShowPassword(false);
@@ -259,45 +260,45 @@ export function SettingsDialog() {
         } catch (error: any) {
             frontendLogger.error('[SettingsDialog]', 'Failed to update profile', { error: error?.data?.message || error?.message || String(error) });
             const message = error.data?.message || (t.settings?.messages?.updateFailed || "Update failed");
-            alert(message);
+            toast.error(message);
         } finally {
             setProfileSaving(false);
         }
     };
 
     const handleClearData = async () => {
-        if (!confirm(t.settings?.clearDataConfirm || "Are you sure?")) {
+        if (!(await confirmDialog(t.settings?.clearDataConfirm || "Are you sure?", { destructive: true }))) {
             return;
         }
 
         setClearingPractice(true);
         try {
             await apiClient.delete("/api/stats/practice/clear");
-            alert(t.settings?.clearSuccess || "Success");
+            toast.success(t.settings?.clearSuccess || "Success");
             setOpen(false);
             window.location.reload();
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Failed to clear practice data', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.clearError || "Failed");
+            toast.error(t.settings?.clearError || "Failed");
         } finally {
             setClearingPractice(false);
         }
     };
 
     const handleClearErrorData = async () => {
-        if (!confirm(t.settings?.clearErrorDataConfirm || "Are you sure?")) {
+        if (!(await confirmDialog(t.settings?.clearErrorDataConfirm || "Are you sure?", { destructive: true }))) {
             return;
         }
 
         setClearingError(true);
         try {
             await apiClient.delete("/api/error-items/clear");
-            alert(t.settings?.clearSuccess || "Success");
+            toast.success(t.settings?.clearSuccess || "Success");
             setOpen(false);
             window.location.reload();
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Failed to clear error data', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.clearError || "Failed");
+            toast.error(t.settings?.clearError || "Failed");
         } finally {
             setClearingError(false);
         }
@@ -305,26 +306,26 @@ export function SettingsDialog() {
 
     const handleSystemReset = async () => {
         // Double confirm
-        if (!confirm(t.settings?.systemResetConfirm || "WARNING: Deleting ALL data. Undoing is impossible. Are you sure?")) {
+        if (!(await confirmDialog(t.settings?.systemResetConfirm || "WARNING: Deleting ALL data. Undoing is impossible. Are you sure?", { destructive: true }))) {
             return;
         }
 
         // Optional triple confirm?
         const userInput = prompt(t.settings?.systemResetPrompt || "Type 'RESET' to confirm system initialization:", "");
         if (userInput !== 'RESET') {
-            if (userInput !== null) alert(t.common?.error || "Confirmation failed");
+            if (userInput !== null) toast.error(t.common?.error || "Confirmation failed");
             return;
         }
 
         setSystemResetting(true);
         try {
             await apiClient.post("/api/admin/system-reset", {});
-            alert(t.settings?.clearSuccess || "Success - System Reset Complete");
+            toast.success(t.settings?.clearSuccess || "Success - System Reset Complete");
             setOpen(false);
             window.location.reload();
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'System reset failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.clearError || "Failed to reset system");
+            toast.error(t.settings?.clearError || "Failed to reset system");
         } finally {
             setSystemResetting(false);
         }
@@ -349,17 +350,17 @@ export function SettingsDialog() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            alert(t.settings?.exportSuccess || "Export successful");
+            toast.success(t.settings?.exportSuccess || "Export successful");
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Export failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.exportFailed || "Export failed");
+            toast.error(t.settings?.exportFailed || "Export failed");
         } finally {
             setExporting(false);
         }
     };
 
     const handleExportAllData = async () => {
-        if (!confirm(t.settings?.exportAllConfirm || "Export all users' data? This may take a while.")) {
+        if (!(await confirmDialog(t.settings?.exportAllConfirm || "Export all users' data? This may take a while."))) {
             return;
         }
         setExporting(true);
@@ -380,10 +381,10 @@ export function SettingsDialog() {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            alert(t.settings?.exportSuccess || "Export successful");
+            toast.success(t.settings?.exportSuccess || "Export successful");
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Export all failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.exportFailed || "Export failed");
+            toast.error(t.settings?.exportFailed || "Export failed");
         } finally {
             setExporting(false);
         }
@@ -400,7 +401,7 @@ export function SettingsDialog() {
     const handleImportData = async () => {
         if (!selectedFile) return;
 
-        if (!confirm(t.settings?.importConfirm || "Are you sure you want to import?")) {
+        if (!(await confirmDialog(t.settings?.importConfirm || "Are you sure you want to import?"))) {
             return;
         }
 
@@ -412,7 +413,7 @@ export function SettingsDialog() {
             const response = await apiClient.post('/api/import', data);
             const stats = (response as any).stats;
 
-            alert(
+            toast.success(
                 (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records.")
                     .replace('{subjects}', String(stats.subjectsCreated))
                     .replace('{tags}', String(stats.tagsCreated))
@@ -427,7 +428,7 @@ export function SettingsDialog() {
             window.location.reload();
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Import failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.importFailed || "Import failed");
+            toast.error(t.settings?.importFailed || "Import failed");
         } finally {
             setImporting(false);
         }
@@ -436,7 +437,7 @@ export function SettingsDialog() {
     const handleImportAllData = async () => {
         if (!selectedFile) return;
 
-        if (!confirm(t.settings?.importAllConfirm || "Import all users' data? This will restore data for all users from the export file.")) {
+        if (!(await confirmDialog(t.settings?.importAllConfirm || "Import all users' data? This will restore data for all users from the export file."))) {
             return;
         }
 
@@ -452,7 +453,7 @@ export function SettingsDialog() {
             const result = await res.json();
             if (result.success) {
                 const s = result.stats;
-                alert(
+                toast.success(
                     (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records.")
                         .replace('{subjects}', String(s.subjectsCreated))
                         .replace('{tags}', String(s.tagsCreated))
@@ -469,25 +470,25 @@ export function SettingsDialog() {
             }
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Import all failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.importFailed || "Import failed");
+            toast.error(t.settings?.importFailed || "Import failed");
         } finally {
             setImporting(false);
         }
     };
 
     const handleMigrateTags = async () => {
-        if (!confirm(t.settings?.migrateTagsConfirm || "This will reset system tags. Confirm?")) {
+        if (!(await confirmDialog(t.settings?.migrateTagsConfirm || "This will reset system tags. Confirm?", { destructive: true }))) {
             return;
         }
 
         setMigratingTags(true);
         try {
             const res = await apiClient.post("/api/admin/migrate-tags", {});
-            alert(`${t.settings?.clearSuccess || "Success"}: ${(res as any).count || 0} tags migrated.`);
+            toast.success(`${t.settings?.clearSuccess || "Success"}: ${(res as any).count || 0} tags migrated.`);
             // No reload needed necessarily, but good to refresh if user is viewing tags.
         } catch (error) {
             frontendLogger.error('[SettingsDialog]', 'Tag migration failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.settings?.clearError || "Failed to migrate tags");
+            toast.error(t.settings?.clearError || "Failed to migrate tags");
         } finally {
             setMigratingTags(false);
         }
@@ -1005,9 +1006,9 @@ export function SettingsDialog() {
                                                             type="button"
                                                             variant="outline"
                                                             size="icon"
-                                                            onClick={() => {
+                                                            onClick={async () => {
                                                                 const activeId = selectedInstanceId || config.openai?.activeInstanceId;
-                                                                if (activeId && confirm(t.settings?.ai?.confirmDelete || 'Delete this instance?')) {
+                                                                if (activeId && (await confirmDialog(t.settings?.ai?.confirmDelete || 'Delete this instance?', { destructive: true }))) {
                                                                     deleteOpenAIInstance(activeId);
                                                                 }
                                                             }}

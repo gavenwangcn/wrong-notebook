@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
-import { dateInputToISOString, formatDateTime } from "@/lib/date-time";
+import { answeredDateToISOString, formatDateTime } from "@/lib/date-time";
 import { ClipboardCheck, Loader2, Printer, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { apiClient } from "@/lib/api-client";
 import type { ExamPaperDetail, PracticeResult } from "@/types/api";
+import { confirmDialog } from "@/lib/feedback";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -74,7 +75,7 @@ export default function ExamDetailPage() {
         setMessage(null);
         try {
             await apiClient.post(`/api/exams/${paper.id}/results`, {
-                takenAt: dateInputToISOString(takenAt, timeZone),
+                takenAt: answeredDateToISOString(takenAt, timeZone),
                 results: recordable
                     .filter((question) => draft[question.id])
                     .map((question) => ({ questionId: question.id, result: draft[question.id] })),
@@ -90,7 +91,7 @@ export default function ExamDetailPage() {
     };
 
     const deleteAttempt = async (attemptId: string) => {
-        if (!confirm(t.mastery.deleteRecordConfirm)) return;
+        if (!(await confirmDialog(t.mastery.deleteRecordConfirm, { destructive: true }))) return;
         try {
             await apiClient.delete(`/api/practice/record/${attemptId}`);
             await load();
@@ -105,7 +106,7 @@ export default function ExamDetailPage() {
     };
 
     const deletePaper = async () => {
-        if (!confirm(t.exam.deleteConfirm)) return;
+        if (!(await confirmDialog(t.exam.deleteConfirm, { destructive: true }))) return;
         await apiClient.delete(`/api/exams/${paper.id}`);
         router.push("/exams");
     };

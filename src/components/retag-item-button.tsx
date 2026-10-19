@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { toast } from "@/lib/feedback";
 
 type RetagItemButtonProps = {
     errorItemId: string;
@@ -35,7 +36,7 @@ export function RetagItemButton({ errorItemId, onDone, onSuggested }: RetagItemB
             const code = (error as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
             frontendLogger.error('[RetagItem]', 'Failed to regenerate tags', { code });
-            alert(code === "NO_TAGS_SELECTED" ? t.retag.noTags : typeof mapped === "string" ? mapped : t.retag.itemFailed);
+            toast.error(code === "NO_TAGS_SELECTED" ? t.retag.noTags : typeof mapped === "string" ? mapped : t.retag.itemFailed);
         } finally {
             setRunning(false);
         }

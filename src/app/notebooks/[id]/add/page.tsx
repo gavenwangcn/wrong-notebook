@@ -22,6 +22,7 @@ import { ImportResultBanner } from "@/components/import-result-banner";
 import { BatchImportPanel } from "@/components/batch-import-panel";
 import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
 import type { ImportedQuestion } from "@/lib/question-import";
+import { toast } from "@/lib/feedback";
 
 export default function AddErrorPage() {
     const params = useParams();
@@ -234,13 +235,13 @@ export default function AddErrorPage() {
                     }
                 }
 
-                alert(errorMessage);
+                toast.error(errorMessage);
             } catch (innerError) {
                 frontendLogger.error('[AddError]', 'Failed to process error message', {
                     innerError: String(innerError)
                 });
                 // 确保至少弹出一个提示
-                alert('Analysis failed. Please try again.');
+                toast.error('Analysis failed. Please try again.');
             }
         } finally {
             // Always reset analysis state, even if setState throws
@@ -319,9 +320,9 @@ export default function AddErrorPage() {
                         errorMessage = backendErrorType;
                     }
                 }
-                alert(errorMessage);
+                toast.error(errorMessage);
             } catch {
-                alert('Analysis failed. Please try again.');
+                toast.error('Analysis failed. Please try again.');
             }
         } finally {
             setAnalysisStep('idle');
@@ -341,11 +342,11 @@ export default function AddErrorPage() {
                 frontendLogger.info('[AddSave]', 'Duplicate submission detected, using existing record');
             }
 
-            alert(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
+            toast.success(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
             router.push(result.duplicate ? `/error-items/${result.id}` : `/notebooks/${notebookId}`);
         } catch (error) {
             frontendLogger.error('[AddSave]', 'Save failed', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.common.messages?.saveFailed || 'Save failed');
+            toast.error(t.common.messages?.saveFailed || 'Save failed');
         }
     };
 

@@ -8,6 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { processImageFile } from "@/lib/image-utils";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 interface ReplaceQuestionImageButtonProps {
     errorItemId: string;
@@ -30,15 +31,15 @@ export function ReplaceQuestionImageButton({ errorItemId, hasImage, onDone }: Re
         if (croppingImage) URL.revokeObjectURL(croppingImage);
     }, [croppingImage]);
 
-    const handleClick = () => {
-        if (hasImage && !confirm(t.replaceImage.confirm)) return;
+    const handleClick = async () => {
+        if (hasImage && !(await confirmDialog(t.replaceImage.confirm))) return;
         inputRef.current?.click();
     };
 
     const handleFile = (file: File | undefined) => {
         if (!file) return;
         if (!file.type.startsWith("image/")) {
-            alert(t.replaceImage.invalid);
+            toast.error(t.replaceImage.invalid);
             return;
         }
         setCroppingImage(URL.createObjectURL(file));
@@ -52,11 +53,11 @@ export function ReplaceQuestionImageButton({ errorItemId, hasImage, onDone }: Re
             const imageDataUrl = await processImageFile(file);
             const result = await apiClient.put<{ originalImageUrl: string }>(`/api/error-items/${errorItemId}/image`, { imageDataUrl });
             onDone(result.originalImageUrl);
-            alert(t.replaceImage.done);
+            toast.success(t.replaceImage.done);
         } catch (error) {
             const code = (error as { data?: { message?: string } })?.data?.message || "";
             frontendLogger.error('[ReplaceImage]', 'Failed to replace original image', { code });
-            alert(code === "INVALID_IMAGE" ? t.replaceImage.invalid : t.replaceImage.failed);
+            toast.error(code === "INVALID_IMAGE" ? t.replaceImage.invalid : t.replaceImage.failed);
         } finally {
             setUploading(false);
         }

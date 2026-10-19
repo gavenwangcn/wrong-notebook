@@ -31,6 +31,7 @@ import { DEFAULT_PAGE_SIZE } from "@/lib/constants/pagination";
 import { getMistakeStatusLabel } from "@/lib/mistake-status";
 import { isShortId } from "@/lib/short-id-format";
 import { locateByShortId } from "@/lib/short-id-client";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -154,20 +155,20 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
 
         const confirmMsg = (t.notebook?.confirmBatchDelete || "Delete {count} items?")
             .replace("{count}", selectedIds.size.toString());
-        if (!confirm(confirmMsg)) return;
+        if (!(await confirmDialog(confirmMsg, { destructive: true }))) return;
 
         setIsDeleting(true);
         try {
             await apiClient.post("/api/error-items/batch-delete", {
                 ids: Array.from(selectedIds),
             });
-            alert(t.notebook?.batchDeleteSuccess || "Deleted successfully");
+            toast.success(t.notebook?.batchDeleteSuccess || "Deleted successfully");
             setIsSelectMode(false);
             setSelectedIds(new Set());
             fetchItems();
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.deleteFailed || "Delete failed");
+            toast.error(t.common?.messages?.deleteFailed || "Delete failed");
         } finally {
             setIsDeleting(false);
         }

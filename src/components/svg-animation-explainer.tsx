@@ -7,6 +7,7 @@ import { SvgAnimationPlayer } from "@/components/svg-animation-player";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 /** 动画 SVG 较长，AI 通常需要几分钟才能写完，前端等待上限与服务端 AI 请求超时一致 */
 const GENERATE_TIMEOUT_MS = 10 * 60 * 1000;
@@ -48,7 +49,7 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
     };
 
     const handleDelete = async () => {
-        if (!confirm(t.svgAnimation.confirmDelete)) return;
+        if (!(await confirmDialog(t.svgAnimation.confirmDelete, { destructive: true }))) return;
         setDeleting(true);
         try {
             await apiClient.delete(`/api/error-items/${errorItemId}/svg-animation`);
@@ -56,7 +57,7 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
             setError(null);
         } catch (err) {
             frontendLogger.error('[SvgAnimation]', 'Failed to delete SVG animation', { error: err instanceof Error ? err.message : String(err) });
-            alert(t.svgAnimation.deleteFailed);
+            toast.error(t.svgAnimation.deleteFailed);
         } finally {
             setDeleting(false);
         }

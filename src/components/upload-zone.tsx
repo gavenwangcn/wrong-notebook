@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { UploadCloud, Loader2, Monitor, ClipboardPaste } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { toast } from "@/lib/feedback";
 
 // 添加 CaptureController 类型声明
 declare global {
@@ -105,7 +106,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
     // 点击按钮读取剪贴板图片
     const handleClipboardRead = async () => {
         if (!isClipboardReadSupported()) {
-            alert(t.upload.pasteNotSupported);
+            toast.warning(t.upload.pasteNotSupported);
             return;
         }
 
@@ -119,15 +120,15 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                     return;
                 }
             }
-            alert(t.upload.pasteNoImage);
+            toast.warning(t.upload.pasteNoImage);
         } catch (error) {
             frontendLogger.warn('[UploadZone]', 'Clipboard read failed', {
                 error: error instanceof Error ? error.message : String(error),
             });
             if (error instanceof Error && error.name === 'NotAllowedError') {
-                alert(t.upload.pastePermissionDenied);
+                toast.warning(t.upload.pastePermissionDenied);
             } else {
-                alert(t.upload.pasteFailed);
+                toast.error(t.upload.pasteFailed);
             }
         }
     };
@@ -142,7 +143,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
     // 屏幕截图功能
     const handleScreenshot = async () => {
         if (!isScreenshotSupported()) {
-            alert(t.upload.screenshotNotSupported);
+            toast.warning(t.upload.screenshotNotSupported);
             return;
         }
 
@@ -236,7 +237,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                     onImageSelect(file);
                     console.log('✅ 截图完成，当前页面未跳转');
                 } else {
-                    alert('截图转换失败');
+                    toast.error('截图转换失败');
                 }
             }, 'image/png', 1.0);
 
@@ -244,9 +245,9 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
             console.error('Screenshot failed:', error);
             if (error instanceof Error) {
                 if (error.name === 'NotAllowedError') {
-                    alert(t.upload.screenshotPermissionDenied);
+                    toast.warning(t.upload.screenshotPermissionDenied);
                 } else {
-                    alert(`${t.upload.screenshotFailed}: ${error.message}`);
+                    toast.error(`${t.upload.screenshotFailed}: ${error.message}`);
                 }
             }
         } finally {

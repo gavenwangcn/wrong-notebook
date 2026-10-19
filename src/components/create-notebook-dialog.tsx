@@ -17,6 +17,7 @@ import { useNotebookScopeLabels } from "@/components/notebook-scope-label";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DEFAULT_NOTEBOOK_STAGE, NOTEBOOK_STAGES, STAGE_SUBJECTS, type NotebookStage, type NotebookSubject } from "@/lib/notebook-scope";
+import { toast } from "@/lib/feedback";
 
 export interface CreateNotebookInput {
     name: string;
@@ -48,7 +49,7 @@ export function CreateNotebookDialog({ open, onOpenChange, onCreate }: CreateNot
 
     const handleCreate = async () => {
         if (!name.trim()) {
-            alert(t.notebooks?.dialog?.enterName || "Please enter notebook name");
+            toast.warning(t.notebooks?.dialog?.enterName || "Please enter notebook name");
             return;
         }
 

@@ -42,3 +42,8 @@ export function shiftCalendarDate(date: Date, timeZone = DEFAULT_TIME_ZONE, days
 export function dateInputToISOString(date: string, timeZone = DEFAULT_TIME_ZONE): string {
     return fromZonedTime(`${date}T12:00:00`, timeZone).toISOString();
 }
+
+/** 作答日期：选的是今天时记录当前时间，便于同一天多次作答区分先后；补录以前的日期按中午保存。 */
+export function answeredDateToISOString(date: string, timeZone = DEFAULT_TIME_ZONE, now = new Date()): string {
+    return date === formatDateTime(now, 'yyyy-MM-dd', timeZone) ? now.toISOString() : dateInputToISOString(date, timeZone);
+}

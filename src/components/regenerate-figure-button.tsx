@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { toast } from "@/lib/feedback";
 
 interface RegenerateFigureButtonProps {
     errorItemId: string;
@@ -23,12 +24,12 @@ export function RegenerateFigureButton({ errorItemId, onDone }: RegenerateFigure
         try {
             const figure = await apiClient.post<{ hasFigure: boolean; figureSvg: string | null }>(`/api/error-items/${errorItemId}/figure`, {});
             onDone(figure);
-            if (!figure.figureSvg) alert(t.figure.noFigure);
+            if (!figure.figureSvg) toast.warning(t.figure.noFigure);
         } catch (error) {
             const code = (error as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
             frontendLogger.error('[RegenerateFigure]', 'Failed to regenerate figure', { code });
-            alert(code === "NO_ORIGINAL_IMAGE" ? t.figure.noImage : typeof mapped === "string" ? mapped : t.figure.failed);
+            toast.error(code === "NO_ORIGINAL_IMAGE" ? t.figure.noImage : typeof mapped === "string" ? mapped : t.figure.failed);
         } finally {
             setRunning(false);
         }

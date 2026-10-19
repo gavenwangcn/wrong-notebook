@@ -26,6 +26,7 @@ import { DifficultyStars } from "@/components/difficulty-stars";
 import { QuestionFigure } from "@/components/question-figure";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { toast } from "@/lib/feedback";
 
 interface ParsedQuestionWithSubject extends ParsedQuestion {
     subjectId?: string;
@@ -97,7 +98,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
     // 重新解题函数
     const handleReanswer = async () => {
         if (!data.questionText.trim()) {
-            alert(t.editor.enterQuestionFirst || 'Please enter question text first');
+            toast.warning(t.editor.enterQuestionFirst || 'Please enter question text first');
             return;
         }
 
@@ -137,7 +138,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                 difficultyStars: result.difficultyStars ?? prev.difficultyStars,
             }));
 
-            alert(t.editor.reanswerSuccess || '✅ Answer and analysis updated!');
+            toast.success(t.editor.reanswerSuccess || '✅ Answer and analysis updated!');
         } catch (error: unknown) {
             console.error("Reanswer failed:", error);
             const apiError = error as { data?: { message?: string } };
@@ -154,7 +155,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                 errorText = reanswerErrors.responseError || t.errors?.AI_RESPONSE_ERROR || errorText;
             }
 
-            alert(errorText);
+            toast.error(errorText);
 
         } finally {
             setIsReanswering(false);
@@ -163,11 +164,11 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
     const handleAnalyzeGeogebra = async () => {
         if (!data.questionText.trim()) {
-            alert(t.editor.enterQuestionFirst || '请先输入题目文本');
+            toast.warning(t.editor.enterQuestionFirst || '请先输入题目文本');
             return;
         }
         if (!data.answerText.trim()) {
-            alert('请先生成或输入答案');
+            toast.warning('请先生成或输入答案');
             return;
         }
 
@@ -217,7 +218,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                     <Button
                         onClick={async () => {
                             if (!data.subjectId) {
-                                alert(t.editor.messages?.selectNotebook || "Please select a notebook");
+                                toast.warning(t.editor.messages?.selectNotebook || "Please select a notebook");
                                 return;
                             }
                             if (isSaving) return; // 防止重复点击

@@ -33,6 +33,7 @@ import { RegenerateAnswerButton } from "@/components/regenerate-answer-button";
 import { FixLatexButton } from "@/components/fix-latex-button";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 interface KnowledgeTag {
     id: string;
@@ -128,7 +129,7 @@ export default function ErrorDetailPage() {
             setItem(data);
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.loadFailed || 'Failed to load item');
+            toast.error(t.common?.messages?.loadFailed || 'Failed to load item');
             router.push("/notebooks");
         } finally {
             setLoading(false);
@@ -178,7 +179,7 @@ export default function ErrorDetailPage() {
         } catch (error) {
             setItem((current) => current && { ...current, difficultyStars: previous });
             frontendLogger.error('[ErrorDetail]', 'Failed to save difficulty', { error: error instanceof Error ? error.message : String(error) });
-            alert(t.difficulty.saveFailed);
+            toast.error(t.difficulty.saveFailed);
         } finally {
             setSavingDifficulty(false);
         }
@@ -217,10 +218,10 @@ export default function ErrorDetailPage() {
         try {
             await apiClient.patch(`/api/error-items/${item.id}/mastery`, { masteryLevel: newLevel });
             setItem({ ...item, masteryLevel: newLevel });
-            alert(newLevel > 0 ? (t.common?.messages?.markMastered || 'Marked as mastered') : (t.common?.messages?.unmarkMastered || 'Unmarked'));
+            toast.success(newLevel > 0 ? (t.common?.messages?.markMastered || 'Marked as mastered') : (t.common?.messages?.unmarkMastered || 'Unmarked'));
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.updateFailed || 'Update failed');
+            toast.error(t.common?.messages?.updateFailed || 'Update failed');
         }
     };
 
@@ -228,11 +229,11 @@ export default function ErrorDetailPage() {
         if (!item) return;
 
         const confirmMessage = t.common?.messages?.confirmDelete || 'Are you sure you want to delete this error item?';
-        if (!confirm(confirmMessage)) return;
+        if (!(await confirmDialog(confirmMessage, { destructive: true }))) return;
 
         try {
             await apiClient.delete(`/api/error-items/${item.id}/delete`);
-            alert(t.common?.messages?.deleteSuccess || 'Deleted successfully');
+            toast.success(t.common?.messages?.deleteSuccess || 'Deleted successfully');
             if (item.subjectId) {
                 router.push(`/notebooks/${item.subjectId}`);
             } else {
@@ -240,7 +241,7 @@ export default function ErrorDetailPage() {
             }
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.deleteFailed || 'Delete failed');
+            toast.error(t.common?.messages?.deleteFailed || 'Delete failed');
         }
     };
 
@@ -283,10 +284,10 @@ export default function ErrorDetailPage() {
 
             setIsEditingTags(false);
             await fetchItem(params.id as string);
-            alert(t.common?.messages?.tagUpdateSuccess || 'Tags updated successfully!');
+            toast.success(t.common?.messages?.tagUpdateSuccess || 'Tags updated successfully!');
         } catch (error) {
             console.error("[Frontend] Error updating:", error);
-            alert(t.common?.messages?.updateFailed || 'Update failed');
+            toast.error(t.common?.messages?.updateFailed || 'Update failed');
         }
     };
 
@@ -314,10 +315,10 @@ export default function ErrorDetailPage() {
 
             setIsEditingMetadata(false);
             fetchItem(params.id as string);
-            alert(t.common?.messages?.metaUpdateSuccess || 'Metadata updated successfully!');
+            toast.success(t.common?.messages?.metaUpdateSuccess || 'Metadata updated successfully!');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.updateFailed || 'Update failed');
+            toast.error(t.common?.messages?.updateFailed || 'Update failed');
         }
     };
 
@@ -356,10 +357,10 @@ export default function ErrorDetailPage() {
             await apiClient.put(`/api/error-items/${item?.id}`, { questionText: questionInput });
             setIsEditingQuestion(false);
             if (item) setItem({ ...item, questionText: questionInput });
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+            toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 
@@ -381,10 +382,10 @@ export default function ErrorDetailPage() {
             await apiClient.put(`/api/error-items/${item?.id}`, { answerText: answerInput });
             setIsEditingAnswer(false);
             if (item) setItem({ ...item, answerText: answerInput });
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+            toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 
@@ -406,10 +407,10 @@ export default function ErrorDetailPage() {
             await apiClient.put(`/api/error-items/${item?.id}`, { analysis: analysisInput });
             setIsEditingAnalysis(false);
             if (item) setItem({ ...item, analysis: analysisInput });
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+            toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 
@@ -437,10 +438,10 @@ export default function ErrorDetailPage() {
             });
             setIsEditingWrongAnswer(false);
             setItem((current) => current && { ...current, wrongAnswerText: wrongAnswerInput, mistakeStatus: normalizedStatus });
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+            toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 
@@ -463,10 +464,10 @@ export default function ErrorDetailPage() {
             await apiClient.put(`/api/error-items/${item.id}`, { mistakeAnalysis: mistakeAnalysisInput });
             setIsEditingMistakeAnalysis(false);
             setItem((current) => current && { ...current, mistakeAnalysis: mistakeAnalysisInput });
-            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+            toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 
@@ -482,10 +483,10 @@ export default function ErrorDetailPage() {
             await apiClient.patch(`/api/error-items/${item.id}/notes`, { userNotes: notesInput });
             setItem({ ...item, userNotes: notesInput });
             setIsEditingNotes(false);
-            alert(t.common?.messages?.noteSaveSuccess || 'Notes saved successfully');
+            toast.success(t.common?.messages?.noteSaveSuccess || 'Notes saved successfully');
         } catch (error) {
             console.error(error);
-            alert(t.common?.messages?.saveFailed || 'Save failed');
+            toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
 

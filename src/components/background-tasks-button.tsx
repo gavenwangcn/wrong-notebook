@@ -86,7 +86,7 @@ export function BackgroundTasksButton() {
             <Button
                 variant="outline"
                 size="icon"
-                className="fixed bottom-4 right-4 z-40 h-11 w-11 rounded-full shadow-lg print:hidden"
+                className="fixed bottom-20 right-4 z-40 h-11 w-11 rounded-full shadow-lg md:bottom-6 md:right-6 print:hidden"
                 onClick={() => setOpen(true)}
                 aria-label={t.backgroundTasks.title}
                 title={t.backgroundTasks.title}

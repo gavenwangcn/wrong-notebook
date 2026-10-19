@@ -16,6 +16,7 @@ import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 // ... imports
 
@@ -50,7 +51,7 @@ export default function NotebooksPage() {
         } catch (error: any) {
             console.error(error);
             const message = error.data?.message || t.notebooks?.createError || "Failed to create";
-            alert(message);
+            toast.error(message);
         }
     };
 
@@ -63,10 +64,10 @@ export default function NotebooksPage() {
 
     const handleDelete = async (id: string, errorCount: number, name: string) => {
         if (errorCount > 0) {
-            alert(t.notebooks?.deleteNotEmpty || "Please clear all items in this notebook first.");
+            toast.warning(t.notebooks?.deleteNotEmpty || "Please clear all items in this notebook first.");
             return;
         }
-        if (!confirm((t.notebooks?.deleteConfirm || "Are you sure?").replace("{name}", name))) return;
+        if (!(await confirmDialog((t.notebooks?.deleteConfirm || "Are you sure?").replace("{name}", name), { destructive: true }))) return;
 
         try {
             await apiClient.delete(`/api/notebooks/${id}`);
@@ -74,7 +75,7 @@ export default function NotebooksPage() {
         } catch (error: any) {
             console.error(error);
             const message = error.data?.message || t.notebooks?.deleteError || "Failed to delete";
-            alert(message);
+            toast.error(message);
         }
     };
 

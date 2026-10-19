@@ -16,6 +16,7 @@ import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
+import { toast } from "@/lib/feedback";
 
 // ... imports
 
@@ -42,7 +43,7 @@ export default function NotebookDetailPage() {
             setNotebook(data);
         } catch (error) {
             console.error("Failed to fetch notebook:", error);
-            alert(t.notebooks?.notFound || "Notebook not found");
+            toast.error(t.notebooks?.notFound || "Notebook not found");
             router.push("/notebooks");
         } finally {
             setLoading(false);

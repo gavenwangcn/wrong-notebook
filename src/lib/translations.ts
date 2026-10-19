@@ -28,6 +28,8 @@ export const translations = {
             edit: "Edit",
             expand: "Expand",
             collapse: "Collapse",
+            close: "Close",
+            confirmTitle: "Please confirm",
             cropper: {
                 title: "Crop Image",
                 hint: "💡 Drag to adjust crop area",
@@ -59,6 +61,24 @@ export const translations = {
                 confirmDelete: "Are you sure you want to delete this error item?",
             }
         },
+        home: {
+            greetingMorning: "Good morning",
+            greetingAfternoon: "Good afternoon",
+            greetingEvening: "Good evening",
+            heroSubtitle: "Snap or type a question — AI will analyze, tag and file it for you.",
+            notebookCount: "Notebooks",
+            itemCount: "Mistakes",
+            targetNotebook: "Adding to: {name}",
+        },
+        nav: {
+            home: "Add",
+            notebooks: "Notebooks",
+            tags: "Tags",
+            stats: "Stats",
+            exams: "Exams",
+            admin: "Admin",
+            menu: "Account",
+        },
         app: {
             title: "Smart Error Notebook",
             subtitle: "AI-powered analysis and intelligent review",
@@ -71,6 +91,7 @@ export const translations = {
             stats: "Stats",
             logout: "Logout",
             uploadNew: "Upload New",
+            directInput: "Manual Entry",
             addError: "Add Error Item",
             viewNotebook: "View Notebook",
             practiceProblem: "Practice Problem",
@@ -1010,6 +1031,8 @@ export const translations = {
             edit: "编辑",
             expand: "展开",
             collapse: "收起",
+            close: "关闭",
+            confirmTitle: "请确认",
             cropper: {
                 title: "裁剪图片",
                 hint: "💡 拖动选框调整裁剪区域",
@@ -1041,6 +1064,24 @@ export const translations = {
                 confirmDelete: "确定要删除这道错题吗？",
             }
         },
+        home: {
+            greetingMorning: "早上好",
+            greetingAfternoon: "下午好",
+            greetingEvening: "晚上好",
+            heroSubtitle: "拍照或输入题目，AI 帮你解析、打标签并归档到错题本。",
+            notebookCount: "错题本",
+            itemCount: "道错题",
+            targetNotebook: "录入到：{name}",
+        },
+        nav: {
+            home: "录入",
+            notebooks: "错题本",
+            tags: "知识点",
+            stats: "统计",
+            exams: "试卷",
+            admin: "管理",
+            menu: "账户",
+        },
         app: {
             title: "智能错题本",
             subtitle: "AI 驱动的题目分析与智能复习",
@@ -1053,6 +1094,7 @@ export const translations = {
             stats: "统计中心",
             logout: "退出登录",
             uploadNew: "上传新题",
+            directInput: "直接录入",
             addError: "添加错题",
             viewNotebook: "查看错题本",
             practiceProblem: "练习题",

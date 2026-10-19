@@ -13,6 +13,7 @@ import { formatDateTime } from "@/lib/date-time";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { RegisterRequest } from "@/types/api";
+import { toast } from "@/lib/feedback";
 
 export default function RegisterPage() {
     const { timeZone } = useTimeZone();
@@ -67,7 +68,7 @@ export default function RegisterPage() {
                 enrollmentYear: parseInt(enrollmentYear)
             });
 
-            alert(t.auth?.register?.success || 'Registration successful! Please login');
+            toast.success(t.auth?.register?.success || 'Registration successful! Please login');
             router.push("/login");
         } catch (error: any) {
             let errorMsg = error.data?.message;

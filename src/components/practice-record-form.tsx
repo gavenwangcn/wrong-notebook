@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { PracticeResultPicker } from "@/components/practice-result-picker";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
-import { dateInputToISOString, formatDateTime } from "@/lib/date-time";
+import { answeredDateToISOString, formatDateTime } from "@/lib/date-time";
 import type { PracticeResult } from "@/types/api";
 
 interface PracticeRecordFormProps {
@@ -36,8 +36,7 @@ export function PracticeRecordForm({ errorItemId, onSaved, onCancel }: PracticeR
                 errorItemId,
                 result,
                 source: "manual",
-                // 当天录入保留当前时间，便于同一天多次作答按先后排序
-                takenAt: date === today ? new Date().toISOString() : dateInputToISOString(date, timeZone),
+                takenAt: answeredDateToISOString(date, timeZone),
             });
             onSaved();
         } catch {

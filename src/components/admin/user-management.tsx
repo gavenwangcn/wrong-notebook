@@ -20,6 +20,7 @@ import {
 import { Trash2, Ban, CheckCircle, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { AdminUser, AppConfig } from "@/types/api";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 export function UserManagement() {
     const { timeZone } = useTimeZone();
@@ -51,7 +52,7 @@ export function UserManagement() {
             setAllowRegistration(checked);
         } catch (error) {
             console.error("Failed to update registration setting", error);
-            alert(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setSavingRegistration(false);
         }
@@ -74,19 +75,19 @@ export function UserManagement() {
             ? t.admin.confirmDisable
             : t.admin.confirmEnable;
 
-        if (!confirm(confirmMsg)) return;
+        if (!(await confirmDialog(confirmMsg))) return;
 
         try {
             await apiClient.patch(`/api/admin/users/${user.id}`, { isActive: !user.isActive });
             fetchUsers();
         } catch (error) {
             console.error("Failed to update user status", error);
-            alert(t.common.error);
+            toast.error(t.common.error);
         }
     };
 
     const handleDelete = async (user: AdminUser) => {
-        if (!confirm(t.admin.confirmDelete)) return;
+        if (!(await confirmDialog(t.admin.confirmDelete, { destructive: true }))) return;
 
         try {
             await apiClient.delete(`/api/admin/users/${user.id}`);
@@ -94,7 +95,7 @@ export function UserManagement() {
         } catch (error: any) {
             console.error("Failed to delete user", error);
             const text = error.data?.message || t.common.error;
-            alert(text);
+            toast.error(text);
         }
     };
 

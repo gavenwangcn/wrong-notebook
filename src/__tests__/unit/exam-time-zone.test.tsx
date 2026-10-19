@@ -53,9 +53,9 @@ const click = (text: string) => act(async () => Array.from(container.querySelect
 
 describe('试卷页面使用应用时区', () => {
     it.each([
-        ['Asia/Shanghai', '2026-10-19 11:27', '2026-10-19', '2026-10-19T04:00:00.000Z'],
-        ['America/New_York', '2026-10-18 23:27', '2026-10-18', '2026-10-18T16:00:00.000Z'],
-    ])('%s 下显示时间、日期默认值和保存结果保持一致', async (zone, displayed, date, saved) => {
+        ['Asia/Shanghai', '2026-10-19 11:27', '2026-10-19'],
+        ['America/New_York', '2026-10-18 23:27', '2026-10-18'],
+    ])('%s 下显示时间和日期默认值一致，当天录入保存当前时间', async (zone, displayed, date) => {
         await renderPage(zone);
         expect(container.textContent).toContain(displayed);
         await click(translations.zh.exam.recordResults);
@@ -63,9 +63,22 @@ describe('试卷页面使用应用时区', () => {
         await click('选择做对');
         await click(translations.zh.exam.saveResults);
         expect(apiClient.post).toHaveBeenCalledWith('/api/exams/paper-1/results', {
-            takenAt: saved,
+            takenAt: new Date(recordedAt).toISOString(),
             results: [{ questionId: 'q1', result: 'correct' }],
         });
+    });
+
+    it('补录以前的日期按应用时区的中午保存', async () => {
+        await renderPage('America/New_York');
+        await click(translations.zh.exam.recordResults);
+        const input = container.querySelector<HTMLInputElement>('#exam-taken-at')!;
+        await act(async () => {
+            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '2026-10-17');
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await click('选择做对');
+        await click(translations.zh.exam.saveResults);
+        expect(apiClient.post).toHaveBeenCalledWith('/api/exams/paper-1/results', expect.objectContaining({ takenAt: '2026-10-17T16:00:00.000Z' }));
     });
 
     it('每次录入从空白开始，未选择任何结果时不能保存', async () => {

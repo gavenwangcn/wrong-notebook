@@ -14,6 +14,7 @@ import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import type { PracticeHistoryResponse } from "@/types/api";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 interface MasteryPanelProps {
     errorItemId: string;
@@ -57,12 +58,12 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
     };
 
     const deleteRecord = async (recordId: string) => {
-        if (!confirm(t.mastery.deleteRecordConfirm)) return;
+        if (!(await confirmDialog(t.mastery.deleteRecordConfirm, { destructive: true }))) return;
         try {
             await apiClient.delete(`/api/practice/record/${recordId}`);
             reload();
         } catch {
-            alert(t.mastery.deleteRecordFailed);
+            toast.error(t.mastery.deleteRecordFailed);
         }
     };
 

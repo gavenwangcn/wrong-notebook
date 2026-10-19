@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Loader2, Maximize2, Minimize2, RotateCcw, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { toast, confirmDialog } from "@/lib/feedback";
 
 interface GeogebraDemoProps {
     commands: string;
@@ -262,12 +263,12 @@ export function GeogebraDemo({
     // ── Delete ──────────────────────────────────────────────────────────
     const handleDelete = useCallback(async () => {
         if (!onDelete || deleting) return;
-        if (!confirm(t.geogebra.confirmDelete)) return;
+        if (!(await confirmDialog(t.geogebra.confirmDelete, { destructive: true }))) return;
         setDeleting(true);
         try {
             await onDelete();
         } catch {
-            alert(t.geogebra.deleteFailed);
+            toast.error(t.geogebra.deleteFailed);
         } finally {
             setDeleting(false);
         }
