@@ -24,10 +24,14 @@ export const translations = {
                 hint: "💡 Drag to adjust crop area",
             },
             progress: {
-                compressing: "Compressing image...",
+                compressing: "Preparing image...",
                 uploading: "Uploading...",
-                analyzing: "AI is analyzing...",
+                analyzing: "Waiting for AI analysis...",
                 processing: "Processing result...",
+                saving: "Saving...",
+                estimated: "Stage estimate: {percent}%",
+                elapsed: "Elapsed: {time}",
+                estimateHint: "The percentage is estimated by processing stage.",
             },
             messages: {
                 analysisFailed: "AI analysis failed, please try again",
@@ -907,10 +911,14 @@ export const translations = {
                 hint: "💡 拖动选框调整裁剪区域",
             },
             progress: {
-                compressing: "正在压缩图片...",
+                compressing: "正在准备图片...",
                 uploading: "正在上传...",
-                analyzing: "AI 正在分析...",
+                analyzing: "等待 AI 返回分析结果...",
                 processing: "正在处理结果...",
+                saving: "正在保存...",
+                estimated: "阶段估算：{percent}%",
+                elapsed: "已用时：{time}",
+                estimateHint: "百分比按处理阶段估算。",
             },
             messages: {
                 analysisFailed: "AI 分析失败，请重试",

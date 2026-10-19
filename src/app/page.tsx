@@ -18,7 +18,8 @@ import { SettingsDialog } from "@/components/settings-dialog";
 import { BroadcastNotification } from "@/components/broadcast-notification";
 import { signOut } from "next-auth/react";
 
-import { ProgressFeedback, ProgressStatus } from "@/components/ui/progress-feedback";
+import { ProgressFeedback } from "@/components/ui/progress-feedback";
+import type { ProgressStatus } from "@/components/ui/progress-feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { TextInputZone } from "@/components/text-input-zone";
 import { ImportResultBanner } from "@/components/import-result-banner";
@@ -30,7 +31,6 @@ import { DirectTextEditor } from "@/components/direct-text-editor";
 function HomeContent() {
     const [step, setStep] = useState<"upload" | "review">("upload");
     const [analysisStep, setAnalysisStep] = useState<ProgressStatus>('idle');
-    const [progress, setProgress] = useState(0);
     const [parsedData, setParsedData] = useState<ParsedQuestion | null>(null);
     const [currentImage, setCurrentImage] = useState<string | null>(null);
     const { t, language } = useLanguage();
@@ -88,29 +88,14 @@ function HomeContent() {
             .catch(err => console.error("Failed to fetch config:", err));
     }, []);
 
-    // Simulate progress for smoother UX with timeout protection
+    // 保留按阶段计时的超时兜底，进度估值和已用时间由提示组件统一维护。
     useEffect(() => {
-        let interval: NodeJS.Timeout;
-        let timeout: NodeJS.Timeout;
-        if (analysisStep !== 'idle') {
-            setProgress(0);
-            interval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 90) return prev; // Cap at 90% until complete
-                    return prev + Math.random() * 10;
-                });
-            }, 500);
-
-            // Safety timeout: auto-reset after configurable time to prevent stuck overlay
-            timeout = setTimeout(() => {
-                console.warn('[Progress] Safety timeout triggered - resetting analysisStep');
-                setAnalysisStep('idle');
-            }, safetyTimeout);
-        }
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
-        };
+        if (analysisStep === 'idle') return;
+        const timeout = setTimeout(() => {
+            frontendLogger.warn('[Progress]', '处理超时，关闭进度提示', { analysisStep, safetyTimeout });
+            setAnalysisStep('idle');
+        }, safetyTimeout);
+        return () => clearTimeout(timeout);
     }, [analysisStep, safetyTimeout]);
 
     const handleBatchCropComplete = (blobs: Blob[]) => {
@@ -173,10 +158,8 @@ function HomeContent() {
             }
             frontendLogger.info('[HomeAnalyze]', 'Response data validated successfully');
 
-            frontendLogger.info('[HomeAnalyze]', 'Step 3/5: Setting processing state and progress to 100%');
+            frontendLogger.info('[HomeAnalyze]', '开始处理 AI 返回结果');
             setAnalysisStep('processing');
-            setProgress(100);
-            frontendLogger.info('[HomeAnalyze]', 'Progress updated to 100%');
 
             // 未开启人工确认时直接入库
             if (!confirmBeforeImport) {
@@ -353,7 +336,6 @@ function HomeContent() {
             }, { timeout: aiTimeout });
 
             setAnalysisStep('processing');
-            setProgress(100);
 
             const parsed: ParsedQuestion = {
                 questionText,
@@ -465,24 +447,9 @@ function HomeContent() {
         }
     };
 
-    const getProgressMessage = () => {
-        switch (analysisStep) {
-            case 'compressing': return t.common.progress?.compressing || "Compressing...";
-            case 'uploading': return t.common.progress?.uploading || "Uploading...";
-            case 'analyzing': return t.common.progress?.analyzing || "Analyzing...";
-            case 'processing': return t.common.progress?.processing || "Processing...";
-            case 'saving': return "保存中...";
-            default: return "";
-        }
-    };
-
     return (
         <main className="min-h-screen bg-background">
-            <ProgressFeedback
-                status={analysisStep}
-                progress={progress}
-                message={getProgressMessage()}
-            />
+            <ProgressFeedback status={analysisStep} />
 
             <div className="container mx-auto p-4 space-y-8 pb-20">
                 {/* Header Section */}
