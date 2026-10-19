@@ -216,6 +216,7 @@ model ExamQuestion {
   analysis      String?
   figureSvg     String?    // 新题的 SVG 配图
   error         String?
+  practiceRecordId String? // [DEPRECATED] 旧版一对一关联，部署校验要求保留已有列，改用 PracticeRecord.examQuestionId
   practiceRecords PracticeRecord[]
 
   @@index([paperId, order])
