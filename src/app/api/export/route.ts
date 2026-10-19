@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { unauthorized, internalError, forbidden } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { getAppTimeZone } from "@/lib/config";
+import { formatDateTime } from "@/lib/date-time";
 
 const logger = createLogger('api:export');
 
@@ -92,8 +94,8 @@ export async function GET(req: Request) {
 
         const jsonString = JSON.stringify(exportData, null, 2);
         const filename = exportAll
-            ? `wrong-notebook-export-all-${new Date().toISOString().slice(0, 10)}.json`
-            : `wrong-notebook-export-${new Date().toISOString().slice(0, 10)}.json`;
+            ? `wrong-notebook-export-all-${formatDateTime(new Date(), 'yyyy-MM-dd', getAppTimeZone())}.json`
+            : `wrong-notebook-export-${formatDateTime(new Date(), 'yyyy-MM-dd', getAppTimeZone())}.json`;
 
         return new NextResponse(jsonString, {
             headers: {

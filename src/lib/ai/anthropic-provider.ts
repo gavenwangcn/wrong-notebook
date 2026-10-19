@@ -1,12 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { sanitizeSvgAnimation } from '../svg-animation';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
+import { normalizeGeneratedQuestion } from './generated-question';
 
 const logger = createLogger('ai:anthropic');
 
@@ -197,7 +199,7 @@ export class AnthropicProvider implements AIService {
         try {
             const text = await this.complete(systemPrompt, userPrompt, 8192);
             logger.box('🤖 AI Raw Response', text);
-            return parseQuestionResponse(text);
+            return normalizeGeneratedQuestion(parseQuestionResponse(text));
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during question generation');
             this.handleError(error);
@@ -306,9 +308,23 @@ export class AnthropicProvider implements AIService {
         }
     }
 
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
+        logger.info({ provider: 'Anthropic', model: this.model, questionLength: questionText.length }, 'SVG Animation Request');
+
+        try {
+            const text = await this.complete(generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg), "请为上述题目制作 SVG 动画讲解。", 16384);
+            logger.debug({ rawResponse: text }, 'SVG animation AI raw response');
+            return sanitizeSvgAnimation(extractTag(text, "svg_animation") || text);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during SVG animation generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
     private handleError(error: unknown) {
         logger.error({ error }, 'Anthropic error');
-        if (error instanceof Error && error.message === AI_OUTPUT_TRUNCATED) {
+        if (error instanceof Error && (error.message === AI_OUTPUT_TRUNCATED || error.message.startsWith('AI_RESPONSE_ERROR:'))) {
             throw error;
         }
 

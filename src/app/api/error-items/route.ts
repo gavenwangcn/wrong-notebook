@@ -14,6 +14,8 @@ import { resolveNotebookForSubject } from "@/lib/notebook-resolver";
 import { scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion, runQuestionImportTransaction } from "@/lib/question-deduplication";
 import { MAX_FIGURE_SVG_LENGTH, sanitizeFigureSvg } from "@/lib/figure-svg";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { getAppTimeZone } from "@/lib/config";
 
 const logger = createLogger('api:error-items');
 
@@ -116,7 +118,7 @@ export async function POST(req: Request) {
             // 计算年级
             let finalGradeSemester = gradeSemester;
             if (!finalGradeSemester && user.educationStage && user.enrollmentYear) {
-                finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear);
+                finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), 'en', getAppTimeZone());
                 logger.debug({ finalGradeSemester, educationStage: user.educationStage, enrollmentYear: user.enrollmentYear }, 'Grade calculated');
             }
 
@@ -185,7 +187,7 @@ export async function POST(req: Request) {
                         mistakeStatus: normalizeMistakeStatusForSave(mistakeStatus, wrongAnswerText),
                         knowledgePoints: JSON.stringify(tagNames),
                         gradeSemester: finalGradeSemester,
-                        paperLevel: paperLevel,
+                        paperLevel: paperLevel ?? getDefaultPaperLevel(difficultyStars),
                         difficultyStars: difficultyStars ?? null,
                         hasFigure,
                         figureSvg,

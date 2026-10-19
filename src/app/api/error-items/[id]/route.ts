@@ -7,6 +7,7 @@ import { unauthorized, forbidden, notFound, badRequest, internalError } from "@/
 import { createLogger } from "@/lib/logger";
 import { findParentTagIdForGrade } from "@/lib/tag-recognition";
 import { normalizeMistakeStatusForSave } from "@/lib/mistake-status";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
 
 const logger = createLogger('api:error-items:id');
 
@@ -99,6 +100,10 @@ export async function PUT(
         const updateData: Prisma.ErrorItemUpdateInput = {};
         if (gradeSemester !== undefined) updateData.gradeSemester = gradeSemester;
         if (paperLevel !== undefined) updateData.paperLevel = paperLevel;
+        else if (!errorItem.paperLevel) {
+            const defaultPaperLevel = getDefaultPaperLevel(difficultyStars);
+            if (defaultPaperLevel) updateData.paperLevel = defaultPaperLevel;
+        }
         if (questionText !== undefined) updateData.questionText = questionText;
         if (answerText !== undefined) updateData.answerText = answerText;
         if (analysis !== undefined) updateData.analysis = analysis;

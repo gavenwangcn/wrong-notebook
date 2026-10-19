@@ -19,6 +19,7 @@ import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { getMistakeStatusLabel, normalizeMistakeStatusForSave } from "@/lib/mistake-status";
 import { NotebookSelector } from "@/components/notebook-selector";
 import { GeogebraDemo } from "@/components/geogebra-demo";
+import { SvgAnimationExplainer } from "@/components/svg-animation-explainer";
 import { ShortIdBadge } from "@/components/short-id-badge";
 import { DifficultyStars } from "@/components/difficulty-stars";
 import { QuestionFigure } from "@/components/question-figure";
@@ -26,6 +27,7 @@ import { RegenerateFigureButton } from "@/components/regenerate-figure-button";
 import { MasteryPanel } from "@/components/mastery-panel";
 import { RetagItemButton } from "@/components/retag-item-button";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
 
 interface KnowledgeTag {
     id: string;
@@ -59,6 +61,7 @@ interface ErrorItemDetail {
     hasFigure?: boolean;
     figureSvg?: string | null;
     geogebraCommands?: string | null;
+    svgAnimation?: string | null;
 }
 
 export default function ErrorDetailPage() {
@@ -83,6 +86,8 @@ export default function ErrorDetailPage() {
     const [geogebraError, setGeogebraError] = useState<string | null>(null);
     // GeoGebra 动态演示默认关闭，用户在设置中开启后才显示
     const [geogebraEnabled, setGeogebraEnabled] = useState(false);
+    // SVG 动画讲解默认开启，用户可在设置中关闭
+    const [svgAnimationEnabled, setSvgAnimationEnabled] = useState(true);
     const [showQuestionImage, setShowQuestionImage] = useState(false);
     const [showReferenceImage, setShowReferenceImage] = useState(false);
     const [showOwnImage, setShowOwnImage] = useState(false);
@@ -97,6 +102,7 @@ export default function ErrorDetailPage() {
                     setEducationStage(user.educationStage);
                 }
                 setGeogebraEnabled(!!user?.enableGeogebra);
+                setSvgAnimationEnabled(user?.enableSvgAnimation !== false);
             })
             .catch(err => console.error("Failed to fetch user info:", err));
 
@@ -161,7 +167,8 @@ export default function ErrorDetailPage() {
         setItem({ ...item, difficultyStars });
         setSavingDifficulty(true);
         try {
-            await apiClient.put(`/api/error-items/${item.id}`, { difficultyStars });
+            const updated = await apiClient.put<Pick<ErrorItemDetail, "paperLevel">>(`/api/error-items/${item.id}`, { difficultyStars });
+            setItem((current) => current && { ...current, paperLevel: updated.paperLevel });
         } catch (error) {
             setItem((current) => current && { ...current, difficultyStars: previous });
             frontendLogger.error('[ErrorDetail]', 'Failed to save difficulty', { error: error instanceof Error ? error.message : String(error) });
@@ -176,6 +183,17 @@ export default function ErrorDetailPage() {
         await apiClient.put(`/api/error-items/${item.id}`, { geogebraCommands: commands });
         setItem({ ...item, geogebraCommands: commands });
     };
+
+    // 失败时抛出，由 GeogebraDemo 提示
+    const handleDeleteGeogebra = async () => {
+        if (!item) return;
+        await apiClient.delete(`/api/error-items/${item.id}/geogebra`);
+        setItem((current) => current && { ...current, geogebraCommands: null });
+    };
+
+    const handleSvgAnimationChange = useCallback((svgAnimation: string | null) => {
+        setItem((current) => current && { ...current, svgAnimation });
+    }, []);
 
     const toggleMastery = async () => {
         if (!item) return;
@@ -267,7 +285,7 @@ export default function ErrorDetailPage() {
         if (item) {
             setNotebookInput(item.subjectId || null);
             setGradeSemesterInput(item.gradeSemester || "");
-            setPaperLevelInput(item.paperLevel || "a");
+            setPaperLevelInput(item.paperLevel || getDefaultPaperLevel(item.difficultyStars) || "a");
             setIsEditingMetadata(true);
         }
     };
@@ -617,8 +635,10 @@ export default function ErrorDetailPage() {
                 </div>
 
                 <div className="space-y-6">
+                    {svgAnimationEnabled && <SvgAnimationExplainer errorItemId={item.id} svgAnimation={item.svgAnimation} onChange={handleSvgAnimationChange} />}
+
                     {geogebraEnabled && (item.geogebraCommands ? (
-                        <GeogebraDemo commands={item.geogebraCommands} height={700} showToolBar={true} showAlgebraInput={false} showMenuBar={false} onRegenerate={handleAnalyzeGeogebra} onSaveCommands={handleSaveGeogebraCommands} />
+                        <GeogebraDemo commands={item.geogebraCommands} height={700} showToolBar={true} showAlgebraInput={false} showMenuBar={false} onRegenerate={handleAnalyzeGeogebra} onSaveCommands={handleSaveGeogebraCommands} onDelete={handleDeleteGeogebra} />
                     ) : (
                         <div className="rounded-lg border border-dashed p-4"><div className="flex items-center justify-between"><div className="flex items-center gap-2 text-sm text-muted-foreground"><Box className="h-4 w-4" /><span>GeoGebra 动态演示</span></div><Button variant="outline" size="sm" onClick={() => handleAnalyzeGeogebra()} disabled={isAnalyzingGeogebra}>{isAnalyzingGeogebra ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />AI 分析中...</> : <><Box className="mr-2 h-4 w-4" />生成演示</>}</Button></div>{geogebraError && <p className="text-xs text-muted-foreground mt-2">{geogebraError}</p>}<p className="text-xs text-muted-foreground mt-2">AI 将判断本题是否可以用 GeoGebra 进行动态演示，如适合则自动生成交互式图形</p></div>
                     ))}

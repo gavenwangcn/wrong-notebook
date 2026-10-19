@@ -10,6 +10,7 @@ import type { CandidateTags, GradeLevel } from "@/lib/ai/types";
 import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import { createLogger } from "@/lib/logger";
+import { getAppTimeZone } from "@/lib/config";
 
 const logger = createLogger('api:analyze');
 
@@ -65,9 +66,9 @@ export async function POST(req: Request) {
                 });
 
                 if (user) {
-                    userGrade = calculateGradeNumber(user.educationStage, user.enrollmentYear);
+                    userGrade = calculateGradeNumber(user.educationStage, user.enrollmentYear, getAppTimeZone());
                     if (user.educationStage && user.enrollmentYear) {
-                        userGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), 'zh');
+                        userGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), 'zh', getAppTimeZone());
                     }
                     logger.debug({ userGrade, userGradeSemester }, 'Calculated user grade');
                 }

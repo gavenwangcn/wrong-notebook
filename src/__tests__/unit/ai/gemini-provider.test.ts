@@ -63,6 +63,15 @@ function asPrivateProvider(provider: GeminiProvider): PrivateGeminiProvider {
 }
 
 describe('Gemini Provider 响应解析', () => {
+    it('举一反三清理题号和分值，拒绝返回选择题', async () => {
+        const provider = new GeminiProvider({ apiKey: 'test-key' });
+        const response = (question: string) => ({ text: `<question_text>${question}</question_text><answer_text>4</answer_text><analysis>计算</analysis><subject>数学</subject>` });
+        mockGenerateContent.mockResolvedValue(response('1. （5分）求 2+2 的值。'));
+        expect((await provider.generateSimilarQuestion('原题', [])).questionText).toBe('求 2+2 的值。');
+        expect(mockGenerateContent.mock.calls[0][0].contents).toContain('只能生成填空题或解答题');
+        mockGenerateContent.mockResolvedValue(response('求和。\nA. 2\nB. 4'));
+        await expect(provider.generateSimilarQuestion('原题', [])).rejects.toThrow('AI_RESPONSE_ERROR');
+    });
     let provider: GeminiProvider;
 
     beforeEach(() => {
@@ -271,5 +280,21 @@ describe('Gemini Provider 知识点重新标注', () => {
         const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['鸡兔同笼'] });
 
         expect(tags).toEqual({ tags: ['鸡兔同笼'], difficultyStars: null });
+    });
+});
+
+describe('Gemini Provider SVG 动画讲解', () => {
+    const animation = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><circle r="5" opacity="0"><set attributeName="opacity" to="1" begin="2s" fill="freeze"/></circle><script>alert(1)</script></svg>';
+
+    it('解析并净化动画，没有标签时从正文中取 SVG', async () => {
+        const provider = new GeminiProvider({ apiKey: 'test-key' });
+        mockGenerateContent.mockResolvedValue({ text: `<svg_animation>${animation}</svg_animation>` });
+        const svg = await provider.generateSvgAnimation('求面积', '6', '解析');
+        expect(JSON.stringify(mockGenerateContent.mock.calls.at(-1)?.[0].contents)).toContain('求面积');
+        expect(svg).toContain('<set attributeName="opacity"');
+        expect(svg).not.toContain('<script');
+
+        mockGenerateContent.mockResolvedValue({ text: '动画如下：' + animation });
+        expect(await provider.generateSvgAnimation('求面积', '6', '解析')).toContain('<circle');
     });
 });

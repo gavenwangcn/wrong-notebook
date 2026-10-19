@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { RegisterRequest } from "@/types/api";
 
 export default function RegisterPage() {
+    const { timeZone } = useTimeZone();
     const router = useRouter();
     const { t, language } = useLanguage();
     const [name, setName] = useState("");
@@ -244,7 +247,7 @@ export default function RegisterPage() {
                                 placeholder="YYYY"
                                 required
                                 min={1990}
-                                max={new Date().getFullYear()}
+                                max={Number(formatDateTime(new Date(), 'yyyy', timeZone))}
                             />
                         </div>
                         {error && (

@@ -293,7 +293,7 @@ export const DEFAULT_SIMILAR_TEMPLATE = `你是一位资深的K12教育题目生
 请严格按照以下结构输出内容（不要包含任何其他文字）：
 
 <question_text>
-在此处填写新生成的题目文本。包含选项（如果是选择题）。
+在此处填写新生成的填空题或解答题。不要包含题号、分值或选择题选项。
 </question_text>
 
 <answer_text>
@@ -520,6 +520,14 @@ ${englishTagsString}`;
  * @param difficulty - Difficulty level
  * @param options - Optional customizations
  */
+export const GENERATED_QUESTION_RULES = `【生成题目的必守规则（适用于举一反三和试卷生成）】
+- 只能生成填空题或解答题，题干直接给出条件和需要填写、计算、说明或证明的要求。
+- 题干中不得包含题号、编号标题或分值，例如“第 1 题”“1.”“（5 分）”“Question 1”“[5 marks]”。
+- 不得生成选择题、判断题或任何候选选项，包括 A/B/C/D、①②③④、勾选框及作为选项的配图。
+- 原题是选择题或判断题时，必须重新设计为可独立作答的填空题或解答题；把解题所需条件写入题干，不得只删除选项而留下“下列哪项正确”等依赖选项的问法。
+- answer_text 必须给出具体答案或结论，不能只给选项字母；analysis 给出对应的解题过程。
+- 返回前检查题干，删除题号和分值，确认没有选项、答案泄漏或缺失的必要条件。`;
+
 export function generateSimilarQuestionPrompt(
   language: 'zh' | 'en',
   originalQuestion: string,
@@ -541,7 +549,7 @@ export function generateSimilarQuestionPrompt(
 
   const template = options?.customTemplate || DEFAULT_SIMILAR_TEMPLATE;
 
-  return replaceVariables(template, {
+  const prompt = replaceVariables(template, {
     figure_instruction: generateSimilarFigureInstruction(options?.originalFigureSvg),
     difficulty_level: difficulty.toUpperCase(),
     difficulty_instruction: difficultyInstruction,
@@ -551,6 +559,8 @@ export function generateSimilarQuestionPrompt(
     grade_instruction: generateGradeInstruction(gradeSemester),
     provider_hints: options?.providerHints || ''
   }).trim();
+  // 自定义模板也必须遵守统一题型规则。
+  return `${prompt}\n\n${GENERATED_QUESTION_RULES}`;
 }
 
 /**
@@ -742,6 +752,57 @@ export function generateGeogebraPrompt(
     }
 
     return prompt;
+}
+
+/**
+ * SVG 动画讲解提示词（详情页「生成动画讲解」）
+ */
+export const DEFAULT_SVG_ANIMATION_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
+你是一位擅长用动画讲题的老师。请为下面这道题制作一段 SVG 动画讲解：按解题思路分步骤演示，让学生看完动画就能理解这道题怎么做。
+
+【题目内容 (QUESTION)】
+{{question_text}}
+
+【答案内容 (ANSWER)】
+{{answer_text}}
+
+【解析内容 (ANALYSIS)】
+{{analysis}}
+
+{{figure_reference}}
+
+【动画要求】
+- 分 3~6 个步骤，每步 4~6 秒，总时长不超过 40 秒；动画只播放一遍，全部元素使用 fill="freeze"，结束时停在完整的解题结论画面。
+- 每一步在画面底部的字幕区显示该步的讲解文字（简体中文，每行不超过 24 个字，最多两行），进入下一步时替换为新字幕。
+- 画面与讲解同步：逐步画出辅助线、标出已知条件、高亮正在讲解的部分、移动或变换图形、写出关键算式。几何题按题目条件画图；非几何题用线段图、数轴、表格、示意图或算式推导等合适的形式。
+- 用 SMIL 动画（<animate>、<set>、<animateTransform>、<animateMotion>）实现，用 begin 属性按时间排列（如 begin="4s"）；需要先隐藏的元素设 opacity="0" 再用 <animate> 或 <set> 显示。
+- 公式不要用 LaTeX，用普通文字和 Unicode 符号（如 x²、√2、π、×、÷、≤、≥、∠、△、⊥、∥）。
+- 输出一个完整的 <svg> 元素，包含 xmlns="http://www.w3.org/2000/svg" 和 viewBox="0 0 800 500"，第一个元素是铺满画面的白色背景 rect；文字用 <text>（font-family="sans-serif"，正文 font-size 18~22），线条为黑色，高亮可用红色 #e53935、蓝色 #1e88e5、绿色 #43a047。
+- 只使用基本图形元素：line、polyline、polygon、rect、circle、ellipse、path、text、tspan、g、defs、marker 以及上述动画元素。
+- 严禁使用 <image>、<script>、<foreignObject>、外部链接、外部字体或事件属性。
+
+【输出格式】
+只输出以下标签，不要用 Markdown 代码块包裹，不要输出其他内容：
+
+<svg_animation>
+完整的 SVG 动画
+</svg_animation>`;
+
+/**
+ * 生成 SVG 动画讲解提示词；figureSvg 为题目配图，动画据此作图
+ */
+export function generateSvgAnimationPrompt(
+    questionText: string,
+    answerText: string,
+    analysis: string,
+    figureSvg?: string | null
+): string {
+    return replaceVariables(DEFAULT_SVG_ANIMATION_TEMPLATE, {
+        question_text: questionText.trim() || '（无题目文字）',
+        answer_text: answerText.trim() || '（无）',
+        analysis: analysis.trim() || '（无）',
+        figure_reference: figureSvg ? `【题目配图 (FIGURE)】\n题目配图如下（SVG），动画中的图形须与之一致：\n${figureSvg}` : '',
+    }).trim();
 }
 
 /**

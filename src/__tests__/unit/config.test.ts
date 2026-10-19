@@ -44,6 +44,32 @@ describe('config module', () => {
 
             expect(config.aiProvider).toBe('gemini'); // 默认值
             expect(config.allowRegistration).toBe(true);
+            expect(config.timeZone).toBe('Asia/Shanghai');
+        });
+
+        it.each([undefined, null, 'invalid/zone'])('旧配置或无效时区 %s 回退为北京时间', async (timeZone) => {
+            vi.mocked(fs.existsSync).mockReturnValue(true);
+            vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ aiProvider: 'gemini', timeZone }));
+            const { getAppConfig, getAppTimeZone } = await import('@/lib/config');
+            expect(getAppConfig().timeZone).toBe('Asia/Shanghai');
+            expect(getAppTimeZone()).toBe('Asia/Shanghai');
+        });
+
+        it('可保存并重新读取管理员配置的时区', async () => {
+            vi.mocked(fs.existsSync).mockReturnValue(false);
+            const { updateAppConfig, getAppTimeZone } = await import('@/lib/config');
+            const config = updateAppConfig({ timeZone: 'America/New_York' });
+            vi.mocked(fs.existsSync).mockReturnValue(true);
+            vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(config));
+            expect(getAppTimeZone()).toBe('America/New_York');
+            expect(fs.writeFileSync).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('"timeZone": "America/New_York"'));
+        });
+
+        it('直接写配置也拒绝无效时区', async () => {
+            vi.mocked(fs.existsSync).mockReturnValue(false);
+            const { updateAppConfig } = await import('@/lib/config');
+            expect(() => updateAppConfig({ timeZone: 'invalid/zone' })).toThrow('INVALID_TIME_ZONE');
+            expect(fs.writeFileSync).not.toHaveBeenCalled();
         });
 
         it('应该从环境变量读取 AI Provider', async () => {

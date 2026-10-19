@@ -10,6 +10,7 @@ import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-d
 import { parseDifficultyStars } from "@/lib/ai/schema";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
 import { sanitizeFigureSvg } from "@/lib/figure-svg";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
 
 const logger = createLogger('api:import');
 
@@ -276,6 +277,7 @@ export async function POST(req: Request) {
                 // 尽量保留导出数据中的短 ID，冲突时重新生成
                 const keepShortId = isShortId(item.shortId)
                     && !(await tx.errorItem.findUnique({ where: { shortId: item.shortId }, select: { id: true } }));
+                const difficultyStars = parseDifficultyStars(item.difficultyStars);
                 const created = await tx.errorItem.create({
                     data: {
                         shortId: keepShortId ? item.shortId : await generateUniqueShortId(tx),
@@ -295,8 +297,8 @@ export async function POST(req: Request) {
                         userNotes: item.userNotes,
                         masteryLevel: safeMasteryLevel(item.masteryLevel),
                         gradeSemester: item.gradeSemester,
-                        paperLevel: item.paperLevel,
-                        difficultyStars: parseDifficultyStars(item.difficultyStars),
+                        paperLevel: item.paperLevel ?? getDefaultPaperLevel(difficultyStars),
+                        difficultyStars,
                         hasFigure: item.hasFigure === true || sanitizeFigureSvg(item.figureSvg) !== null,
                         figureSvg: sanitizeFigureSvg(item.figureSvg),
                         createdAt: safeParseDate(item.createdAt),

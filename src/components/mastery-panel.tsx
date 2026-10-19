@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { ChevronDown, ChevronUp, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ export const RESULT_BADGE_CLASS: Record<string, string> = {
 };
 
 export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanelProps) {
+    const { timeZone } = useTimeZone();
     const { t } = useLanguage();
     const [data, setData] = useState<PracticeHistoryResponse | null>(null);
     const [expanded, setExpanded] = useState<string | null>(null);
@@ -106,7 +108,7 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
                                         className="flex w-full flex-wrap items-center gap-2 text-left"
                                         onClick={() => setExpanded(expanded === record.id ? null : record.id)}
                                     >
-                                        <span className="text-muted-foreground tabular-nums">{format(new Date(record.createdAt), "yyyy-MM-dd HH:mm")}</span>
+                                        <span className="text-muted-foreground tabular-nums">{formatDateTime(record.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
                                         <Badge variant="outline" className={RESULT_BADGE_CLASS[record.result] || ""}>
                                             {t.mastery.results[record.result as keyof typeof t.mastery.results] || record.result}
                                         </Badge>

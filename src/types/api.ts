@@ -110,6 +110,7 @@ export interface UserProfile {
     isActive: boolean;
     confirmBeforeImport?: boolean;
     enableGeogebra?: boolean;
+    enableSvgAnimation?: boolean;
     questionDuplicateThreshold?: number;
 }
 
@@ -133,6 +134,7 @@ export interface OpenAIInstance {
 export interface AppConfig {
     aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic';
     allowRegistration?: boolean;
+    timeZone?: string;
     openai?: {
         instances?: OpenAIInstance[];
         activeInstanceId?: string;

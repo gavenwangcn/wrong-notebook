@@ -5,6 +5,8 @@ import { calculateGradeNumber } from "@/lib/knowledge-tags";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import { createLogger } from "@/lib/logger";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { getAppTimeZone } from "@/lib/config";
 
 const logger = createLogger('retag');
 
@@ -20,6 +22,7 @@ export interface RetagResult {
 interface TagSuggestion {
     tagNames: string[];                  // 新系统标签 + 保留的自定义标签
     difficultyStars: number | null;
+    paperLevel: string | null;
     newTagIds: string[];
     oldSystemTags: { id: string; name: string }[];
 }
@@ -36,6 +39,7 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
             answerText: true,
             analysis: true,
             gradeSemester: true,
+            paperLevel: true,
             subject: { select: { name: true, stage: true, subjectKey: true } },
             tags: { select: { id: true, name: true, isSystem: true } },
             user: { select: { educationStage: true, enrollmentYear: true } },
@@ -54,14 +58,14 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
     const subjectKey = scope?.subject || 'math';
     const allowedTags = scope?.subject
         ? await getScopeTagsFromDB(scope.subject, scope.stage)
-        : await getMathTagsFromDB(calculateGradeNumber(item.user.educationStage, item.user.enrollmentYear));
+        : await getMathTagsFromDB(calculateGradeNumber(item.user.educationStage, item.user.enrollmentYear, getAppTimeZone()));
     if (allowedTags.length === 0) {
         throw new Error('NO_AVAILABLE_TAGS');
     }
 
     const gradeSemester = item.gradeSemester
         || (item.user.educationStage && item.user.enrollmentYear
-            ? calculateGrade(item.user.educationStage, item.user.enrollmentYear, new Date(), 'zh')
+            ? calculateGrade(item.user.educationStage, item.user.enrollmentYear, new Date(), 'zh', getAppTimeZone())
             : null);
 
     const { tags: chosen, difficultyStars } = await getAIService().suggestKnowledgeTags({
@@ -91,6 +95,7 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
     return {
         tagNames: [...newTags, ...customTags.map((tag) => tag.name).filter((name) => !newTags.includes(name))],
         difficultyStars,
+        paperLevel: item.paperLevel,
         newTagIds: newTags.map((name) => tagIdByName.get(name)!),
         oldSystemTags: item.tags.filter((tag) => tag.isSystem).map(({ id, name }) => ({ id, name })),
     };
@@ -109,13 +114,15 @@ export async function previewRetagErrorItem(errorItemId: string, userId: string)
  * AI 未给出星级时保留原星级
  */
 export async function retagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
-    const { tagNames, newTagIds, oldSystemTags, difficultyStars } = await suggestTagsForItem(errorItemId, userId);
+    const { tagNames, newTagIds, oldSystemTags, difficultyStars, paperLevel } = await suggestTagsForItem(errorItemId, userId);
+    const defaultPaperLevel = !paperLevel ? getDefaultPaperLevel(difficultyStars) : null;
 
     await prisma.errorItem.update({
         where: { id: errorItemId },
         data: {
             knowledgePoints: JSON.stringify(tagNames),
             ...(difficultyStars !== null ? { difficultyStars } : {}),
+            ...(defaultPaperLevel ? { paperLevel: defaultPaperLevel } : {}),
             tags: {
                 disconnect: oldSystemTags.map((tag) => ({ id: tag.id })),
                 connect: newTagIds.map((id) => ({ id })),

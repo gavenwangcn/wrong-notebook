@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { apiClient } from "@/lib/api-client";
 import { Loader2, ArrowLeft, User, BookOpen, PenTool, Layers, Calendar, Tag, CheckCircle, Clock, AlertCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { AdminUserDetail } from "@/types/api";
 
 export default function AdminUserDetailPage() {
+    const { timeZone } = useTimeZone()
     const { data: session, status } = useSession()
     const router = useRouter()
     const params = useParams()
@@ -251,7 +254,7 @@ export default function AdminUserDetailPage() {
                                         </div>
                                     </div>
                                     <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {new Date(item.createdAt).toLocaleDateString()}
+                                        {formatDateTime(item.createdAt, 'yyyy-MM-dd', timeZone)}
                                     </span>
                                 </div>
                             ))}

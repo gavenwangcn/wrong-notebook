@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { startOfMonth, subMonths, format, startOfWeek, subDays } from "date-fns";
+import { getAppTimeZone } from "@/lib/config";
+import { formatDateTime, getDayRange } from "@/lib/date-time";
 import { unauthorized, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 
@@ -56,23 +57,19 @@ export async function GET(req: Request) {
 
         // 5. Activity Data (Last 7 days) - Track ErrorItem creation (not practice)
         const activityData = [];
+        const timeZone = getAppTimeZone();
+        const now = new Date();
         for (let i = 6; i >= 0; i--) {
-            const targetDate = subDays(new Date(), i);
-            const dateStr = format(targetDate, 'MM-dd');
-
-            const startOfDay = new Date(targetDate);
-            startOfDay.setHours(0, 0, 0, 0);
-
-            const endOfDay = new Date(targetDate);
-            endOfDay.setHours(23, 59, 59, 999);
+            const { start, end } = getDayRange(now, timeZone, -i);
+            const dateStr = formatDateTime(start, 'MM-dd', timeZone);
 
             // Count error items created on this day
             const count = await prisma.errorItem.count({
                 where: {
                     userId,
                     createdAt: {
-                        gte: startOfDay,
-                        lt: endOfDay
+                        gte: start,
+                        lt: end,
                     }
                 }
             });

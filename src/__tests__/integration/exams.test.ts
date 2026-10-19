@@ -40,11 +40,13 @@ vi.mock('@/lib/mastery', async (importOriginal) => ({
 }));
 vi.mock('next-auth', () => ({ getServerSession: vi.fn(() => Promise.resolve(mocks.session)) }));
 vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+vi.mock('@/lib/config', () => ({ getAppTimeZone: vi.fn(() => 'Asia/Shanghai') }));
 
 import { POST as CREATE, GET as LIST } from '@/app/api/exams/route';
 import { GET as DETAIL, DELETE } from '@/app/api/exams/[id]/route';
 import { PUT as RESULTS } from '@/app/api/exams/[id]/results/route';
 import { generateExamPaper } from '@/lib/exam';
+import { getAppTimeZone } from '@/lib/config';
 
 const json = (url: string, method: string, body: object) => new Request(url, {
     method,
@@ -63,6 +65,21 @@ describe('/api/exams', () => {
 
     describe('POST 创建试卷', () => {
         const options = { subjectIds: ['s1'], scope: 'unmastered', count: 2, difficulty: 'hard' };
+
+        it.each([['Asia/Shanghai', '11:27'], ['UTC', '03:27']])('默认标题按全局时区 %s 生成时间', async (timeZone, time) => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-10-19T03:27:00Z'));
+            vi.mocked(getAppTimeZone).mockReturnValueOnce(timeZone);
+            mocks.subject.findMany.mockResolvedValue([{ id: 's1', name: '数学' }]);
+            mocks.errorItem.findMany.mockResolvedValue([{ id: 'e1', shortId: 'AAAAAA' }]);
+            mocks.examPaper.create.mockResolvedValue({ id: 'p1', title: '数学', requestedCount: 2, _count: { questions: 1 } });
+            try {
+                expect((await CREATE(json('http://localhost/api/exams', 'POST', options))).status).toBe(201);
+                expect(mocks.examPaper.create.mock.calls[0][0].data.title).toBe(`数学 2026-10-19 ${time}`);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
 
         it('随机抽题并记录来源短 ID', async () => {
             mocks.subject.findMany.mockResolvedValue([{ id: 's1', name: '数学' }]);

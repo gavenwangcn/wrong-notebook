@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { dateInputToISOString, formatDateTime } from "@/lib/date-time";
 import { ClipboardCheck, Loader2, Printer, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import type { ExamPaperDetail, PracticeResult } from "@/types/api";
 const POLL_INTERVAL_MS = 3000;
 
 export default function ExamDetailPage() {
+    const { timeZone } = useTimeZone();
     const params = useParams();
     const router = useRouter();
     const { t, language } = useLanguage();
@@ -25,7 +27,7 @@ export default function ExamDetailPage() {
     const [notFound, setNotFound] = useState(false);
     // 录入模式下各题的待保存结果；null 表示未在录入
     const [draft, setDraft] = useState<Record<string, PracticeResult | null> | null>(null);
-    const [takenAt, setTakenAt] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [takenAt, setTakenAt] = useState(formatDateTime(new Date(), "yyyy-MM-dd", timeZone));
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
 
@@ -59,7 +61,7 @@ export default function ExamDetailPage() {
         setMessage(null);
         setDraft(Object.fromEntries(paper.questions.map((question) => [question.id, question.result])));
         const recordedAt = paper.questions.find((question) => question.resultAt)?.resultAt;
-        if (recordedAt) setTakenAt(format(new Date(recordedAt), "yyyy-MM-dd"));
+        setTakenAt(formatDateTime(recordedAt || new Date(), "yyyy-MM-dd", timeZone));
     };
 
     const saveResults = async () => {
@@ -68,7 +70,7 @@ export default function ExamDetailPage() {
         setMessage(null);
         try {
             await apiClient.put(`/api/exams/${paper.id}/results`, {
-                takenAt: new Date(`${takenAt}T12:00:00`).toISOString(),
+                takenAt: dateInputToISOString(takenAt, timeZone),
                 results: recordable.map((question) => ({ questionId: question.id, result: draft[question.id] ?? null })),
             });
             setDraft(null);
@@ -102,7 +104,7 @@ export default function ExamDetailPage() {
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                             <ExamStatusBadge status={paper.status} />
                             <span>{t.exam.progress.replace("{ready}", String(readyCount)).replace("{total}", String(paper.questions.length))}</span>
-                            <span>{format(new Date(paper.createdAt), "yyyy-MM-dd HH:mm")}</span>
+                            <span>{formatDateTime(paper.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
                         </div>
                     </div>
                 </div>

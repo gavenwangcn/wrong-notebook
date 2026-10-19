@@ -18,6 +18,7 @@ const userUpdateSchema = z.object({
     enrollmentYear: z.number().optional().nullable(),
     confirmBeforeImport: z.boolean().optional(),
     enableGeogebra: z.boolean().optional(),
+    enableSvgAnimation: z.boolean().optional(),
     questionDuplicateThreshold: z.number().min(1).max(100).multipleOf(0.01).optional(),
 });
 
@@ -38,6 +39,7 @@ export async function GET() {
                 enrollmentYear: true,
                 confirmBeforeImport: true,
                 enableGeogebra: true,
+                enableSvgAnimation: true,
                 questionDuplicateThreshold: true,
                 // Do not return password
             }
@@ -65,7 +67,7 @@ export async function PATCH(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport, enableGeogebra, questionDuplicateThreshold } = userUpdateSchema.parse(body);
+        const { name, email, password, educationStage, enrollmentYear, confirmBeforeImport, enableGeogebra, enableSvgAnimation, questionDuplicateThreshold } = userUpdateSchema.parse(body);
 
         const updateData: Prisma.UserUpdateInput = {};
 
@@ -80,6 +82,9 @@ export async function PATCH(req: Request) {
         }
         if (typeof enableGeogebra === 'boolean') {
             updateData.enableGeogebra = enableGeogebra;
+        }
+        if (typeof enableSvgAnimation === 'boolean') {
+            updateData.enableSvgAnimation = enableSvgAnimation;
         }
         if (typeof questionDuplicateThreshold === 'number') {
             updateData.questionDuplicateThreshold = questionDuplicateThreshold;
@@ -113,6 +118,7 @@ export async function PATCH(req: Request) {
                 enrollmentYear: true,
                 confirmBeforeImport: true,
                 enableGeogebra: true,
+                enableSvgAnimation: true,
                 questionDuplicateThreshold: true,
             }
         });

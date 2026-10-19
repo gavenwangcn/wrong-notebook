@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import type { UserProfile } from "@/types/api";
 
-type BooleanPreference = "confirmBeforeImport" | "enableGeogebra";
+type BooleanPreference = "confirmBeforeImport" | "enableGeogebra" | "enableSvgAnimation";
 
 interface UserPreferenceSwitchProps {
     field: BooleanPreference;

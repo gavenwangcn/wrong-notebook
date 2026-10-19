@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ParsedQuestion } from "@/lib/ai";
+import type { ParsedQuestion } from "@/lib/ai";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { TagInput } from "@/components/tag-input";
 import { NotebookSelector } from "@/components/notebook-selector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
-import { UserProfile, Notebook } from "@/types/api";
+import type { UserProfile, Notebook } from "@/types/api";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { normalizeMistakeStatusForSave, type MistakeStatus } from "@/lib/mistake-status";
 import type { ReanswerQuestionResult } from "@/lib/ai/types";
@@ -24,6 +24,8 @@ import { buildReanswerRequestBody } from "@/lib/reanswer-request";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { DifficultyStars } from "@/components/difficulty-stars";
 import { QuestionFigure } from "@/components/question-figure";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
 
 interface ParsedQuestionWithSubject extends ParsedQuestion {
     subjectId?: string;
@@ -33,7 +35,7 @@ interface ParsedQuestionWithSubject extends ParsedQuestion {
 }
 
 interface CorrectionEditorProps {
-    initialData: ParsedQuestion;
+    initialData: ParsedQuestionWithSubject;
     onSave: (data: ParsedQuestionWithSubject) => Promise<void>;
     onCancel: () => void;
     imagePreview?: string | null;
@@ -49,6 +51,7 @@ type ReanswerErrorMessages = {
 };
 
 export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, initialSubjectId, aiTimeout }: CorrectionEditorProps) {
+    const { timeZone } = useTimeZone();
     const [data, setData] = useState<ParsedQuestionWithSubject>({
         ...initialData,
         wrongAnswerText: initialData.wrongAnswerText || "",
@@ -56,8 +59,9 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
         mistakeStatus: initialData.mistakeStatus || "unknown",
         subjectId: initialSubjectId,
         gradeSemester: "",
-        paperLevel: "a"
     });
+    // 未手工选卷时随星级更新默认值，手工选择后优先保留。
+    const paperLevel = data.paperLevel ?? getDefaultPaperLevel(data.difficultyStars) ?? "a";
     const { t, language } = useLanguage();
     const [isReanswering, setIsReanswering] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -82,13 +86,13 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
             .then(user => {
                 setGeogebraEnabled(!!user?.enableGeogebra);
                 if (user && user.educationStage && user.enrollmentYear) {
-                    const grade = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), language);
+                    const grade = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), language, timeZone);
                     setData(prev => ({ ...prev, gradeSemester: grade }));
                     setEducationStage(user.educationStage);
                 }
             })
             .catch(err => console.error("Failed to fetch user info for grade calculation:", err));
-    }, [language]);
+    }, [language, timeZone]);
 
     // 重新解题函数
     const handleReanswer = async () => {
@@ -221,6 +225,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                             try {
                                 await onSave({
                                     ...data,
+                                    paperLevel,
                                     mistakeStatus: normalizeMistakeStatusForSave(
                                         data.mistakeStatus,
                                         data.wrongAnswerText
@@ -273,7 +278,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                         <div className="space-y-2">
                             <Label>{t.editor.paperLevel || "Paper Level"}</Label>
                             <Select
-                                value={data.paperLevel || "a"}
+                                value={paperLevel}
                                 onValueChange={(val) => setData({ ...data, paperLevel: val })}
                             >
                                 <SelectTrigger>
@@ -430,7 +435,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
                     {/* GeoGebra Dynamic Demo */}
                     {!geogebraEnabled ? null : data.geogebraCommands ? (
-                        <GeogebraDemo commands={data.geogebraCommands} height={350} onRegenerate={handleAnalyzeGeogebra} />
+                        <GeogebraDemo commands={data.geogebraCommands} height={350} onRegenerate={handleAnalyzeGeogebra} onDelete={async () => setData(prev => ({ ...prev, geogebraCommands: undefined }))} />
                     ) : data.questionText.trim() && data.answerText.trim() ? (
                         <div className="rounded-lg border border-dashed p-4">
                             <div className="flex items-center justify-between">

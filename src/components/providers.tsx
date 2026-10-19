@@ -2,12 +2,13 @@
 
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SessionProvider } from "next-auth/react";
+import { TimeZoneProvider } from "@/contexts/TimeZoneContext";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, timeZone }: { children: React.ReactNode; timeZone?: string }) {
     return (
         <SessionProvider>
             <LanguageProvider>
-                {children}
+                <TimeZoneProvider initialTimeZone={timeZone}>{children}</TimeZoneProvider>
             </LanguageProvider>
         </SessionProvider>
     );

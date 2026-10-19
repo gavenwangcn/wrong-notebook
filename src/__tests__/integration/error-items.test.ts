@@ -200,6 +200,23 @@ describe('/api/error-items', () => {
     });
 
     describe('POST /api/error-items (创建错题)', () => {
+        it.each([[1, 'a'], [2, 'a'], [3, 'a'], [4, 'b'], [5, 'b']] as const)('%i 星的新题保存默认 %s 卷', async (difficultyStars, paperLevel) => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'new-item', userId: 'user-123' });
+            const response = await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST', body: JSON.stringify({ questionText: '新题', difficultyStars }),
+            }));
+            expect(response.status).toBe(201);
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.paperLevel).toBe(paperLevel);
+        });
+
+        it.each(['a', 'b', 'other'])('创建时优先保留手工指定的 %s 卷', async (paperLevel) => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'new-item', userId: 'user-123' });
+            const response = await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST', body: JSON.stringify({ questionText: '新题', difficultyStars: paperLevel === 'b' ? 2 : 5, paperLevel }),
+            }));
+            expect(response.status).toBe(201);
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.paperLevel).toBe(paperLevel);
+        });
         it('应该成功创建错题', async () => {
             const errorItemData = {
                 questionText: '求解 x + 2 = 5',
@@ -485,6 +502,20 @@ describe('/api/error-items', () => {
     });
 
     describe('PUT /api/error-items/[id] (更新错题)', () => {
+        it('未设置卷别的题目补评为 4 星时默认归 B 卷', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ id: 'e1', userId: 'user-123', paperLevel: null });
+            mocks.mockPrismaErrorItem.update.mockResolvedValue({ id: 'e1' });
+            const response = await PUT(new Request('http://localhost/api/error-items/e1', { method: 'PUT', body: JSON.stringify({ difficultyStars: 4 }) }), { params: Promise.resolve({ id: 'e1' }) });
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaErrorItem.update.mock.calls[0][0].data).toMatchObject({ difficultyStars: 4, paperLevel: 'b' });
+        });
+
+        it.each(['a', 'b', 'other'])('补评星级时保留已有 %s 卷', async (paperLevel) => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ id: 'e1', userId: 'user-123', paperLevel });
+            mocks.mockPrismaErrorItem.update.mockResolvedValue({ id: 'e1' });
+            await PUT(new Request('http://localhost/api/error-items/e1', { method: 'PUT', body: JSON.stringify({ difficultyStars: paperLevel === 'b' ? 2 : 5 }) }), { params: Promise.resolve({ id: 'e1' }) });
+            expect(mocks.mockPrismaErrorItem.update.mock.calls[0][0].data).not.toHaveProperty('paperLevel');
+        });
         it('应该成功更新知识点', async () => {
             const existingItem = {
                 id: 'error-item-1',

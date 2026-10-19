@@ -1,11 +1,12 @@
-import { addDays } from "date-fns";
+import { getAppTimeZone } from "@/lib/config";
+import { shiftCalendarDate } from "@/lib/date-time";
 
 // Ebbinghaus intervals in days: 1, 2, 4, 7, 15, 30
 const REVIEW_INTERVALS = [1, 2, 4, 7, 15, 30];
 
 export function calculateNextReviewDate(currentStage: number): Date {
     const interval = REVIEW_INTERVALS[currentStage] || 30; // Default to 30 if stage exceeds
-    return addDays(new Date(), interval);
+    return shiftCalendarDate(new Date(), getAppTimeZone(), interval);
 }
 
 export function getReviewStageDescription(stage: number): string {

@@ -6,6 +6,7 @@
  */
 
 import type { GradeLevel } from "@/lib/ai/types";
+import { DEFAULT_TIME_ZONE, getCalendarDate } from "@/lib/date-time";
 
 /**
  * 根据教育阶段和入学年份计算当前年级数字
@@ -15,7 +16,8 @@ import type { GradeLevel } from "@/lib/ai/types";
  */
 export function calculateGradeNumber(
     educationStage: string | null,
-    enrollmentYear: number | null
+    enrollmentYear: number | null,
+    timeZone = DEFAULT_TIME_ZONE,
 ): GradeLevel | null {
     if (!enrollmentYear) {
         return null;
@@ -26,8 +28,9 @@ export function calculateGradeNumber(
         return null;
     }
 
-    const currentYear = new Date().getFullYear();
-    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const now = getCalendarDate(new Date(), timeZone);
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
 
     // 计算入学后的年数
     let yearsInSchool = currentYear - enrollmentYear;

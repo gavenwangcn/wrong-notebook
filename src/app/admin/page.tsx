@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { apiClient } from "@/lib/api-client";
 import { Loader2, Users, BookOpen, PenTool, Layers, TrendingUp, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Eye, BarChart3, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,8 +80,7 @@ function DailyTrendChart({ data, t }: { data: AdminDashboardData; t: any }) {
                 <div className="flex items-end gap-2 h-40">
                     {data.dailyTrend.map((d) => {
                         const height = maxCount > 0 ? (d.count / maxCount) * 100 : 0
-                        const dateObj = new Date(d.date)
-                        const label = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`
+                        const label = d.date.slice(5).replace('-', '/')
                         return (
                             <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
                                 <span className="text-xs font-medium">{d.count > 0 ? d.count : ""}</span>
@@ -196,6 +197,7 @@ function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: any
 }
 
 function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDetail: (userId: string) => void }) {
+    const { timeZone } = useTimeZone()
     const { t } = useLanguage()
     const [expandedId, setExpandedId] = useState<string | null>(null)
 
@@ -237,7 +239,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                     </Badge>
                                 </td>
                                 <td className="p-3 text-center text-muted-foreground text-xs">
-                                    {new Date(user.createdAt).toLocaleDateString()}
+                                    {formatDateTime(user.createdAt, 'yyyy-MM-dd', timeZone)}
                                 </td>
                                 <td className="p-3 text-center">
                                     <Button
@@ -303,7 +305,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                             {expandedId === user.id && (
                                 <div className="mt-3 pt-3 border-t flex justify-between items-center">
                                     <span className="text-xs text-muted-foreground">
-                                        {new Date(user.createdAt).toLocaleDateString()}
+                                        {formatDateTime(user.createdAt, 'yyyy-MM-dd', timeZone)}
                                     </span>
                                     <Button
                                         variant="ghost"

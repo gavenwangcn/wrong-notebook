@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createLogger } from './logger';
+import { DEFAULT_TIME_ZONE, isValidTimeZone } from './date-time';
 
 const logger = createLogger('config');
 
@@ -18,6 +19,7 @@ export interface OpenAIInstance {
 export interface AppConfig {
     aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic';
     allowRegistration?: boolean;
+    timeZone?: string;
     openai?: {
         instances?: OpenAIInstance[];
         activeInstanceId?: string;
@@ -96,6 +98,7 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
 const DEFAULT_CONFIG: AppConfig = {
     aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'gemini',
     allowRegistration: true,
+    timeZone: DEFAULT_TIME_ZONE,
     openai: {
         instances: process.env.OPENAI_API_KEY ? [{
             id: 'env-default',
@@ -156,6 +159,7 @@ export function getAppConfig(): AppConfig {
             return {
                 ...DEFAULT_CONFIG,
                 ...userConfig,
+                timeZone: isValidTimeZone(userConfig.timeZone) ? userConfig.timeZone.trim() : DEFAULT_TIME_ZONE,
                 openai: {
                     instances: openaiConfig?.instances || DEFAULT_CONFIG.openai?.instances || [],
                     activeInstanceId: openaiConfig?.activeInstanceId || DEFAULT_CONFIG.openai?.activeInstanceId,
@@ -175,10 +179,14 @@ export function getAppConfig(): AppConfig {
 }
 
 export function updateAppConfig(newConfig: Partial<AppConfig>) {
+    if (newConfig.timeZone !== undefined && !isValidTimeZone(newConfig.timeZone)) {
+        throw new Error('INVALID_TIME_ZONE');
+    }
     const currentConfig = getAppConfig();
     const updatedConfig = {
         ...currentConfig,
         ...newConfig,
+        timeZone: newConfig.timeZone?.trim() ?? currentConfig.timeZone ?? DEFAULT_TIME_ZONE,
         openai: {
             instances: newConfig.openai?.instances ?? currentConfig.openai?.instances ?? [],
             activeInstanceId: newConfig.openai?.activeInstanceId ?? currentConfig.openai?.activeInstanceId,
@@ -197,6 +205,10 @@ export function updateAppConfig(newConfig: Partial<AppConfig>) {
         logger.error({ error }, 'Failed to write config file');
         throw error;
     }
+}
+
+export function getAppTimeZone(): string {
+    return getAppConfig().timeZone || DEFAULT_TIME_ZONE;
 }
 
 // 获取当前激活的 OpenAI 实例配置

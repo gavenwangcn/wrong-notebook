@@ -17,14 +17,14 @@ const DANGEROUS_OPEN_TAGS = /<\/?(script|foreignObject|iframe|object|embed|audio
 /**
  * 从 AI 回复中取出 <svg>…</svg> 并净化；没有有效 SVG、超长或净化后为空时返回 null
  */
-export function sanitizeFigureSvg(raw: unknown): string | null {
+export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_SVG_LENGTH): string | null {
     if (typeof raw !== 'string') return null;
     const start = raw.search(/<svg[\s>]/i);
     const end = raw.toLowerCase().lastIndexOf('</svg>');
     if (start === -1 || end === -1 || end < start) return null;
 
     let svg = raw.slice(start, end + '</svg>'.length);
-    if (svg.length > MAX_FIGURE_SVG_LENGTH) return null;
+    if (svg.length > maxLength) return null;
 
     svg = svg
         .replace(/<!--[\s\S]*?-->/g, '')

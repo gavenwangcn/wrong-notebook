@@ -5,6 +5,8 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { unauthorized, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { getAppTimeZone } from "@/lib/config";
+import { shiftCalendarDate } from "@/lib/date-time";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE } from "@/lib/constants/pagination";
 import { isShortId } from "@/lib/short-id";
 
@@ -70,12 +72,13 @@ export async function GET(req: Request) {
         // Time range filter
         if (timeRange && timeRange !== "all") {
             const now = new Date();
-            const startDate = new Date();
+            const timeZone = getAppTimeZone();
+            let startDate = now;
 
             if (timeRange === "week") {
-                startDate.setDate(now.getDate() - 7);
+                startDate = shiftCalendarDate(now, timeZone, -7);
             } else if (timeRange === "month") {
-                startDate.setMonth(now.getMonth() - 1);
+                startDate = shiftCalendarDate(now, timeZone, 0, -1);
             }
 
             whereClause.createdAt = {

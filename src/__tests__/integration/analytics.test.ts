@@ -35,6 +35,7 @@ vi.mock('next-auth', () => ({
 vi.mock('@/lib/auth', () => ({
     authOptions: {},
 }));
+vi.mock('@/lib/config', () => ({ getAppTimeZone: () => 'Asia/Shanghai' }));
 
 // Import after mocks
 import { GET } from '@/app/api/analytics/route';
@@ -47,6 +48,22 @@ describe('/api/analytics', () => {
     });
 
     describe('GET /api/analytics (获取分析统计)', () => {
+        it('北京时间跨日后使用当天零点到次日零点的统计范围', async () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-10-18T16:01:00Z'));
+            mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
+            mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
+            try {
+                const response = await GET(new Request('http://localhost/api/analytics'));
+                expect(response.status).toBe(200);
+                expect((await response.json()).activityData.at(-1).date).toBe('10-19');
+                expect(mocks.mockPrismaErrorItem.count.mock.calls.at(-1)?.[0].where.createdAt).toEqual({
+                    gte: new Date('2026-10-18T16:00:00Z'), lt: new Date('2026-10-19T16:00:00Z'),
+                });
+            } finally {
+                vi.useRealTimers();
+            }
+        });
         it('应该返回完整的统计数据', async () => {
             // Mock total errors
             mocks.mockPrismaErrorItem.count

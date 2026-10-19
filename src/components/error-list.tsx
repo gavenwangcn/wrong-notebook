@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useRouter } from "next/navigation";
 import {
@@ -43,6 +44,7 @@ type KnowledgeFilterChange = {
 };
 
 export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
+    const { timeZone } = useTimeZone();
     const [items, setItems] = useState<ErrorItem[]>([]);
     const [, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -410,7 +412,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                                     <span title={t.mastery.probability}>{Math.round(item.masteryProbability * 100)}%</span>
                                                 )}
                                                 {item.shortId && <span className="font-mono">{item.shortId}</span>}
-                                                {format(new Date(item.createdAt), "MM/dd")}
+                                                {formatDateTime(item.createdAt, "MM/dd", timeZone)}
                                             </span>
                                         </div>
                                     </CardHeader>

@@ -1,12 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { sanitizeSvgAnimation } from '../svg-animation';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { getAppConfig } from '../config';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
+import { normalizeGeneratedQuestion } from './generated-question';
 
 const logger = createLogger('ai:gemini');
 
@@ -274,7 +276,7 @@ export class GeminiProvider implements AIService {
 
             logger.box('✅ Parsed & Validated Result', JSON.stringify(parsedResult, null, 2));
 
-            return parsedResult;
+            return normalizeGeneratedQuestion(parsedResult);
 
         } catch (error) {
             logger.box('❌ Error during question generation', {
@@ -473,10 +475,32 @@ export class GeminiProvider implements AIService {
         }
     }
 
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
+        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg);
+        logger.info({ provider: 'Gemini', model: this.modelName, questionLength: questionText.length }, 'SVG Animation Request');
+
+        try {
+            const response = await this.retryOperation(() => this.ai.models.generateContent({
+                model: this.modelName,
+                contents: [{ text: prompt }, { text: "请为上述题目制作 SVG 动画讲解。" }],
+            }));
+
+            const text = response.text || '';
+            logger.debug({ rawResponse: text }, 'SVG animation AI raw response');
+
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
+            return sanitizeSvgAnimation(this.extractTag(text, "svg_animation") || text);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during SVG animation generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
     private handleError(error: unknown) {
         logger.error({ error }, 'Gemini error');
         if (error instanceof Error) {
-            if (error.message === AI_OUTPUT_TRUNCATED) {
+            if (error.message === AI_OUTPUT_TRUNCATED || error.message.startsWith('AI_RESPONSE_ERROR:')) {
                 throw error;
             }
             const msg = error.message.toLowerCase();

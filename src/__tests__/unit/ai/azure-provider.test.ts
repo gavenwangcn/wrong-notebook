@@ -72,6 +72,15 @@ function asPrivateProvider(provider: AzureOpenAIProvider): PrivateAzureProvider 
 }
 
 describe('Azure OpenAI Provider 初始化', () => {
+    it('举一反三清理题号和分值，拒绝返回选择题', async () => {
+        const provider = new AzureOpenAIProvider({ apiKey: 'test-key', endpoint: 'https://test.openai.azure.com', deploymentName: 'gpt-4o' });
+        const response = (question: string) => ({ choices: [{ finish_reason: 'stop', message: { content: `<question_text>${question}</question_text><answer_text>4</answer_text><analysis>计算</analysis><subject>数学</subject>` } }] });
+        mockAzureCompletionCreate.mockResolvedValue(response('1. （5分）求 2+2 的值。'));
+        expect((await provider.generateSimilarQuestion('原题', [])).questionText).toBe('求 2+2 的值。');
+        expect(mockAzureCompletionCreate.mock.calls[0][0].messages[0].content).toContain('只能生成填空题或解答题');
+        mockAzureCompletionCreate.mockResolvedValue(response('求和。\nA. 2\nB. 4'));
+        await expect(provider.generateSimilarQuestion('原题', [])).rejects.toThrow('AI_RESPONSE_ERROR');
+    });
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -516,5 +525,20 @@ describe('Azure OpenAI Provider 知识点重新标注', () => {
         const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['相遇问题'] });
 
         expect(tags).toEqual({ tags: ['相遇问题'], difficultyStars: null });
+    });
+});
+
+describe('Azure OpenAI Provider SVG 动画讲解', () => {
+    const animation = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><circle r="5" opacity="0"><set attributeName="opacity" to="1" begin="2s" fill="freeze"/></circle><script>alert(1)</script></svg>';
+
+    it('解析并净化动画', async () => {
+        mockAzureCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: `<svg_animation>${animation}</svg_animation>` } }] });
+        const provider = new AzureOpenAIProvider({ apiKey: 'test-key', endpoint: 'https://test.openai.azure.com', deploymentName: 'gpt-4o' });
+
+        const svg = await provider.generateSvgAnimation('求面积', '6', '解析');
+
+        expect(mockAzureCompletionCreate.mock.calls.at(-1)?.[0].messages[0].content).toContain('求面积');
+        expect(svg).toContain('<set attributeName="opacity"');
+        expect(svg).not.toContain('<script');
     });
 });

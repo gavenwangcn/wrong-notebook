@@ -32,8 +32,12 @@ import { ModelSelector } from "@/components/ui/model-selector";
 import { PromptSettings } from "@/components/settings/prompt-settings";
 import { ImportPreferenceSetting } from "@/components/settings/import-preference-setting";
 import { GeogebraPreferenceSetting } from "@/components/settings/geogebra-preference-setting";
+import { SvgAnimationPreferenceSetting } from "@/components/settings/svg-animation-preference-setting";
 import { AnthropicSettings } from "@/components/settings/anthropic-settings";
 import { DuplicateThresholdSetting } from "@/components/settings/duplicate-threshold-setting";
+import { TimeZoneSetting } from "@/components/settings/time-zone-setting";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
 const MAX_OPENAI_INSTANCES = 10;
@@ -56,6 +60,7 @@ interface ProfileFormState {
 }
 
 export function SettingsDialog() {
+    const { timeZone, setTimeZone } = useTimeZone();
     const { data: session } = useSession();
     const isAdmin = (session?.user as { role?: string } | undefined)?.role === 'admin';
     const { t, language, setLanguage } = useLanguage();
@@ -185,6 +190,10 @@ export function SettingsDialog() {
     };
 
     const handleSaveSettings = async () => {
+        if (!isValidTimeZone(config.timeZone ?? DEFAULT_TIME_ZONE)) {
+            alert(t.settings.general.invalidTimeZone);
+            return;
+        }
         // 验证 OpenAI 实例必填字段
         const openaiValidationError = validateOpenAIInstances();
         if (openaiValidationError) {
@@ -201,7 +210,9 @@ export function SettingsDialog() {
 
         setSaving(true);
         try {
-            await apiClient.post("/api/settings", config);
+            const updated = await apiClient.post<AppConfig>("/api/settings", config);
+            setConfig(updated);
+            setTimeZone(updated.timeZone || DEFAULT_TIME_ZONE);
             alert(t.settings?.messages?.saved || "Settings saved");
             // 保存成功后滚动到顶部，方便关闭对话框
             dialogContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -747,6 +758,8 @@ export function SettingsDialog() {
                                 </Select>
                             </div>
 
+                            <TimeZoneSetting value={config.timeZone ?? timeZone} onChange={(value) => setConfig((current) => ({ ...current, timeZone: value }))} disabled={!isAdmin || loading || saving} />
+
                             {/* AI 超时是全局配置，只有管理员可以修改 */}
                             {isAdmin && (
                             <div className="space-y-2 pt-4 border-t">
@@ -792,6 +805,7 @@ export function SettingsDialog() {
                             )}
 
                             <ImportPreferenceSetting />
+                            <SvgAnimationPreferenceSetting />
                             <GeogebraPreferenceSetting />
                             <DuplicateThresholdSetting />
                         </div>

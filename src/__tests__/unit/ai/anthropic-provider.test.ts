@@ -80,6 +80,14 @@ function message(text: string, stopReason = 'end_turn', extraBlocks: unknown[] =
 }
 
 describe('AnthropicProvider', () => {
+    it('举一反三清理题号和分值，拒绝返回选择题', async () => {
+        const provider = new AnthropicProvider({ apiKey: 'test-key' });
+        mocks.create.mockResolvedValue(message(QUESTION_XML.replace('2 + 3 = ?', '1. （5分）求 2+2 的值。')));
+        expect((await provider.generateSimilarQuestion('原题', [])).questionText).toBe('求 2+2 的值。');
+        expect(mocks.create.mock.calls[0][0].system).toContain('只能生成填空题或解答题');
+        mocks.create.mockResolvedValue(message(QUESTION_XML.replace('2 + 3 = ?', '求和。\nA. 2\nB. 4')));
+        await expect(provider.generateSimilarQuestion('原题', [])).rejects.toThrow('AI_RESPONSE_ERROR');
+    });
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.clientOptions.length = 0;
@@ -194,5 +202,22 @@ describe('AnthropicProvider', () => {
         const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
 
         await expect(provider.generateSimilarQuestion('2+3', ['加法'])).rejects.toThrow('AI_RESPONSE_ERROR');
+    });
+});
+
+describe('Anthropic Provider SVG 动画讲解', () => {
+    const animation = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><circle r="5" opacity="0"><set attributeName="opacity" to="1" begin="2s" fill="freeze"/></circle><script>alert(1)</script></svg>';
+
+    it('解析并净化动画', async () => {
+        mocks.create.mockResolvedValue(message(`<svg_animation>${animation}</svg_animation>`));
+        const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
+
+        const svg = await provider.generateSvgAnimation('求面积', '6', '解析');
+
+        const request = mocks.create.mock.calls.at(-1)?.[0];
+        expect(request.max_tokens).toBe(16384);
+        expect(request.system).toContain('求面积');
+        expect(svg).toContain('<set attributeName="opacity"');
+        expect(svg).not.toContain('<script');
     });
 });

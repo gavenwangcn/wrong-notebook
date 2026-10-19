@@ -232,6 +232,24 @@ describe('题目导入自动判重（真实 SQLite）', () => {
 });
 
 describe('其他导入入口也使用同一判重规则', () => {
+    it('Openclaw 识别返回星级时，保存星级并默认归入对应卷别', async () => {
+        vi.stubEnv('OPENCLAW_AUTH_MODE', 'apikey');
+        vi.stubEnv('OPENCLAW_INTEGRATION_API_KEY', 'test-only-key');
+        vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+            success: true, data: { questionText, answerText: 'x = 3', analysis: '移项', knowledgePoints: [], difficultyStars: 5 },
+        }), { status: 200 })));
+        const response = await IMPORT_OPENCLAW(request({ userEmail: mocks.session.user.email, images: [{ base64: 'dGVzdA==', mimeType: 'image/png', filename: 'star.png' }] }, '/api/openclaw/batch-upload', { 'x-api-key': 'test-only-key' }));
+        expect(response.status).toBe(201);
+        const data = await response.json();
+        expect(data.successCount).toBe(1);
+        expect(await database.errorItem.findUnique({ where: { id: data.results[0].errorItemId } })).toMatchObject({ difficultyStars: 5, paperLevel: 'b' });
+    });
+
+    it.each([null, 'a', 'other'])('备份导入仅为未设置卷别的 4 星题补 B 卷，原卷别为 %s', async (paperLevel) => {
+        const response = await IMPORT_BACKUP(request({ version: 1, user: { email: mocks.session.user.email }, errorItems: [{ id: 'backup-item', userId: 'user-1', questionText, difficultyStars: 4, paperLevel, originalImageUrl: '' }] }, '/api/import'));
+        expect(response.status).toBe(200);
+        expect(await database.errorItem.findFirst({ where: { userId: 'user-1' } })).toMatchObject({ difficultyStars: 4, paperLevel: paperLevel ?? 'b' });
+    });
     it('Openclaw 同一批次的相同题目返回逐题提示和错误记录', async () => {
         vi.stubEnv('OPENCLAW_AUTH_MODE', 'apikey');
         vi.stubEnv('OPENCLAW_INTEGRATION_API_KEY', 'test-only-key');

@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { getAppTimeZone } from "@/lib/config";
+
+export const dynamic = 'force-dynamic';
 
 const geistSans = localFont({
   src: './fonts/Geist-Variable.woff2',
@@ -53,7 +56,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Providers>
+        <Providers timeZone={getAppTimeZone()}>
           {children}
         </Providers>
       </body>

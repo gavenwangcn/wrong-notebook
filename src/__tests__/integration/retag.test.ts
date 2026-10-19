@@ -98,6 +98,7 @@ describe('知识点重新生成', () => {
             data: {
                 knowledgePoints: JSON.stringify(['假设法解鸡兔同笼', '鸡兔同笼', '易错']),
                 difficultyStars: 2,
+                paperLevel: 'a',
                 tags: { disconnect: [{ id: 'old-sys' }], connect: [{ id: 'tag-a' }, { id: 'tag-b' }] },
             },
         });
@@ -136,6 +137,17 @@ describe('知识点重新生成', () => {
 
         expect(response.status).toBe(200);
         expect(mocks.errorItem.update.mock.calls[0][0].data).not.toHaveProperty('difficultyStars');
+        expect(mocks.errorItem.update.mock.calls[0][0].data).not.toHaveProperty('paperLevel');
+    });
+
+    it.each([null, 'a', 'other'])('补评为 5 星时只为未设置卷别的题目补默认值（原卷别 %s）', async (paperLevel) => {
+        mocks.errorItem.findUnique.mockResolvedValue({ ...item, paperLevel });
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['鸡兔同笼'], difficultyStars: 5 });
+        mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
+        expect((await RETAG_ITEM(new Request('http://localhost', { method: 'POST' }), params('e1'))).status).toBe(200);
+        const data = mocks.errorItem.update.mock.calls[0][0].data;
+        if (paperLevel === null) expect(data.paperLevel).toBe('b');
+        else expect(data).not.toHaveProperty('paperLevel');
     });
 
     it('他人的题目返回 404，AI 未选出知识点时返回 400 且不修改', async () => {

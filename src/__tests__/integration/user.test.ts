@@ -110,6 +110,22 @@ describe('/api/user', () => {
             expect(mocks.mockPrismaUser.update.mock.calls[0][0].select.enableGeogebra).toBe(true);
         });
 
+        it('应该更新「SVG 动画讲解」偏好，并在响应中返回该字段', async () => {
+            mocks.mockPrismaUser.update.mockResolvedValue({ enableSvgAnimation: false });
+
+            const request = new Request('http://localhost/api/user', {
+                method: 'PATCH',
+                body: JSON.stringify({ enableSvgAnimation: false }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH(request);
+
+            expect(response.status).toBe(200);
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].data).toEqual({ enableSvgAnimation: false });
+            expect(mocks.mockPrismaUser.update.mock.calls[0][0].select.enableSvgAnimation).toBe(true);
+        });
+
         it('GeoGebra 偏好不是布尔值时拒绝更新', async () => {
             const request = new Request('http://localhost/api/user', {
                 method: 'PATCH',

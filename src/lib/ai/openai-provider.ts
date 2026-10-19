@@ -1,12 +1,14 @@
 import OpenAI from "openai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt } from './prompts';
+import { sanitizeSvgAnimation } from '../svg-animation';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
+import { normalizeGeneratedQuestion } from './generated-question';
 
 const logger = createLogger('ai:openai');
 
@@ -345,7 +347,7 @@ export class OpenAIProvider implements AIService {
 
             logger.box('✅ Parsed & Validated Result', JSON.stringify(parsedResult, null, 2));
 
-            return parsedResult;
+            return normalizeGeneratedQuestion(parsedResult);
 
         } catch (error) {
             logger.box('❌ Error during question generation', {
@@ -582,10 +584,36 @@ export class OpenAIProvider implements AIService {
         }
     }
 
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
+        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg);
+        logger.info({ provider: 'OpenAI', model: this.model, questionLength: questionText.length }, 'SVG Animation Request');
+
+        try {
+            const response = await withTruncationRetry((maxTokens) => this.openai.chat.completions.create({
+                model: this.model,
+                messages: [
+                    { role: "system", content: prompt },
+                    { role: "user", content: "请为上述题目制作 SVG 动画讲解。" },
+                ],
+                max_tokens: maxTokens,
+            }), 16384, () => logger.warn('Output truncated by reasoning, retrying with larger max_tokens'));
+
+            const text = response.choices[0]?.message?.content || '';
+            logger.debug({ rawResponse: text }, 'SVG animation AI raw response');
+
+            if (!text) throw new Error("Empty response from AI");
+            return sanitizeSvgAnimation(this.extractTag(text, "svg_animation") || text);
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during SVG animation generation');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
     private handleError(error: unknown) {
         logger.error({ error }, 'OpenAI error');
         if (error instanceof Error) {
-            if (error.message === AI_OUTPUT_TRUNCATED) {
+            if (error.message === AI_OUTPUT_TRUNCATED || error.message.startsWith('AI_RESPONSE_ERROR:')) {
                 throw error;
             }
             const msg = error.message.toLowerCase();

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Loader2, Maximize2, Minimize2, RotateCcw, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Maximize2, Minimize2, RotateCcw, RefreshCw } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface GeogebraDemoProps {
     commands: string;
@@ -13,6 +14,8 @@ interface GeogebraDemoProps {
     className?: string;
     onRegenerate?: (errors?: string) => Promise<void>;
     onSaveCommands?: (commands: string) => Promise<void>;
+    /** 删除已生成的演示；点击后先二次确认 */
+    onDelete?: () => Promise<void>;
 }
 
 // ── Singleton script loader ─────────────────────────────────────────────
@@ -129,7 +132,9 @@ export function GeogebraDemo({
     showMenuBar = false,
     className = "",
     onRegenerate,
+    onDelete,
 }: GeogebraDemoProps) {
+    const { t } = useLanguage();
     // This ref points to a div that React NEVER puts children into.
     // All GeoGebra DOM is injected via innerHTML in the effect, so
     // React's reconciler never touches the inside of this node.
@@ -141,6 +146,7 @@ export function GeogebraDemo({
     const [error, setError] = useState<string | null>(null);
     const [expanded, setExpanded] = useState(true);
     const [regenerating, setRegenerating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const cmds = useMemo(() => parseCommands(commands), [commands]);
 
@@ -253,6 +259,20 @@ export function GeogebraDemo({
         }
     }, [onRegenerate, regenerating]);
 
+    // ── Delete ──────────────────────────────────────────────────────────
+    const handleDelete = useCallback(async () => {
+        if (!onDelete || deleting) return;
+        if (!confirm(t.geogebra.confirmDelete)) return;
+        setDeleting(true);
+        try {
+            await onDelete();
+        } catch {
+            alert(t.geogebra.deleteFailed);
+        } finally {
+            setDeleting(false);
+        }
+    }, [onDelete, deleting, t]);
+
     if (cmds.length === 0) return null;
 
     return (
@@ -273,6 +293,15 @@ export function GeogebraDemo({
                                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 : <RefreshCw className="h-3.5 w-3.5" />}
                             <span>重新生成</span>
+                        </Button>
+                    )}
+                    {onDelete && (
+                        <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                            onClick={handleDelete} title={t.geogebra.delete} disabled={deleting || regenerating}>
+                            {deleting
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                : <Trash2 className="h-3.5 w-3.5" />}
+                            <span>{t.geogebra.delete}</span>
                         </Button>
                     )}
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0"

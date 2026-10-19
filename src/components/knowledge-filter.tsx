@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { getCalendarDate } from "@/lib/date-time";
 import {
     Select,
     SelectContent,
@@ -62,6 +64,7 @@ export function KnowledgeFilter({
     onFilterChange,
     className
 }: KnowledgeFilterProps) {
+    const { timeZone } = useTimeZone();
     const [gradeSemester, setGradeSemester] = useState<string>(initialGrade || "");
     const [chapter, setChapter] = useState<string>("");
     const [tag, setTag] = useState<string>(initialTag || "");
@@ -87,7 +90,7 @@ export function KnowledgeFilter({
 
     // 计算用户当前年级 (返回原始年级数值，不进行范围截断，以便判断由初升高等情况)
     const calculateCurrentGrade = useCallback((educationStage: string, enrollmentYear: number): number => {
-        const now = new Date();
+        const now = getCalendarDate(new Date(), timeZone);
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth() + 1; // 1-12
 
@@ -105,7 +108,7 @@ export function KnowledgeFilter({
             return yearsInSchool + 9;
         }
         return 0;
-    }, []);
+    }, [timeZone]);
 
     // 根据用户信息生成可用年级列表
     const generateAvailableGrades = useCallback((educationStage?: string, enrollmentYear?: number): string[] => {

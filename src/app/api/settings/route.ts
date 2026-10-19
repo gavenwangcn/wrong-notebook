@@ -3,9 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/auth-utils";
 import { getAppConfig, updateAppConfig } from "@/lib/config";
-import { forbidden, internalError, unauthorized } from "@/lib/api-errors";
+import { badRequest, forbidden, internalError, unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
-import { OpenAIInstance } from "@/types/api";
+import type { OpenAIInstance } from "@/types/api";
+import { isValidTimeZone } from "@/lib/date-time";
 
 const logger = createLogger('api:settings');
 
@@ -20,7 +21,7 @@ export async function GET() {
     const config = getAppConfig();
     // 完整配置（含 API Key）只给管理员；普通用户只需要页面用到的非敏感字段
     if (!requireAdmin(session)) {
-        return NextResponse.json({ aiProvider: config.aiProvider, timeouts: config.timeouts });
+        return NextResponse.json({ aiProvider: config.aiProvider, timeouts: config.timeouts, timeZone: config.timeZone });
     }
     return NextResponse.json(config);
 }
@@ -36,6 +37,10 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
+        if (body.timeZone !== undefined) {
+            if (!isValidTimeZone(body.timeZone)) return badRequest('INVALID_TIME_ZONE');
+            body.timeZone = body.timeZone.trim();
+        }
         const currentConfig = getAppConfig();
 
         // Don't save masked keys if they somehow get sent back (for Gemini)

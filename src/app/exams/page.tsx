@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { FileText, House, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { apiClient } from "@/lib/api-client";
 import type { ExamPaperSummary } from "@/types/api";
 
 export default function ExamsPage() {
+    const { timeZone } = useTimeZone();
     const { t } = useLanguage();
     const [papers, setPapers] = useState<ExamPaperSummary[] | null>(null);
     const [showForm, setShowForm] = useState(false);
@@ -75,7 +77,7 @@ export default function ExamsPage() {
                                                 <ExamStatusBadge status={paper.status} />
                                             </div>
                                             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                                <span>{format(new Date(paper.createdAt), "yyyy-MM-dd HH:mm")}</span>
+                                                <span>{formatDateTime(paper.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
                                                 <span>{t.exam.questionCount.replace("{count}", String(paper.questionCount))}</span>
                                                 <span>{t.exam.scopes[paper.scope]}</span>
                                                 <span>{difficultyLabels[paper.difficulty] || paper.difficulty}</span>

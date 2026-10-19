@@ -76,6 +76,14 @@ describe('OpenAI Provider 响应解析', () => {
     });
 
     describe('parseResponse', () => {
+        it('举一反三清理题号和分值，拒绝返回选择题', async () => {
+            const response = (question: string) => ({ choices: [{ finish_reason: 'stop', message: { content: `<question_text>${question}</question_text><answer_text>4</answer_text><analysis>计算</analysis><subject>数学</subject>` } }] });
+            mockCompletionCreate.mockResolvedValue(response('1. （5分）求 2+2 的值。'));
+            expect((await provider.generateSimilarQuestion('原题', [])).questionText).toBe('求 2+2 的值。');
+            expect(mockCompletionCreate.mock.calls[0][0].messages[0].content).toContain('只能生成填空题或解答题');
+            mockCompletionCreate.mockResolvedValue(response('求和。\nA. 2\nB. 4'));
+            await expect(provider.generateSimilarQuestion('原题', [])).rejects.toThrow('AI_RESPONSE_ERROR');
+        });
         it('解析配图标签，SVG 经净化', () => {
             const base = '<question_text>Q</question_text><answer_text>A</answer_text><analysis>An</analysis><subject>数学</subject>';
             const parsed = asPrivateProvider(provider).parseResponse(base + '<has_figure>true</has_figure><figure_svg><svg onload="x()"><rect width="1" height="1"/></svg></figure_svg>');
@@ -361,5 +369,33 @@ describe('OpenAI Provider 推理模型截断重试', () => {
 
         await expect(provider.reanswerQuestion('题目', 'zh')).rejects.toThrow('AI_OUTPUT_TRUNCATED');
         mockCompletionCreate.mockReset();
+    });
+});
+
+describe('OpenAI Provider SVG 动画讲解', () => {
+    const animation = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><circle r="5" opacity="0"><set attributeName="opacity" to="1" begin="2s" fill="freeze"/></circle><script>alert(1)</script></svg>';
+
+    beforeEach(() => vi.clearAllMocks());
+
+    it('把题目、答案、解析和配图放进提示词，解析并净化动画', async () => {
+        mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: `<svg_animation>${animation}</svg_animation>` } }] });
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+
+        const svg = await provider.generateSvgAnimation('求三角形面积', '6', '底乘高除以二', '<svg><rect width="3" height="4"/></svg>');
+
+        const request = mockCompletionCreate.mock.calls[0][0];
+        expect(request.max_tokens).toBe(16384);
+        expect(request.messages[0].content).toContain('求三角形面积');
+        expect(request.messages[0].content).toContain('底乘高除以二');
+        expect(request.messages[0].content).toContain('<rect width="3" height="4"/>');
+        expect(svg).toContain('<set attributeName="opacity"');
+        expect(svg).not.toContain('<script');
+    });
+
+    it('回复中没有有效 SVG 时返回 null', async () => {
+        mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<svg_animation>无法生成</svg_animation>' } }] });
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+
+        expect(await provider.generateSvgAnimation('题目', '', '')).toBeNull();
     });
 });

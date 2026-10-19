@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
     mockGetAppConfig: vi.fn(() => ({
         aiProvider: 'gemini',
         allowRegistration: true,
+        timeZone: 'Asia/Shanghai',
         openai: {
             instances: [{
                 id: 'test-instance',
@@ -76,7 +77,8 @@ describe('/api/settings', () => {
 
             expect(response.status).toBe(200);
             expect(data.aiProvider).toBe('gemini');
-            expect(Object.keys(data).filter((key) => !['aiProvider', 'timeouts'].includes(key))).toEqual([]);
+            expect(Object.keys(data).filter((key) => !['aiProvider', 'timeouts', 'timeZone'].includes(key))).toEqual([]);
+            expect(data.timeZone).toBe('Asia/Shanghai');
             expect(JSON.stringify(data)).not.toContain('sk-test-key');
             expect(JSON.stringify(data)).not.toContain('AIza-test-key');
         });
@@ -136,6 +138,24 @@ describe('/api/settings', () => {
     });
 
     describe('POST /api/settings', () => {
+        it('管理员可保存有效时区，去掉首尾空白', async () => {
+            const response = await POST(new Request('http://localhost/api/settings', { method: 'POST', body: JSON.stringify({ timeZone: ' America/New_York ' }) }));
+            expect(response.status).toBe(200);
+            expect(mocks.mockUpdateAppConfig).toHaveBeenCalledWith({ timeZone: 'America/New_York' });
+        });
+
+        it.each(['invalid/zone', '', null, 8])('拒绝无效时区 %s 且不写配置', async (timeZone) => {
+            const response = await POST(new Request('http://localhost/api/settings', { method: 'POST', body: JSON.stringify({ timeZone }) }));
+            expect(response.status).toBe(400);
+            expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
+        });
+
+        it('普通用户不能修改全局时区', async () => {
+            mockGetServerSession.mockResolvedValue(userSession);
+            const response = await POST(new Request('http://localhost/api/settings', { method: 'POST', body: JSON.stringify({ timeZone: 'UTC' }) }));
+            expect(response.status).toBe(403);
+            expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
+        });
         it('应该成功更新 AI 提供商', async () => {
             const request = new Request('http://localhost/api/settings', {
                 method: 'POST',

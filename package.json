@@ -32,6 +32,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "bcryptjs": "^3.0.3",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "global-agent": "^3.0.0",
     "jsonrepair": "^3.13.1",

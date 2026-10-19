@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTimeZone } from "@/contexts/TimeZoneContext";
+import { formatDateTime } from "@/lib/date-time";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +22,7 @@ import { apiClient } from "@/lib/api-client";
 import { AdminUser, AppConfig } from "@/types/api";
 
 export function UserManagement() {
+    const { timeZone } = useTimeZone();
     const { data: session } = useSession();
     const { t, language } = useLanguage();
     const [users, setUsers] = useState<AdminUser[]>([]);
@@ -144,7 +147,7 @@ export function UserManagement() {
                         </div>
                         <div className="flex justify-between items-center pt-2 border-t">
                             <div className="text-xs text-muted-foreground">
-                                {new Date(user.createdAt).toLocaleDateString()}
+                                {formatDateTime(user.createdAt, 'yyyy-MM-dd', timeZone)}
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -207,7 +210,7 @@ export function UserManagement() {
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    {new Date(user.createdAt).toLocaleDateString()}
+                                    {formatDateTime(user.createdAt, 'yyyy-MM-dd', timeZone)}
                                 </TableCell>
                                 <TableCell>
                                     <Badge variant={user.isActive ? "default" : "destructive"}>

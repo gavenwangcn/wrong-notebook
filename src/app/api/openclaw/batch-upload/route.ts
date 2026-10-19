@@ -9,6 +9,9 @@ import { findParentTagIdForGrade } from "@/lib/tag-recognition";
 import { generateUniqueShortId } from "@/lib/short-id";
 import { scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion, runQuestionImportTransaction } from "@/lib/question-deduplication";
+import { parseDifficultyStars } from "@/lib/ai/schema";
+import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { getAppTimeZone } from "@/lib/config";
 
 const logger = createLogger('api:openclaw:batch-upload');
 
@@ -35,6 +38,7 @@ interface OpenclawResponse {
         subject?: string;
         errorType?: string;
         source?: string;
+        difficultyStars?: number | null;
     };
     error?: string;
 }
@@ -118,6 +122,7 @@ async function createErrorItem(
     subjectId?: string
 ) {
     const { questionText, answerText, analysis, knowledgePoints, errorType, source } = parsedData || {};
+    const difficultyStars = parseDifficultyStars(parsedData?.difficultyStars);
 
     const content = {
         questionText,
@@ -144,7 +149,7 @@ async function createErrorItem(
 
         let finalGradeSemester: string | null = null;
         if (user?.educationStage && user?.enrollmentYear) {
-            finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear);
+            finalGradeSemester = calculateGrade(user.educationStage, user.enrollmentYear, new Date(), 'en', getAppTimeZone());
         }
 
         for (const tagName of tagNames) {
@@ -193,7 +198,8 @@ async function createErrorItem(
                 analysis: analysis || null,
                 knowledgePoints: JSON.stringify(tagNames),
                 gradeSemester: finalGradeSemester,
-                paperLevel: null,
+                paperLevel: getDefaultPaperLevel(difficultyStars),
+                difficultyStars,
                 errorType: errorType || null,
                 source: source || 'Openclaw',
                 masteryLevel: 0,

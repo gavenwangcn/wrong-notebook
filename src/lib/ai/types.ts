@@ -80,6 +80,8 @@ export interface AIService {
     generateFigureSvg(imageBase64: string, mimeType: string, questionText?: string | null): Promise<FigureResult>;
     reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
+    /** 生成 SVG 动画讲解（已净化），无有效 SVG 时返回 null；figureSvg 为题目配图 */
+    generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
     /** 从标签库中选知识点，并评定难度星级 */
     suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult>;

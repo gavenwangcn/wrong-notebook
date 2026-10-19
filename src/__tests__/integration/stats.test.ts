@@ -41,6 +41,7 @@ vi.mock('next-auth', () => ({
 vi.mock('@/lib/auth', () => ({
     authOptions: {},
 }));
+vi.mock('@/lib/config', () => ({ getAppTimeZone: () => 'Asia/Shanghai' }));
 
 // Import after mocks
 import { GET as GET_PRACTICE_STATS } from '@/app/api/stats/practice/route';
@@ -55,6 +56,20 @@ describe('/api/stats', () => {
     });
 
     describe('GET /api/stats/practice (获取练习统计)', () => {
+        it('按北京时间归属月份，月末 UTC 时间正确计入下个月', async () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-09-30T16:30:00Z'));
+            mocks.mockPrismaPracticeRecord.groupBy.mockResolvedValue([]);
+            mocks.mockPrismaPracticeRecord.findMany.mockResolvedValue([{ createdAt: new Date('2026-09-30T16:01:00Z'), isCorrect: true, difficulty: 'medium' }]);
+            try {
+                const response = await GET_PRACTICE_STATS(new Request('http://localhost/api/stats/practice'));
+                expect(response.status).toBe(200);
+                expect((await response.json()).activityStats.at(-1)).toMatchObject({ date: '2026-10', total: 1, correct: 1 });
+                expect(mocks.mockPrismaPracticeRecord.findMany.mock.calls[0][0].where.createdAt.gte.toISOString()).toBe('2026-04-30T16:00:00.000Z');
+            } finally {
+                vi.useRealTimers();
+            }
+        });
         it('应该返回练习统计数据', async () => {
             // Mock subject stats
             mocks.mockPrismaPracticeRecord.groupBy.mockResolvedValueOnce([

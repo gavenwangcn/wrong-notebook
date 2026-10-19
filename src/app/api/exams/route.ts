@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { format } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, badRequest, validationError, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { EXAM_DIFFICULTIES, EXAM_SCOPES, MAX_EXAM_QUESTIONS, generateExamPaper, selectSourceItems } from "@/lib/exam";
+import { getAppTimeZone } from "@/lib/config";
+import { formatDateTime } from "@/lib/date-time";
 
 const logger = createLogger('api:exams');
 
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
         }
 
         const title = parsed.data.title
-            || `${notebooks.map((notebook) => notebook.name).join('、')} ${format(new Date(), 'yyyy-MM-dd HH:mm')}`;
+            || `${notebooks.map((notebook) => notebook.name).join('、')} ${formatDateTime(new Date(), 'yyyy-MM-dd HH:mm', getAppTimeZone())}`;
 
         const paper = await prisma.examPaper.create({
             data: {
