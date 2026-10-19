@@ -71,7 +71,7 @@ describe('/api/exams', () => {
             vi.setSystemTime(new Date('2026-10-19T03:27:00Z'));
             vi.mocked(getAppTimeZone).mockReturnValueOnce(timeZone);
             mocks.subject.findMany.mockResolvedValue([{ id: 's1', name: '数学' }]);
-            mocks.errorItem.findMany.mockResolvedValue([{ id: 'e1', shortId: 'AAAAAA' }]);
+            mocks.errorItem.findMany.mockResolvedValue([{ id: 'e1', shortId: 'AAAAAA', _count: { practiceRecords: 0 } }]);
             mocks.examPaper.create.mockResolvedValue({ id: 'p1', title: '数学', requestedCount: 2, _count: { questions: 1 } });
             try {
                 expect((await CREATE(json('http://localhost/api/exams', 'POST', options))).status).toBe(201);
@@ -81,16 +81,18 @@ describe('/api/exams', () => {
             }
         });
 
-        it('随机抽题并记录来源短 ID', async () => {
+        const practicedItems = [
+            { id: 'e1', shortId: 'AAAAAA', _count: { practiceRecords: 5 } },
+            { id: 'e2', shortId: 'BBBBBB', _count: { practiceRecords: 0 } },
+            { id: 'e3', shortId: 'CCCCCC', _count: { practiceRecords: 1 } },
+        ];
+
+        it('完全随机抽题并记录来源短 ID', async () => {
             mocks.subject.findMany.mockResolvedValue([{ id: 's1', name: '数学' }]);
-            mocks.errorItem.findMany.mockResolvedValue([
-                { id: 'e1', shortId: 'AAAAAA' },
-                { id: 'e2', shortId: 'BBBBBB' },
-                { id: 'e3', shortId: 'CCCCCC' },
-            ]);
+            mocks.errorItem.findMany.mockResolvedValue(practicedItems);
             mocks.examPaper.create.mockResolvedValue({ id: 'p1', title: '数学', requestedCount: 2, _count: { questions: 2 } });
 
-            const response = await CREATE(json('http://localhost/api/exams', 'POST', options));
+            const response = await CREATE(json('http://localhost/api/exams', 'POST', { ...options, pickRule: 'random' }));
 
             expect(response.status).toBe(201);
             const where = mocks.errorItem.findMany.mock.calls[0][0].where;
@@ -101,6 +103,19 @@ describe('/api/exams', () => {
                 expect(['AAAAAA', 'BBBBBB', 'CCCCCC']).toContain(question.sourceShortId);
             }
             expect(created).toMatchObject({ userId: 'user-1', scope: 'unmastered', difficulty: 'hard', requestedCount: 2 });
+        });
+
+        it('默认优先抽取练习次数少的题目', async () => {
+            mocks.subject.findMany.mockResolvedValue([{ id: 's1', name: '数学' }]);
+            mocks.errorItem.findMany.mockResolvedValue(practicedItems);
+            mocks.examPaper.create.mockResolvedValue({ id: 'p1', title: '数学', requestedCount: 2, _count: { questions: 2 } });
+
+            const response = await CREATE(json('http://localhost/api/exams', 'POST', options));
+
+            expect(response.status).toBe(201);
+            expect(mocks.errorItem.findMany.mock.calls[0][0].select._count).toEqual({ select: { practiceRecords: true } });
+            const created = mocks.examPaper.create.mock.calls[0][0].data;
+            expect(created.questions.create.map((question: { errorItemId: string }) => question.errorItemId)).toEqual(['e2', 'e3']);
         });
 
         it('没有符合条件的错题时返回 NO_SOURCE_ITEMS', async () => {
@@ -122,12 +137,14 @@ describe('/api/exams', () => {
             expect(mocks.subject.findMany.mock.calls[0][0].where.userId).toBe('user-1');
         });
 
-        it('校验题量与范围', async () => {
+        it('校验题量、范围与抽题规则', async () => {
             const tooMany = await CREATE(json('http://localhost/api/exams', 'POST', { ...options, count: 51 }));
             const badScope = await CREATE(json('http://localhost/api/exams', 'POST', { ...options, scope: 'some' }));
+            const badRule = await CREATE(json('http://localhost/api/exams', 'POST', { ...options, pickRule: 'hardest' }));
 
             expect(tooMany.status).toBe(400);
             expect(badScope.status).toBe(400);
+            expect(badRule.status).toBe(400);
         });
     });
 

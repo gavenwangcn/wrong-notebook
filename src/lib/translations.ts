@@ -822,6 +822,15 @@ export const translations = {
                 mastered: "Mastered",
                 all: "All",
             },
+            pickRule: "Selection",
+            pickRules: {
+                least_practiced: "Least practiced first",
+                random: "Fully random",
+            },
+            pickRuleHints: {
+                least_practiced: "Questions with fewer practice records come first; ties are random.",
+                random: "Every matching question has the same chance.",
+            },
             count: "Number of questions",
             difficulty: "Difficulty",
             titleLabel: "Title (optional)",
@@ -1825,6 +1834,15 @@ export const translations = {
                 unmastered: "未掌握",
                 mastered: "已掌握",
                 all: "全部",
+            },
+            pickRule: "抽题规则",
+            pickRules: {
+                least_practiced: "优先练习较少",
+                random: "完全随机",
+            },
+            pickRuleHints: {
+                least_practiced: "举一反三记录越少的题目越优先抽到，次数相同时随机。",
+                random: "所有符合条件的题目被抽到的机会相同。",
             },
             count: "题目数量",
             difficulty: "难度",

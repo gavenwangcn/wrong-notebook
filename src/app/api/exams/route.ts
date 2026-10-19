@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, badRequest, validationError, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
-import { EXAM_DIFFICULTIES, EXAM_SCOPES, MAX_EXAM_QUESTIONS, generateExamPaper, selectSourceItems } from "@/lib/exam";
+import { DEFAULT_EXAM_PICK_RULE, EXAM_DIFFICULTIES, EXAM_PICK_RULES, EXAM_SCOPES, MAX_EXAM_QUESTIONS, generateExamPaper, selectSourceItems } from "@/lib/exam";
 import { getAppTimeZone } from "@/lib/config";
 import { formatDateTime } from "@/lib/date-time";
 
@@ -15,6 +15,7 @@ const createSchema = z.object({
     tagNames: z.array(z.string().trim().min(1)).max(50).optional(),
     scope: z.enum(EXAM_SCOPES),
     count: z.number().int().min(1).max(MAX_EXAM_QUESTIONS),
+    pickRule: z.enum(EXAM_PICK_RULES).default(DEFAULT_EXAM_PICK_RULE),
     difficulty: z.enum(EXAM_DIFFICULTIES),
     title: z.string().trim().max(100).optional(),
     language: z.enum(['zh', 'en']).optional(),
@@ -61,7 +62,7 @@ export async function GET() {
 
 /**
  * POST /api/exams
- * 按条件随机抽取错题，创建试卷并在后台生成举一反三题目
+ * 按条件与抽题规则（默认优先练习较少的题目）抽取错题，创建试卷并在后台生成举一反三题目
  */
 export async function POST(req: Request) {
     try {
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
         if (!parsed.success) {
             return validationError("Invalid exam options", parsed.error.issues);
         }
-        const { subjectIds, tagNames, scope, count, difficulty, language } = parsed.data;
+        const { subjectIds, tagNames, scope, count, pickRule, difficulty, language } = parsed.data;
 
         // 只允许使用自己的错题本
         const notebooks = await prisma.subject.findMany({
@@ -90,6 +91,7 @@ export async function POST(req: Request) {
             tagNames,
             scope,
             count,
+            pickRule,
         });
         if (sources.length === 0) {
             return badRequest("NO_SOURCE_ITEMS");

@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 vi.mock('@/lib/ai', () => ({ getAIService: vi.fn() }));
 
-import { buildSourceWhere, sampleItems, summarizePaperStatus } from '@/lib/exam';
+import { buildSourceWhere, pickLeastPracticed, sampleItems, summarizePaperStatus } from '@/lib/exam';
 import { buildExamHtmlDocument, examFileName, KATEX_CSS_URL } from '@/lib/exam-print';
 import { regionFromPoints } from '@/lib/image-crop';
 
@@ -37,6 +37,30 @@ describe('sampleItems', () => {
 
     it('按题量截取', () => {
         expect(sampleItems([1, 2, 3, 4, 5], 2)).toHaveLength(2);
+    });
+});
+
+describe('pickLeastPracticed', () => {
+    const items = [
+        { id: 'a', practiceCount: 3 },
+        { id: 'b', practiceCount: 0 },
+        { id: 'c', practiceCount: 1 },
+        { id: 'd', practiceCount: 0 },
+    ];
+
+    it('按练习次数从少到多选取', () => {
+        const picked = pickLeastPracticed(items, 3);
+        expect(picked.slice(0, 2).map((item) => item.id).sort()).toEqual(['b', 'd']);
+        expect(picked[2].id).toBe('c');
+    });
+
+    it('练习次数相同的题目之间随机', () => {
+        const first = new Set(Array.from({ length: 50 }, () => pickLeastPracticed(items, 1)[0].id));
+        expect(first).toEqual(new Set(['b', 'd']));
+    });
+
+    it('不足题量时返回全部', () => {
+        expect(pickLeastPracticed(items, 10)).toHaveLength(4);
     });
 });
 

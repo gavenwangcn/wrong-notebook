@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { TagInput } from "@/components/tag-input";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
-import type { ExamScope, Notebook } from "@/types/api";
+import type { ExamPickRule, ExamScope, Notebook } from "@/types/api";
 
 const SCOPES: ExamScope[] = ["unmastered", "mastered", "all"];
+const PICK_RULES: ExamPickRule[] = ["least_practiced", "random"];
 const DIFFICULTIES = ["easy", "medium", "hard", "harder"] as const;
 
 /** 新建试卷：选择错题本、范围、题量与难度 */
@@ -24,6 +25,7 @@ export function ExamCreateForm() {
     const [subjectIds, setSubjectIds] = useState<string[]>([]);
     const [tagNames, setTagNames] = useState<string[]>([]);
     const [scope, setScope] = useState<ExamScope>("unmastered");
+    const [pickRule, setPickRule] = useState<ExamPickRule>("least_practiced");
     const [count, setCount] = useState(10);
     const [difficulty, setDifficulty] = useState<typeof DIFFICULTIES[number]>("medium");
     const [title, setTitle] = useState("");
@@ -56,6 +58,7 @@ export function ExamCreateForm() {
                 subjectIds,
                 tagNames,
                 scope,
+                pickRule,
                 count,
                 difficulty,
                 title: title.trim() || undefined,
@@ -147,6 +150,23 @@ export function ExamCreateForm() {
                                 ))}
                             </select>
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>{t.exam.pickRule}</Label>
+                        <div className="grid grid-cols-2 gap-1 rounded-md bg-muted p-1 sm:max-w-sm">
+                            {PICK_RULES.map((value) => (
+                                <button
+                                    key={value}
+                                    type="button"
+                                    onClick={() => setPickRule(value)}
+                                    className={`rounded px-2 py-1.5 text-sm transition-colors ${pickRule === value ? "bg-background shadow-sm font-medium" : "text-muted-foreground"}`}
+                                >
+                                    {t.exam.pickRules[value]}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{t.exam.pickRuleHints[pickRule]}</p>
                     </div>
 
                     <div className="space-y-2">

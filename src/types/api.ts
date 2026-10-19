@@ -305,6 +305,7 @@ export interface PracticeHistoryResponse {
 // ============ 错题试卷 ============
 
 export type ExamScope = 'unmastered' | 'mastered' | 'all';
+export type ExamPickRule = 'least_practiced' | 'random';
 export type ExamStatus = 'generating' | 'ready' | 'partial' | 'failed';
 
 export interface ExamPaperSummary {

@@ -11,6 +11,10 @@ const logger = createLogger('exam');
 export const EXAM_SCOPES = ['unmastered', 'mastered', 'all'] as const;
 export type ExamScope = typeof EXAM_SCOPES[number];
 export const EXAM_DIFFICULTIES = ['easy', 'medium', 'hard', 'harder'] as const;
+/** 抽题规则：优先练习较少的题目（默认）/ 完全随机 */
+export const EXAM_PICK_RULES = ['least_practiced', 'random'] as const;
+export type ExamPickRule = typeof EXAM_PICK_RULES[number];
+export const DEFAULT_EXAM_PICK_RULE: ExamPickRule = 'least_practiced';
 export const MAX_EXAM_QUESTIONS = 50;
 
 // 同时生成的题目数
@@ -21,6 +25,7 @@ export interface ExamSelection {
     tagNames?: string[];
     scope: ExamScope;
     count: number;
+    pickRule?: ExamPickRule;
 }
 
 /** 构造抽题条件：限定错题本、掌握范围，可选按知识点标签 */
@@ -51,13 +56,23 @@ export function sampleItems<T>(items: T[], count: number, random: () => number =
     return copy.slice(0, count);
 }
 
-/** 随机抽取原题 */
+/** 优先抽练习次数少的题；先洗牌再稳定排序，练习次数相同的题目之间仍随机 */
+export function pickLeastPracticed<T extends { practiceCount: number }>(items: T[], count: number, random: () => number = Math.random): T[] {
+    return sampleItems(items, items.length, random)
+        .sort((a, b) => a.practiceCount - b.practiceCount)
+        .slice(0, count);
+}
+
+/** 按抽题规则选取原题，练习次数为该题的全部举一反三记录数 */
 export async function selectSourceItems(userId: string, selection: ExamSelection) {
     const candidates = await prisma.errorItem.findMany({
         where: buildSourceWhere(userId, selection),
-        select: { id: true, shortId: true },
+        select: { id: true, shortId: true, _count: { select: { practiceRecords: true } } },
     });
-    return sampleItems(candidates, selection.count);
+    const items = candidates.map(({ _count, ...item }) => ({ ...item, practiceCount: _count.practiceRecords }));
+    return (selection.pickRule ?? DEFAULT_EXAM_PICK_RULE) === 'random'
+        ? sampleItems(items, selection.count)
+        : pickLeastPracticed(items, selection.count);
 }
 
 /** 根据原题全部生成完成情况得出试卷状态 */
