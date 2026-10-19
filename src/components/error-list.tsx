@@ -429,7 +429,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                             })()}
                                         </div>
                                         <div className="flex flex-wrap items-center gap-2 mt-3">
-                                            <Badge variant={item.mistakeStatus === "wrong_attempt" ? "default" : "secondary"} className="text-xs">
+                                            <Badge variant="secondary" className="text-xs">
                                                 {getMistakeStatusLabel(item.mistakeStatus, language)}
                                             </Badge>
                                             <DifficultyStars value={item.difficultyStars} showUnrated={false} />
