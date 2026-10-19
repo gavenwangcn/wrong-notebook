@@ -5,13 +5,13 @@ import type { ParsedQuestion } from "@/lib/ai";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, RefreshCw, Loader2, Box } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { MarkdownEditor } from "@/components/markdown-editor";
 import { TagInput } from "@/components/tag-input";
 import { NotebookSelector } from "@/components/notebook-selector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -306,9 +306,9 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
                     <div className="space-y-2">
                         <Label>{t.editor.question}</Label>
-                        <Textarea
+                        <MarkdownEditor
                             value={data.questionText}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData({ ...data, questionText: e.target.value })}
+                            onChange={(value) => setData({ ...data, questionText: value })}
                             className="min-h-[150px] font-mono text-sm"
                             placeholder={t.editor.placeholder || "Supports Markdown and LaTeX..."}
                         />
@@ -353,9 +353,9 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
                     <div className="space-y-2">
                         <Label>{t.editor.answer}</Label>
-                        <Textarea
+                        <MarkdownEditor
                             value={data.answerText}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData({ ...data, answerText: e.target.value })}
+                            onChange={(value) => setData({ ...data, answerText: value })}
                             className="min-h-[100px] font-mono text-sm"
                             placeholder={t.editor.placeholder || "Supports Markdown and LaTeX..."}
                         />
@@ -363,9 +363,9 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
                     <div className="space-y-2">
                         <Label>{t.editor.analysis}</Label>
-                        <Textarea
+                        <MarkdownEditor
                             value={data.analysis}
-                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData({ ...data, analysis: e.target.value })}
+                            onChange={(value) => setData({ ...data, analysis: value })}
                             className="min-h-[200px] font-mono text-sm"
                             placeholder={t.editor.placeholder || "Supports Markdown and LaTeX..."}
                         />
@@ -394,12 +394,12 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                             </div>
                             <div className="space-y-2">
                                 <Label>{t.editor.wrongAnswerText || "错误解答原文"}</Label>
-                                <Textarea
+                                <MarkdownEditor
                                     value={data.wrongAnswerText || ""}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData({
+                                    onChange={(value) => setData({
                                         ...data,
-                                        wrongAnswerText: e.target.value,
-                                        mistakeStatus: e.target.value.trim() ? "wrong_attempt" : data.mistakeStatus,
+                                        wrongAnswerText: value,
+                                        mistakeStatus: value.trim() ? "wrong_attempt" : data.mistakeStatus,
                                     })}
                                     className="min-h-[100px] font-mono text-sm"
                                     placeholder={t.editor.wrongAnswerPlaceholder || "如果图片里没有错误解答，可留空"}
@@ -407,11 +407,11 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                             </div>
                             <div className="space-y-2">
                                 <Label>{t.editor.mistakeAnalysis || "错因分析"}</Label>
-                                <Textarea
+                                <MarkdownEditor
                                     value={data.mistakeAnalysis || ""}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setData({
+                                    onChange={(value) => setData({
                                         ...data,
-                                        mistakeAnalysis: e.target.value,
+                                        mistakeAnalysis: value,
                                     })}
                                     className="min-h-[140px] font-mono text-sm"
                                     placeholder={t.editor.mistakeAnalysisPlaceholder || "分析错误可能发生在哪一步、为什么错、导致什么后果"}

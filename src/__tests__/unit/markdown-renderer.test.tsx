@@ -7,3 +7,43 @@ describe('旧题缺少答案或解析时的详情渲染', () => {
         expect(() => renderToStaticMarkup(<MarkdownRenderer content={content} />)).not.toThrow();
     });
 });
+
+/** 渲染结果中 KaTeX 公式的个数 */
+function countFormulas(content: string): number {
+    return (renderToStaticMarkup(<MarkdownRenderer content={content} />).match(/class="katex"/g) || []).length;
+}
+
+/** 公式对应的 LaTeX 源码（KaTeX 保存在 annotation 中） */
+function annotations(content: string): string[] {
+    const html = renderToStaticMarkup(<MarkdownRenderer content={content} />);
+    return [...html.matchAll(/<annotation encoding="application\/x-tex">([\s\S]*?)<\/annotation>/g)].map((m) => m[1]);
+}
+
+describe('LaTeX 公式渲染', () => {
+    it('渲染 $…$ 和 $$…$$，公式紧贴中文时也能识别', () => {
+        expect(countFormulas('求 $\\frac{1}{2}$ 的值')).toBe(1);
+        expect(countFormulas('面积为$S=6$平方厘米')).toBe(1);
+        expect(countFormulas('答案：\n\n$$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$')).toBe(1);
+    });
+
+    it('渲染 \\(…\\) 和 \\[…\\] 定界符', () => {
+        expect(annotations('求 \\(\\frac{1}{2}\\) 的值')).toEqual(['\\frac{1}{2}']);
+        expect(annotations('解：\\[x = \\frac{1}{2}\\]')).toEqual(['x = \\frac{1}{2}']);
+    });
+
+    it('不把 \\neq、\\nabla 中的 \\n 当作换行，公式外字面的 \\n 仍转为换行', () => {
+        expect(annotations('因为 $a \\neq b$，且 $\\nabla f$')).toEqual(['a \\neq b', '\\nabla f']);
+        expect(renderToStaticMarkup(<MarkdownRenderer content={'第一步。\\n第二步'} />)).toMatch(/第一步。<\/p>\s*<p[^>]*>第二步/);
+    });
+
+    it('多行 $$ 块内的标点和换行不被拆成段落', () => {
+        const content = '解方程组：\n$$\n\\begin{cases}\nx+y=1;\\\\\nx-y=3.\n\\end{cases}\n$$\n得解。';
+        expect(countFormulas(content)).toBe(1);
+        expect(annotations(content)[0]).toContain('x+y=1;\\\\\nx-y=3.');
+    });
+
+    it('还原公式内被二次转义的命令，保留换行符 \\\\', () => {
+        expect(annotations('$\\\\frac{1}{2}$')).toEqual(['\\frac{1}{2}']);
+        expect(annotations('$\\begin{cases}a\\\\\\end{cases}$')).toEqual(['\\begin{cases}a\\\\\\end{cases}']);
+    });
+});

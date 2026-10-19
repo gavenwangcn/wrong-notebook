@@ -779,6 +779,7 @@ export const DEFAULT_SVG_ANIMATION_TEMPLATE = `【角色与核心任务 (ROLE AN
 - 公式不要用 LaTeX，用普通文字和 Unicode 符号（如 x²、√2、π、×、÷、≤、≥、∠、△、⊥、∥）。
 - 输出一个完整的 <svg> 元素，包含 xmlns="http://www.w3.org/2000/svg" 和 viewBox="0 0 800 500"，第一个元素是铺满画面的白色背景 rect；文字用 <text>（font-family="sans-serif"，正文 font-size 18~22），线条为黑色，高亮可用红色 #e53935、蓝色 #1e88e5、绿色 #43a047。
 - 只使用基本图形元素：line、polyline、polygon、rect、circle、ellipse、path、text、tspan、g、defs、marker 以及上述动画元素。
+- 代码保持精简：坐标取整数，相同样式放在 <g> 上统一设置，不要重复绘制相同的元素，整个 SVG 控制在 15000 个字符以内。
 - 严禁使用 <image>、<script>、<foreignObject>、外部链接、外部字体或事件属性。
 
 【输出格式】

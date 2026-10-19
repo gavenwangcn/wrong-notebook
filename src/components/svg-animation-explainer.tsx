@@ -8,6 +8,9 @@ import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { figureSvgToDataUri } from "@/lib/figure-svg";
 
+/** 动画 SVG 较长，AI 通常需要几分钟才能写完，前端等待上限与服务端 AI 请求超时一致 */
+const GENERATE_TIMEOUT_MS = 10 * 60 * 1000;
+
 interface SvgAnimationExplainerProps {
     errorItemId: string;
     svgAnimation: string | null | undefined;
@@ -32,7 +35,7 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
         setGenerating(true);
         setError(null);
         try {
-            const result = await apiClient.post<{ svgAnimation: string }>(`/api/error-items/${errorItemId}/svg-animation`, {});
+            const result = await apiClient.post<{ svgAnimation: string }>(`/api/error-items/${errorItemId}/svg-animation`, {}, { timeout: GENERATE_TIMEOUT_MS });
             onChange(result.svgAnimation);
             setPlayKey((key) => key + 1);
         } catch (err) {
