@@ -1,210 +1,187 @@
 # Smart Wrong Notebook (智能错题本)
 
-一个基于 AI 的智能错题管理系统，帮助学生高效整理、分析和复习错题。
+一个基于 AI 的智能错题管理系统：拍照或输入题目后，由 AI 识别、解答、打知识点标签并评定难度，支持错题本管理、举一反三练习、组卷打印和掌握程度跟踪。
+
+> 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
 
 ## ✨ 主要功能
 
-- **🤖 AI 智能分析**：自动识别题目内容，生成解析、知识点标签和同类练习题。
-- **⚙️ 灵活的 AI 配置**：支持 **Google Gemini** 和 **OpenAI** (及兼容接口) 两种 AI 提供商，可直接在网页设置中动态切换和配置。
-- **📚 多错题本管理**：支持按科目（如数学、物理、英语）创建和管理多个错题本。
-- **🏷️ 智能标签系统**：自动提取知识点标签，支持自定义标签管理。错题本创建时选择学段（小学/初中/高中）和学科（创建后不可修改），本错题本内的题目由 AI 从该学段、该学科的全部知识点中选择标签。
-- **🖼️ 题目配图**：识别时记录题目是否有配图，并由 AI 用 SVG 重绘配图；详情页、打印和试卷导出都使用 SVG 配图（拍照原图可在「查看原题图片」中核对）。举一反三和试卷新题会按新题数据重新画图。已有题目可在详情页点「AI 重新生成配图」。
-- **🎬 SVG 动画讲解**：详情页可由 AI 按解题思路生成分步骤的 SVG 动画讲解，支持播放/暂停、拖动进度条、重播和全屏；已生成的动画讲解和 GeoGebra 演示可删除（需二次确认）。可在「设置 → 通用」中关闭（默认开启）。
-- **∑ LaTeX 公式**：题目、答案和解析中的公式用 KaTeX 显示，支持 `$…$`、`$$…$$`、`\(…\)`、`\[…\]`；编辑时可在「源代码 / 预览」之间切换。详情页「修复 LaTeX」会检查公式并由 AI 只修复语法，「重新生成完整解答」会重新生成答案和解析。
-- **⭐ 难度星级**：导入时由 AI 参考《高思学校竞赛数学导引》的星级标准自动评定 1~5 星（一二星为课本及校内拔高难度，三四星为常规奥数难度，五星为竞赛压轴难度），可在详情页手动修改；错题本中的「重新识别知识点和难度」可为已有题目补评星级。
-- **🔍 多维度筛选**：支持按掌握状态、时间范围、知识点标签、年级学期、试卷等级等多种条件筛选错题。
-- **🖨️ 灵活导出打印**：一键导出筛选后的错题，支持自定义打印内容（答案/解析/知识点）和图片缩放比例，可直接打印或保存为 PDF。
-- **📝 智能练习**：基于错题生成相似的练习题，巩固薄弱环节。
-- **📊 数据统计**：可视化展示错题掌握情况和学习进度。
-- **🔐 用户管理**：支持多用户注册、登录，数据安全隔离。
-- **🛡️ 管理员后台**：提供用户管理功能，可禁用/启用用户、删除违规用户。
+### 录入与识别
 
+- **📷 多种录入方式**：上传图片、从剪贴板粘贴（Ctrl/⌘+V）、屏幕截图，或直接输入题目文字（支持 Markdown 和 LaTeX）；图片可裁剪，也可在一张图上框选多道题批量导入。
+- **🤖 AI 识别与解答**：识别题目文字、答案、解析、学生的错误解答和错因，判断学科，并从知识点库中选择标签。可在「设置 → 通用」中开启「导入前人工确认」，先在校对页修改再保存。
+- **🔁 重复题判定**：导入时比较题干相似度，超过阈值（默认 90%，可在设置中调整）的题目不会重复导入，而是在原题下记一次做错。
+- **🆔 题目 ID**：每道题有 6 位 ID，可复制，也可在错题本中输入 ID 直接打开该题；打印的错题和试卷都标有「来源 ID」，方便做完后定位原题录入结果。
+
+### 题目内容
+
+- **∑ LaTeX 公式**：题目、答案和解析中的公式用 KaTeX 显示，支持 `$…$`、`$$…$$`、`\(…\)`、`\[…\]`；编辑时可在「源代码 / 预览」之间切换。检测到公式语法错误时，详情页出现「修复 LaTeX」按钮，由 AI 只修复公式写法。
+- **📝 重新生成解答**：详情页「重新生成完整解答」由 AI 重新生成答案和解析（覆盖前二次确认），知识点和错因保持不变。
+- **🖼️ 题目配图**：识别时由 AI 用 SVG 重绘题目配图，详情页、打印和试卷都使用 SVG 配图；拍照原图可在「查看原题图片」中核对，也可替换或补充上传。
+- **⭐ 难度星级**：导入时由 AI 参考《高思学校竞赛数学导引》的星级标准评定 1~5 星（一二星为课本及校内拔高，三四星为常规奥数，五星为竞赛压轴），可手动修改；4 星及以上默认归入 B 卷。
+- **🏷️ 知识点标签**：错题本创建时选择学段（小学/初中/高中）和学科（创建后不可修改），本错题本内的题目由 AI 从该学段、该学科的全部知识点中选择标签；支持自定义标签，单题或整本错题本可让 AI 重新识别知识点和难度。
+
+### 讲解与演示
+
+- **🎬 SVG 动画讲解**：AI 按解题思路生成分步骤的 SVG 动画，支持播放/暂停、拖动进度、重播和全屏。默认开启，可在「设置 → 通用」中关闭。
+- **📐 GeoGebra 动态演示**：数学、物理题可由 AI 生成交互式 GeoGebra 图形。默认关闭，可在「设置 → 通用」中开启。
+- 已生成的动画讲解和 GeoGebra 演示都可删除（需二次确认）。
+
+### 复习与练习
+
+- **🔄 举一反三**：基于错题生成同知识点的变式题（填空或解答题），可选难度，记录做对/做错。
+- **📈 掌握概率**：根据举一反三和试卷的作答历史，由 AI 评估每道题的已掌握概率，达到 80% 自动标记为已掌握。
+- **🧾 错题试卷**：按错题本、知识点和掌握情况随机抽题，用举一反三生成一套可打印的试卷；做完后可按题录入结果，结果计入原题的作答历史。
+- **🖨️ 错题打印**：筛选后打印错题，可选打印题目文字或原图、答案、解析、知识点，调节图片比例，可直接打印或保存为 PDF。
+
+### 管理与统计
+
+- **🔍 多维度筛选**：按掌握状态、时间范围、知识点、年级学期、试卷等级等条件筛选，支持批量操作和两题相似度比较。
+- **📊 数据统计**：错题与练习的掌握率、月度趋势和学科分布。
+- **⏳ 后台任务**：页面右下角的按钮可查看识别、AI 生成、批量标注、组卷等耗时事务的进度；离开页面后事务仍在服务器上继续。
+- **💾 数据导入导出**：在「设置」中导出或导入数据备份。
+- **🕒 应用时区**：默认北京时间，管理员可修改，日期显示与统计都按应用时区计算，详见 [时区说明](doc/TIME_ZONE.md)。
+- **🔐 多用户与管理后台**：支持注册、登录，数据按用户隔离；管理员可在「设置 → 用户管理」进入管理后台，查看使用统计，启用/禁用或删除用户。
+- **🔌 Openclaw 集成**：外部 Openclaw agent 可通过 `POST /api/openclaw/batch-upload` 批量上传题目图片，配置见下文环境变量。
 
 ## 📸 屏幕截图功能 (HTTPS 设置)
 
-本应用的屏幕截图功能依赖浏览器的安全上下文 (HTTPS)。在 Docker 或局域网环境中使用时，请参考 **[HTTPS 配置指南](doc/HTTPS_SETUP.md)** 启用内置 HTTPS 支持。
+屏幕截图依赖浏览器的安全上下文 (HTTPS)。在 Docker 或局域网环境中使用时，请参考 **[HTTPS 配置指南](doc/HTTPS_SETUP.md)** 启用内置 HTTPS 支持。
 
 ## 📱 PWA 支持 (添加到主屏幕)
 
-本项目支持 PWA (Progressive Web App)，您可以将应用添加到手机主屏幕，获得原生应用般的使用体验。
-
-**功能特性**：
-- 🚀 **快速启动**：点击主屏幕图标直接打开，无需输入网址。
-- 📱 **沉浸体验**：全屏运行，无浏览器地址栏干扰。
-- 🎨 **原色适配**：应用图标和启动画面适配系统主题。
-
-**使用方法**：
+本项目支持 PWA，可将应用添加到手机主屏幕，全屏运行、点击图标直接打开。
 
 - **iPhone / iPad (Safari)**: 点击底部 **分享** 按钮 -> 选择 **"添加到主屏幕"**。
 - **Android (Chrome)**: 点击右上角 **菜单** -> 选择 **"添加到主屏幕"** 或 **"安装应用"**。
 
 ## 🛠️ 技术栈
 
-- **框架**: [Next.js 16](https://nextjs.org/) (App Router)
-- **UI 库**: [React 19](https://react.dev/)
-- **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma](https://www.prisma.io/))
-- **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Shadcn UI](https://ui.shadcn.com/)
-- **AI**: Google Gemini API / OpenAI API / Azure OpenAI / Anthropic API
-- **认证**: [NextAuth.js](https://next-auth.js.org/)
+- **框架**: [Next.js 16](https://nextjs.org/) (App Router) + [React 19](https://react.dev/) + TypeScript
+- **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
+- **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
+- **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
+- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）
+- **认证**: [NextAuth.js v4](https://next-auth.js.org/)
+- **测试**: Vitest（单元、集成）、Playwright（E2E）
 
 ## 🚀 快速开始
 
-### 方式一：使用 Docker 部署
+### 方式一：本地源码运行
 
-#### 1. 启动服务
+1. **环境准备**：Node.js 22 及以上和 npm。
 
-您可以选择 **直接使用命令** (适合快速测试) 或 **Docker Compose** (适合长期运行)。
+2. **克隆并安装依赖**：
 
-**选项 A：直接使用 Docker 命令**
+   ```bash
+   git clone https://github.com/margrop/wrong-notebook.git
+   cd wrong-notebook
+   npm ci
+   ```
+
+3. **配置环境变量**：复制 `.env.example` 为 `.env`，按下文「环境变量」一节填写。
+
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **初始化数据库**：创建表结构和管理员账户，再导入系统知识点（与 Docker 构建时相同）：
+
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts
+   ```
+
+5. **启动开发服务器**：
+
+   ```bash
+   npm run dev
+   ```
+
+   访问 `http://localhost:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。**登录后请尽快修改密码。**
+
+AI 的 API Key 等也可以在登录后通过网页设置填写，见下文「AI 模型配置」一节。
+
+### 方式二：Docker 部署
+
+本仓库的功能需要用源码构建镜像。构建过程中会在镜像内运行全部测试，并完成生产构建：
 
 ```bash
+docker build -t wrong-notebook:local .
+
 docker run -d --name wrong-notebook \
   -e NEXTAUTH_SECRET="your_secret_key" \
   -p 3000:3000 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/config:/app/config \
-  ghcr.io/wttwins/wrong-notebook
+  wrong-notebook:local
 ```
 
-**选项 B：使用 Docker Compose (推荐)**
+也可以使用仓库中的 `docker-compose.yml`，把其中的 `image` 改为 `wrong-notebook:local` 后执行 `docker compose up -d`。
 
-使用 `docker-compose.yml` 文件进行管理。
+> `docker-compose.yml` 默认的 `ghcr.io/wttwins/wrong-notebook` 是上游项目发布的镜像，**不包含**本仓库新增的功能。
 
-1.  **下载配置文件**：
-    ```bash
-    curl -o docker-compose.yml https://raw.githubusercontent.com/wttwins/wrong-notebook/refs/heads/main/docker-compose.yml
-    ```
-2.  **启动服务**：
-    ```bash
-    docker-compose up -d
-    ```
-3.  **查看日志**：
-    ```bash
-    docker-compose logs -f
-    ```
-4.  **停止服务**：
-    ```bash
-    docker-compose down
-    ```
+数据保存在挂载的 `data/`（SQLite 数据库）和 `config/`（网页中保存的 AI 配置等）目录。已有数据库启动时只执行数据库迁移，不会重建数据。HTTPS 部署见 [HTTPS 配置指南](doc/HTTPS_SETUP.md) 和 `docker-compose.https.yml`。
 
-### 方式二：本地源码运行
-
-#### 1. 克隆仓库
-
-```bash
-git clone https://github.com/wttwins/wrong-notebook.git
-cd wrong-notebook
-```
-
-#### 2. 环境准备
-
-确保已安装 Node.js (v18+) 和 npm。
-
-#### 3. 安装依赖
-
-```bash
-npm install
-```
-
-#### 4. 配置环境变量
-
-复制 `.env.example` 为 `.env` 并填入必要的配置：
-
-```bash
-cp .env.example .env
-```
+## 🔧 环境变量
 
 **基础配置**
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | 数据库连接地址 | `file:./dev.db` | SQLite 数据库路径 |
-| `NEXTAUTH_SECRET` | Auth 密钥 | 无 | 用于加密 Session，生产环境建议设置,可以使用 openssl rand -base64 32 生成一个随机字符串作为密钥 |
-| `NEXTAUTH_URL` | 访问地址 | `http://your-domain-name:3000` | 部署后的访问地址 |
-| `AUTH_TRUST_HOST` | 信任主机头 | `true` | 设置为 `true` 时自动推断 URL，适合 Docker/PaaS |
-| `LOG_LEVEL` | 日志级别 | `debug` (开发) / `info` (生产) | 可选值：`trace`, `debug`, `info`, `warn`, `error`, `fatal` |
-| `HTTP_PROXY` | HTTP 代理 | 无 | 设置 HTTP 代理 |
-| `HTTPS_PROXY` | HTTPS 代理 | 无 | 设置 HTTPS 代理 |
+| `DATABASE_URL` | 数据库连接地址 | 源码 `file:./dev.db`；Docker `file:/app/data/dev.db` | SQLite 数据库路径 |
+| `NEXTAUTH_SECRET` | Auth 密钥 | 无 | 用于加密 Session，生产环境必须设置，可用 `openssl rand -base64 32` 生成 |
+| `NEXTAUTH_URL` | 访问地址 | 无 | 部署后的访问地址，如 `http://your-domain:3000` |
+| `AUTH_TRUST_HOST` | 信任主机头 | Docker 镜像中为 `true` | 为 `true` 时根据请求自动推断访问地址，适合 Docker/反向代理 |
+| `LOG_LEVEL` | 日志级别 | 开发 `debug` / 生产 `info` | 可选 `trace`、`debug`、`info`、`warn`、`error`、`fatal`，详见 [日志指南](doc/LOGGING_GUIDE.md) |
+| `DEBUG_DB` | SQL 日志 | `false` | 为 `true` 时输出数据库查询日志 |
+| `HTTP_PROXY` / `HTTPS_PROXY` | 代理 | 无 | 访问 AI 服务时使用的代理 |
 
-**AI 配置**
+**AI 配置**（网页中保存的配置优先于环境变量）
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
 | `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure` 或 `anthropic` |
+| `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
+| `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
+| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 如 `gemini-2.5-pro` |
+| `OPENAI_API_KEY` | OpenAI API Key | 无 | 从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
+| `OPENAI_BASE_URL` | OpenAI API 地址 | `https://api.openai.com/v1` | 使用兼容服务时填写其地址 |
+| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` | |
+| `AZURE_OPENAI_API_KEY` | Azure API Key | 无 | 从 Azure 门户获取 |
+| `AZURE_OPENAI_ENDPOINT` | Azure Endpoint | 无 | 如 `https://xxx.openai.azure.com` |
+| `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称 |
+| `AZURE_OPENAI_API_VERSION` | API 版本 | `2024-02-15-preview` | |
+| `AZURE_OPENAI_MODEL` | 模型名称 | `gpt-4o` | 仅用于显示 |
+| `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 从 [Claude Console](https://platform.claude.com/) 获取 |
+| `ANTHROPIC_BASE_URL` | API 地址 | `https://api.anthropic.com` | 兼容服务填写不含 `/v1` 的地址 |
+| `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
 
-**Gemini 配置**
-
-| 环境变量 | 描述 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `GOOGLE_API_KEY` | Gemini API Key | 无 | 使用 Gemini 时必填，从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
-| `GEMINI_BASE_URL` | Gemini API 地址 | 无 | 可选，默认 `https://generativelanguage.googleapis.com`，通常无需修改 |
-| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 可选，如 `gemini-2.5-pro`、`gemini-3.0-flash` 等 |
-
-**OpenAI 配置**
-
-| 环境变量 | 描述 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `OPENAI_API_KEY` | OpenAI API Key | 无 | 使用 OpenAI 时必填，从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
-| `OPENAI_BASE_URL` | OpenAI API 地址 | 无 | 可选，默认 `https://api.openai.com/v1`；使用第三方兼容服务时填写对应地址 |
-| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` | 可选，如 `gpt-4-turbo`、`o3`、`o4-mini` 等 |
-
-**Azure OpenAI 配置**
+**Openclaw 集成**（可选）
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AZURE_OPENAI_API_KEY` | Azure API Key | 无 | 使用 Azure OpenAI 时必填，从 Azure 门户获取 |
-| `AZURE_OPENAI_ENDPOINT` | Azure Endpoint | 无 | Azure 资源端点，如 `https://xxx.openai.azure.com` |
-| `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称，如 `gpt-4o` |
-| `AZURE_OPENAI_API_VERSION` | API 版本 | `2024-02-15-preview` | 可选，Azure API 版本 |
-| `AZURE_OPENAI_MODEL` | Azure 模型 | `gpt-4o` | 可选，显示用的模型名称 |
+| `OPENCLAW_API_URL` | Openclaw agent 地址 | 无 | 本地部署的 Openclaw agent 服务地址 |
+| `OPENCLAW_API_KEY` | Openclaw API 密钥 | 无 | 调用 Openclaw agent 时使用 |
+| `OPENCLAW_TIMEOUT` | 超时（毫秒） | `30000` | |
+| `OPENCLAW_AUTH_MODE` | 认证方式 | `credentials` | `credentials`（用户名密码）或 `apikey` |
+| `OPENCLAW_INTEGRATION_API_KEY` | 本系统 API 密钥 | 无 | 仅 `apikey` 模式需要，供 Openclaw 调用本系统，可用 `openssl rand -hex 32` 生成 |
 
-**Anthropic 配置**
-
-| 环境变量 | 描述 | 默认值 | 说明 |
-| :--- | :--- | :--- | :--- |
-| `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 使用 Anthropic 时必填，从 [Claude Console](https://platform.claude.com/) 获取 |
-| `ANTHROPIC_BASE_URL` | API 地址 | 无 | 可选，默认 `https://api.anthropic.com`；兼容服务填写不含 `/v1` 的地址 |
-| `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 可选，如 `claude-opus-5-5`、`claude-haiku-5-5` |
-
-#### 5. 初始化数据库
-
-```bash
-npx prisma migrate dev
-npx prisma db seed
-```
-
-#### 6. 管理员账户
-
-默认管理员账户：
-- **邮箱**: `admin@localhost`
-- **密码**: `123456`
-
-> 管理员登录后，可在“设置” -> “用户管理”中管理系统用户。
-
-#### 7. 启动开发服务器
-
-```bash
-npm run dev
-```
-
-访问 [http://your-domain-name:3000](http://your-domain-name:3000) 开始使用。
+新增环境变量时需同步更新 `.env.example`。
 
 ## ⚙️ AI 模型配置
 
-本项目支持动态配置 AI 模型，无需重启服务器。
+AI 配置可在网页中动态修改，无需重启服务器。
 
-1.  **进入设置**：点击首页右上角的设置图标。
-2.  **选择提供商**：支持 Google Gemini、OpenAI、**Azure OpenAI** 和 **Anthropic**（含兼容接口）。
-3.  **填写参数**：
-    *   **通用参数**: API Key、Base URL（或 Endpoint）、Model Name（或 Deployment Name）。
-    *   **Azure 特有**: Deployment Name（部署名称）、API Version（API 版本）。
-4.  **保存生效**：点击保存后即刻生效。
+1. **进入设置**：管理员点击首页右上角的设置图标，打开「AI 设置」。
+2. **选择提供商**：Google Gemini、OpenAI、Azure OpenAI 或 Anthropic（含兼容接口），可添加多个配置并切换。
+3. **填写参数**：API Key、Base URL（或 Endpoint）、模型（或部署名称）；可测试连接并从接口获取模型列表。
+4. **保存生效**：配置保存到 `config/app-config.json`，优先级高于 `.env`。
 
-> **注意**：网页配置会保存到 `config/app-config.json` 文件中，该文件的优先级高于 `.env` 环境变量。
+「提示词」页可自定义识别和举一反三的提示词模板。
 
 ### 配置样例
-
-选择提供商后，填写对应参数即可。各服务商获取方式如下：
 
 #### Google Gemini
 
@@ -212,7 +189,7 @@ npm run dev
 | :--- | :--- |
 | API Key | [Google AI Studio](https://aistudio.google.com/apikey) → 创建 API Key |
 | Base URL | 默认 `https://generativelanguage.googleapis.com`，通常无需修改 |
-| 模型 | `gemini-2.5-flash`（推荐）、`gemini-2.5-pro`、`gemini-3.0-flash` 等 |
+| 模型 | `gemini-2.5-flash`（推荐）、`gemini-2.5-pro` 等 |
 
 #### OpenAI
 
@@ -220,9 +197,9 @@ npm run dev
 | :--- | :--- |
 | API Key | [OpenAI Platform](https://platform.openai.com/api-keys) → Create new secret key |
 | Base URL | 默认 `https://api.openai.com/v1` |
-| 模型 | `gpt-4o`（推荐）、`gpt-4-turbo`、`o3`、`o4-mini` 等 |
+| 模型 | `gpt-4o` 等 |
 
-> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。只需将 Base URL 改为对应服务地址，即可使用硅基流动、智谱 GLM、月之暗面 Kimi、通义千问 DashScope 等平台的模型。模型名称需填写对应平台的完整模型 ID。
+> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、智谱 GLM、月之暗面 Kimi、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
 
 #### Azure OpenAI
 
@@ -232,7 +209,6 @@ npm run dev
 | Endpoint | Azure 门户 → 你的 OpenAI 资源 → 终结点，如 `https://xxx.openai.azure.com` |
 | 部署名称 | Azure 中配置的模型部署名称，如 `gpt-4o` |
 | API 版本 | 默认 `2024-02-15-preview` |
-| 模型 | 显示用的模型名称，如 `gpt-4o` |
 
 #### Anthropic
 
@@ -244,20 +220,42 @@ npm run dev
 
 > **兼容模式**：Anthropic 提供商同样可以接入兼容 Anthropic Messages API 的第三方服务。Base URL 填写服务商提供的地址（不含 `/v1`，程序会自动拼接 `/v1/messages`），模型名称填写对应平台的模型 ID。推理模型返回的思考内容会被自动忽略。
 
-> **权限**：AI 设置、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。
+> **权限**：AI 设置、提示词、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。应用时区由管理员设置。
+
+## 🧪 开发与测试
+
+```bash
+npm run lint                # ESLint
+npm run test:unit           # 单元测试
+npm run test:integration    # 集成测试
+npm test                    # 全部 Vitest 测试
+npm run test:e2e            # Playwright E2E
+bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构建）
+```
+
+修改 `prisma/schema.prisma` 后使用 `npx prisma migrate dev --name <名称>` 生成正式迁移并提交；迁移须兼容已有数据。更多开发约定见 [AGENTS.md](AGENTS.md)。
+
+## 📚 文档
+
+| 文档 | 内容 |
+| :--- | :--- |
+| [HTTPS_SETUP.md](doc/HTTPS_SETUP.md) | HTTPS 配置（屏幕截图需要） |
+| [TIME_ZONE.md](doc/TIME_ZONE.md) | 应用时区 |
+| [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) | 日志 |
+| [MARKDOWN_GUIDE.md](doc/MARKDOWN_GUIDE.md) | Markdown 与公式 |
+| [TABLE_RECOGNITION.md](doc/TABLE_RECOGNITION.md) | 表格识别 |
+| [PROJECT_OVERVIEW.md](doc/PROJECT_OVERVIEW.md)、[operational_flow.md](doc/operational_flow.md) | 项目结构与操作流程（部分内容早于本仓库新增功能） |
+| [release-guide.md](doc/release-guide.md) | 版本发布 |
+| [setup-wsl-network.md](doc/setup-wsl-network.md) | WSL 网络配置 |
 
 ## 🛠️ 实用脚本
 
-在 `scripts/` 目录下提供了一些实用脚本，用于维护和调试：
+`scripts/` 目录下提供维护和调试脚本，例如：
 
-- **重置密码**:
-  ```bash
-  node scripts/reset-password.js <邮箱> <新密码>
-  ```
-  示例:  
-  ```bash
-  node scripts/reset-password.js user@example.com 123456 
-  ```
+- **重置密码**：`node scripts/reset-password.js <邮箱> <新密码>`
+- **重建管理员**：`node scripts/seed-admin.js`（默认 `admin@localhost` / `123456`）
+- **重建系统知识点**：`npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts`（保留自定义标签和题目关联；生产环境操作前请先备份）
+- **检查数据库**：`node scripts/check-db-users.js`、`node scripts/check-db-data.js`
 
 ## 📄 许可证
 
