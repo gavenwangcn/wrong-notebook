@@ -221,6 +221,12 @@ function PrintPreviewContent() {
                                 <span className="text-lg font-bold">
                                     {t.printPreview?.questionNumber?.replace('{num}', String(index + 1)) || `Question ${index + 1}`}
                                 </span>
+                                {/* 题目编号：做完后按编号定位原题、录入结果 */}
+                                {item.shortId && (
+                                    <span className="font-mono text-sm text-muted-foreground whitespace-nowrap">
+                                        {t.printPreview.source.replace('{id}', item.shortId)}
+                                    </span>
+                                )}
                                 {item.subject && (
                                     <span className="text-sm text-muted-foreground">
                                         {item.subject.name}

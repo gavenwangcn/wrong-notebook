@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { getAIService } from "@/lib/ai";
 import type { DifficultyLevel } from "@/lib/ai/types";
 import { createLogger } from "@/lib/logger";
+import { startBackgroundTask } from "@/lib/background-tasks";
+import type { BackgroundTaskHandle } from "@/lib/background-tasks";
 
 const logger = createLogger('exam');
 
@@ -127,14 +129,18 @@ const runningPapers = new Set<string>();
 export async function generateExamPaper(paperId: string, language: 'zh' | 'en' = 'zh'): Promise<void> {
     if (runningPapers.has(paperId)) return;
     runningPapers.add(paperId);
+    let task: BackgroundTaskHandle | null = null;
     try {
         const paper = await prisma.examPaper.findUnique({
             where: { id: paperId },
-            select: { difficulty: true, questions: { where: { status: { not: 'ready' } }, select: { id: true } } },
+            select: { userId: true, title: true, difficulty: true, questions: { where: { status: { not: 'ready' } }, select: { id: true } } },
         });
         if (!paper) return;
 
         const queue = paper.questions.map((question) => question.id);
+        const total = queue.length;
+        let done = 0;
+        if (total > 0) task = startBackgroundTask({ userId: paper.userId, kind: 'exam', subject: paper.title, link: `/exams/${paperId}`, total });
         if (queue.length > 0) {
             await prisma.examQuestion.updateMany({ where: { id: { in: queue } }, data: { status: 'pending', error: null } });
             await prisma.examPaper.update({ where: { id: paperId }, data: { status: 'generating' } });
@@ -142,17 +148,20 @@ export async function generateExamPaper(paperId: string, language: 'zh' | 'en' =
         const worker = async () => {
             while (queue.length > 0) {
                 await generateQuestion(queue.shift()!, paper.difficulty as DifficultyLevel, language);
+                task?.setProgress(++done, total);
             }
         };
         await Promise.all(Array.from({ length: Math.min(GENERATION_CONCURRENCY, queue.length) }, worker));
 
         const questions = await prisma.examQuestion.findMany({ where: { paperId }, select: { status: true } });
-        await prisma.examPaper.update({
-            where: { id: paperId },
-            data: { status: summarizePaperStatus(questions.map((question) => question.status)) },
-        });
+        const paperStatus = summarizePaperStatus(questions.map((question) => question.status));
+        await prisma.examPaper.update({ where: { id: paperId }, data: { status: paperStatus } });
+        task?.setProgress(done, total, questions.filter((question) => question.status === 'failed').length);
+        if (paperStatus === 'failed') task?.fail('ALL_FAILED');
+        else task?.succeed();
     } catch (error) {
         logger.error({ paperId, error }, 'Exam paper generation failed');
+        task?.fail(error);
     } finally {
         runningPapers.delete(paperId);
     }

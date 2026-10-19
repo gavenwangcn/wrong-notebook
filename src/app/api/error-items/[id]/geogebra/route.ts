@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { unauthorized, forbidden, notFound, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { getAIService } from "@/lib/ai";
 
 const logger = createLogger('api:error-items:geogebra');
@@ -72,11 +73,9 @@ export async function POST(
         const answerText = body.answerText || errorItem.answerText || "";
         const previousErrors = body.previousErrors || "";
 
-        const result = await aiService.analyzeForGeogebra(
-            questionText,
-            answerText,
-            errorItem.analysis || "",
-            previousErrors
+        const result = await trackBackgroundTask(
+            { userId: user.id, kind: 'geogebra', subject: describeQuestion(errorItem), link: `/error-items/${id}` },
+            () => aiService.analyzeForGeogebra(questionText, answerText, errorItem.analysis || "", previousErrors)
         );
 
         // If suitable, save the commands to the database

@@ -4,6 +4,7 @@ import { getAIService } from "@/lib/ai";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 
 const logger = createLogger('api:error-items:svg-animation');
 
@@ -13,7 +14,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 async function findOwnedItem(id: string, userId: string) {
     const item = await prisma.errorItem.findUnique({
         where: { id },
-        select: { userId: true, questionText: true, answerText: true, analysis: true, figureSvg: true },
+        select: { userId: true, shortId: true, questionText: true, answerText: true, analysis: true, figureSvg: true },
     });
     return item && item.userId === userId ? item : null;
 }
@@ -39,17 +40,24 @@ export async function POST(_req: Request, { params }: RouteContext) {
             return badRequest("NO_QUESTION_TEXT");
         }
 
-        const svgAnimation = await getAIService().generateSvgAnimation(
-            item.questionText,
-            item.answerText || "",
-            item.analysis || "",
-            item.figureSvg
-        );
+        const questionText = item.questionText;
+        // 页面关闭后服务端仍会继续生成并保存，后台任务弹框中可查看进度
+        const svgAnimation = await trackBackgroundTask(
+            { userId: user.id, kind: 'svg_animation', subject: describeQuestion(item), link: `/error-items/${id}` },
+            async () => {
+                const svg = await getAIService().generateSvgAnimation(questionText, item.answerText || "", item.analysis || "", item.figureSvg);
+                if (!svg) throw new Error("NO_VALID_ANIMATION");
+                await prisma.errorItem.update({ where: { id }, data: { svgAnimation: svg } });
+                return svg;
+            }
+        ).catch((error: unknown) => {
+            if (error instanceof Error && error.message === "NO_VALID_ANIMATION") return null;
+            throw error;
+        });
         if (!svgAnimation) {
             return badRequest("NO_VALID_ANIMATION");
         }
 
-        await prisma.errorItem.update({ where: { id }, data: { svgAnimation } });
         logger.info({ errorItemId: id, svgLength: svgAnimation.length }, 'SVG animation generated');
         return NextResponse.json({ svgAnimation });
     } catch (error) {

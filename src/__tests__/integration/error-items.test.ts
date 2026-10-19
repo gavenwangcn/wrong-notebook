@@ -516,6 +516,15 @@ describe('/api/error-items', () => {
             await PUT(new Request('http://localhost/api/error-items/e1', { method: 'PUT', body: JSON.stringify({ difficultyStars: paperLevel === 'b' ? 2 : 5 }) }), { params: Promise.resolve({ id: 'e1' }) });
             expect(mocks.mockPrismaErrorItem.update.mock.calls[0][0].data).not.toHaveProperty('paperLevel');
         });
+        it('只保存错因分析时沿用原作答状态', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ id: 'e1', userId: 'user-123', wrongAnswerText: null, mistakeAnalysis: null, mistakeStatus: 'not_attempted' });
+            mocks.mockPrismaErrorItem.update.mockResolvedValue({ id: 'e1' });
+            await PUT(new Request('http://localhost/api/error-items/e1', { method: 'PUT', body: JSON.stringify({ mistakeAnalysis: '概念不清' }) }), { params: Promise.resolve({ id: 'e1' }) });
+            const data = mocks.mockPrismaErrorItem.update.mock.calls[0][0].data;
+            expect(data).toMatchObject({ mistakeAnalysis: '概念不清', mistakeStatus: 'not_attempted' });
+            expect(data).not.toHaveProperty('wrongAnswerText');
+        });
+
         it('应该成功更新知识点', async () => {
             const existingItem = {
                 id: 'error-item-1',

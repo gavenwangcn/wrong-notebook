@@ -5,6 +5,7 @@ import type { LatexFixInput } from "@/lib/ai";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { countLatexIssues, findLatexIssuesByField, isAcceptableLatexFix, LATEX_FIELDS } from "@/lib/latex-check";
 import type { LatexField } from "@/lib/latex-check";
 
@@ -29,7 +30,7 @@ export async function POST(
 
         const item = await prisma.errorItem.findUnique({
             where: { id },
-            select: { userId: true, questionText: true, answerText: true, analysis: true, wrongAnswerText: true, mistakeAnalysis: true },
+            select: { userId: true, shortId: true, questionText: true, answerText: true, analysis: true, wrongAnswerText: true, mistakeAnalysis: true },
         });
         if (!item || item.userId !== user.id) {
             return notFound("Item not found");
@@ -49,7 +50,10 @@ export async function POST(
             };
         }
 
-        const fixed = await getAIService().fixLatex(input);
+        const fixed = await trackBackgroundTask(
+            { userId: user.id, kind: 'fix_latex', subject: describeQuestion(item), link: `/error-items/${id}` },
+            () => getAIService().fixLatex(input)
+        );
         const updated: Partial<Record<LatexField, string>> = {};
         for (const field of Object.keys(input) as LatexField[]) {
             const candidate = fixed[field];

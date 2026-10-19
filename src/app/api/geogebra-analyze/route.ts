@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { getAIService } from "@/lib/ai";
 
 const logger = createLogger('api:geogebra-analyze');
@@ -31,10 +32,9 @@ export async function POST(req: Request) {
         }
 
         const aiService = getAIService();
-        const result = await aiService.analyzeForGeogebra(
-            questionText,
-            answerText || "",
-            analysis || ""
+        const result = await trackBackgroundTask(
+            { userId: session.user.id, kind: 'geogebra', subject: describeQuestion({ questionText }) },
+            () => aiService.analyzeForGeogebra(questionText, answerText || "", analysis || "")
         );
 
         logger.info({ suitable: result.suitable, commandCount: result.commands.length }, 'GeoGebra analysis complete');

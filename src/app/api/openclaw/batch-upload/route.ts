@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createLogger } from "@/lib/logger";
+import { startBackgroundTask } from "@/lib/background-tasks";
+import type { BackgroundTaskHandle } from "@/lib/background-tasks";
 import { createErrorResponse, ErrorCode } from "@/lib/api-errors";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
@@ -232,6 +234,7 @@ export async function POST(req: Request) {
     let user = null;
     let userEmail = null;
     let subjectId = null;
+    let task: BackgroundTaskHandle | null = null;
 
     try {
         const body = await req.json();
@@ -366,8 +369,13 @@ export async function POST(req: Request) {
             message?: string;
             error?: string;
         }> = [];
+        // 页面「后台任务」中显示识别进度
+        const currentTask = startBackgroundTask({ userId: dbUser.id, kind: 'batch_upload', total: images.length });
+        task = currentTask;
+        const reportProgress = () => currentTask.setProgress(results.length, images.length, results.filter(r => !r.success).length);
 
         for (let i = 0; i < images.length; i++) {
+            reportProgress();
             const imageData = images[i] as ImageData;
             const { base64, mimeType, filename } = imageData;
 
@@ -429,6 +437,9 @@ export async function POST(req: Request) {
 
         const successCount = results.filter(r => r.success).length;
         const failCount = results.length - successCount;
+        reportProgress();
+        if (successCount === 0) currentTask.fail('ALL_FAILED');
+        else currentTask.succeed();
 
         logger.info({ 
             total: results.length, 
@@ -446,6 +457,7 @@ export async function POST(req: Request) {
             results,
         }, { status: statusCode });
     } catch (error: any) {
+        task?.fail(error);
         logger.error({ error: error?.message || String(error), stack: error?.stack }, 'Batch upload error');
         return createErrorResponse(
             error?.message || '批量上传失败',

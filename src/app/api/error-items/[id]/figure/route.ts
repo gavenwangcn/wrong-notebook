@@ -4,6 +4,7 @@ import { getAIService } from "@/lib/ai";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 
 const logger = createLogger('api:error-items:figure');
 
@@ -25,7 +26,7 @@ export async function POST(
 
         const item = await prisma.errorItem.findUnique({
             where: { id },
-            select: { userId: true, originalImageUrl: true, questionText: true },
+            select: { userId: true, shortId: true, originalImageUrl: true, questionText: true },
         });
         if (!item || item.userId !== user.id) {
             return notFound("Item not found");
@@ -37,12 +38,17 @@ export async function POST(
             return badRequest("NO_ORIGINAL_IMAGE");
         }
 
-        const figure = await getAIService().generateFigureSvg(match[2], match[1], item.questionText);
-        const updated = await prisma.errorItem.update({
-            where: { id },
-            data: { hasFigure: figure.hasFigure, figureSvg: figure.figureSvg },
-            select: { hasFigure: true, figureSvg: true },
-        });
+        const updated = await trackBackgroundTask(
+            { userId: user.id, kind: 'figure', subject: describeQuestion(item), link: `/error-items/${id}` },
+            async () => {
+                const figure = await getAIService().generateFigureSvg(match[2], match[1], item.questionText);
+                return prisma.errorItem.update({
+                    where: { id },
+                    data: { hasFigure: figure.hasFigure, figureSvg: figure.figureSvg },
+                    select: { hasFigure: true, figureSvg: true },
+                });
+            }
+        );
 
         logger.info({ errorItemId: id, hasFigure: updated.hasFigure, svgLength: updated.figureSvg?.length ?? 0 }, 'Figure regenerated');
         return NextResponse.json(updated);

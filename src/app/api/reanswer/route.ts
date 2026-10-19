@@ -4,9 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { badRequest, createErrorResponse, ErrorCode } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { prisma } from "@/lib/prisma";
 import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
+import type { CandidateTags } from "@/lib/ai";
 
 const logger = createLogger('api:reanswer');
 
@@ -39,7 +41,7 @@ export async function POST(req: Request) {
         }
 
         // 指定了错题本时，知识点只能从该错题本学段 + 学科下的全部标签中选择
-        let candidateTags;
+        let candidateTags: CandidateTags | undefined;
         if (typeof subjectId === 'string' && subjectId && session.user?.email) {
             const notebook = await prisma.subject.findFirst({
                 where: { id: subjectId, user: { email: session.user.email } },
@@ -53,7 +55,10 @@ export async function POST(req: Request) {
         const aiService = getAIService();
 
         // 根据是否有图片选择不同的重新解题方式
-        const result = await aiService.reanswerQuestion(questionText, language, subject, imageBase64, gradeSemester, candidateTags);
+        const result = await trackBackgroundTask(
+            { userId: session.user.id, kind: 'reanswer', subject: describeQuestion({ questionText }) },
+            () => aiService.reanswerQuestion(questionText, language, subject, imageBase64, gradeSemester, candidateTags)
+        );
 
         logger.info('Reanswer successful');
 

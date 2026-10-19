@@ -7,6 +7,7 @@ import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scop
 import { createLogger } from "@/lib/logger";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { getAppTimeZone } from "@/lib/config";
+import { startBackgroundTask } from "@/lib/background-tasks";
 
 const logger = createLogger('retag');
 
@@ -178,6 +179,9 @@ export async function startRetagJob(userId: string, subjectId: string): Promise<
     };
     jobs.set(key, status);
 
+    const notebook = await prisma.subject.findUnique({ where: { id: subjectId }, select: { name: true } });
+    const task = startBackgroundTask({ userId, kind: 'retag_notebook', subject: notebook?.name ?? null, link: `/notebooks/${subjectId}`, total: items.length });
+
     const queue = items.map((item) => item.id);
     const worker = async () => {
         while (queue.length > 0) {
@@ -189,12 +193,15 @@ export async function startRetagJob(userId: string, subjectId: string): Promise<
                 logger.warn({ errorItemId: id, error: error instanceof Error ? error.message : String(error) }, 'Retag failed');
             } finally {
                 status.done++;
+                task.setProgress(status.done, status.total, status.failed);
             }
         }
     };
     void Promise.all(Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker)).finally(() => {
         status.running = false;
         status.finishedAt = new Date().toISOString();
+        if (status.total > 0 && status.failed === status.total) task.fail('ALL_FAILED');
+        else task.succeed();
         logger.info({ subjectId, total: status.total, failed: status.failed }, 'Retag job finished');
     });
 

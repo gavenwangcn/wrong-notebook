@@ -156,7 +156,8 @@ export function SvgAnimationPlayer({ svg }: SvgAnimationPlayerProps) {
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 w-8 shrink-0 p-0"
+                    // 全屏时控制栏文字为白色，播放按钮是白底，图标需保持深色
+                    className="h-8 w-8 shrink-0 p-0 text-foreground"
                     onClick={playing ? pause : play}
                     aria-label={playing ? t.svgAnimation.pause : t.svgAnimation.play}
                     title={playing ? t.svgAnimation.pause : t.svgAnimation.play}

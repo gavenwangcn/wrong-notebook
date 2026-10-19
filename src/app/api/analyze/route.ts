@@ -10,6 +10,7 @@ import type { CandidateTags, GradeLevel } from "@/lib/ai/types";
 import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import { createLogger } from "@/lib/logger";
+import { trackBackgroundTask } from "@/lib/background-tasks";
 import { getAppTimeZone } from "@/lib/config";
 
 const logger = createLogger('api:analyze');
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
         let userGradeSemester: string | null = null;
         let subjectChinese: string | null = null;
         let candidateTags: CandidateTags | undefined;
+        let notebookName: string | null = null;
 
         if (session?.user?.email) {
             try {
@@ -81,6 +83,7 @@ export async function POST(req: Request) {
                     });
 
                     if (notebook && notebook.userId === user.id) {
+                        notebookName = notebook.name;
                         const scope = resolveNotebookScope(notebook);
                         subjectChinese = scope.subject ? SUBJECT_DISPLAY_NAMES[scope.subject] : null;
                         candidateTags = await getNotebookCandidateTags(scope);
@@ -96,7 +99,10 @@ export async function POST(req: Request) {
 
         logger.info({ userGrade, userGradeSemester, subject: subjectChinese }, 'Calling AI service for image analysis');
         const aiService = getAIService();
-        const analysisResult = await aiService.analyzeImage(imageBase64, mimeType, language, userGrade, subjectChinese, userGradeSemester, candidateTags);
+        const analysisResult = await trackBackgroundTask(
+            { userId: session.user.id, kind: 'analyze', subject: notebookName },
+            () => aiService.analyzeImage(imageBase64, mimeType, language, userGrade, subjectChinese, userGradeSemester, candidateTags)
+        );
 
         logger.debug({
             knowledgePointsCount: analysisResult.knowledgePoints?.length,

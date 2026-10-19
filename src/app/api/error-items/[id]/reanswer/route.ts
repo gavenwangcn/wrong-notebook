@@ -4,6 +4,7 @@ import { getAIService } from "@/lib/ai";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 
 const logger = createLogger('api:error-items:reanswer');
@@ -29,6 +30,7 @@ export async function POST(
             where: { id },
             select: {
                 userId: true,
+                shortId: true,
                 questionText: true,
                 originalImageUrl: true,
                 gradeSemester: true,
@@ -49,7 +51,11 @@ export async function POST(
         // 原图以 data URL 保存；文字录入的题目没有原图
         const image = item.originalImageUrl?.startsWith('data:') ? item.originalImageUrl : undefined;
 
-        const result = await getAIService().reanswerQuestion(item.questionText, language, subject, image, item.gradeSemester);
+        const questionText = item.questionText;
+        const result = await trackBackgroundTask(
+            { userId: user.id, kind: 'reanswer', subject: describeQuestion(item), link: `/error-items/${id}` },
+            () => getAIService().reanswerQuestion(questionText, language, subject, image, item.gradeSemester)
+        );
         if (!result.answerText.trim() && !result.analysis.trim()) {
             return badRequest("EMPTY_ANSWER");
         }

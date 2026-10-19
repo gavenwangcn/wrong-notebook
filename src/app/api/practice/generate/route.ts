@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { getAIService } from "@/lib/ai";
 import { notFound, internalError, unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 
 const logger = createLogger('api:practice:generate');
 
@@ -36,13 +37,16 @@ export async function POST(req: Request) {
         }
 
         const aiService = getAIService();
-        const similarQuestion = await aiService.generateSimilarQuestion(
-            errorItemWithSubject.questionText || "",
-            tags,
-            language,
-            difficulty || 'medium',
-            errorItemWithSubject.gradeSemester,
-            errorItemWithSubject.figureSvg
+        const similarQuestion = await trackBackgroundTask(
+            { userId: session.user.id, kind: 'practice', subject: describeQuestion(errorItemWithSubject), link: `/error-items/${errorItemId}` },
+            () => aiService.generateSimilarQuestion(
+                errorItemWithSubject.questionText || "",
+                tags,
+                language,
+                difficulty || 'medium',
+                errorItemWithSubject.gradeSemester,
+                errorItemWithSubject.figureSvg
+            )
         );
 
         // Inject the subject from the database with type safety

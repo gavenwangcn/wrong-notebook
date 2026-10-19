@@ -25,6 +25,7 @@ import { ShortIdBadge } from "@/components/short-id-badge";
 import { DifficultyStars } from "@/components/difficulty-stars";
 import { QuestionFigure } from "@/components/question-figure";
 import { RegenerateFigureButton } from "@/components/regenerate-figure-button";
+import { ReplaceQuestionImageButton } from "@/components/replace-question-image-button";
 import { MasteryPanel } from "@/components/mastery-panel";
 import { RetagItemButton } from "@/components/retag-item-button";
 import { RegenerateAnswerButton } from "@/components/regenerate-answer-button";
@@ -334,7 +335,8 @@ export default function ErrorDetailPage() {
     const [isEditingAnalysis, setIsEditingAnalysis] = useState(false);
     const [analysisInput, setAnalysisInput] = useState("");
 
-    const [isEditingMistake, setIsEditingMistake] = useState(false);
+    const [isEditingWrongAnswer, setIsEditingWrongAnswer] = useState(false);
+    const [isEditingMistakeAnalysis, setIsEditingMistakeAnalysis] = useState(false);
     const [wrongAnswerInput, setWrongAnswerInput] = useState("");
     const [mistakeAnalysisInput, setMistakeAnalysisInput] = useState("");
     const [mistakeStatusInput, setMistakeStatusInput] = useState("unknown");
@@ -414,36 +416,25 @@ export default function ErrorDetailPage() {
         setAnalysisInput("");
     };
 
-    // --- Mistake Analysis Handlers ---
-    const startEditingMistake = () => {
+    // --- 错误解答（含作答状态）与错因分析：两个卡片各自编辑、各自保存 ---
+    const startEditingWrongAnswer = () => {
         if (item) {
             setWrongAnswerInput(item.wrongAnswerText || "");
-            setMistakeAnalysisInput(item.mistakeAnalysis || "");
             setMistakeStatusInput(item.mistakeStatus || "unknown");
-            setIsEditingMistake(true);
+            setIsEditingWrongAnswer(true);
         }
     };
 
-    const saveMistakeHandler = async () => {
+    const saveWrongAnswerHandler = async () => {
+        if (!item) return;
         try {
-            const normalizedStatus = normalizeMistakeStatusForSave(
-                mistakeStatusInput,
-                wrongAnswerInput
-            );
-            await apiClient.put(`/api/error-items/${item?.id}`, {
+            const normalizedStatus = normalizeMistakeStatusForSave(mistakeStatusInput, wrongAnswerInput);
+            await apiClient.put(`/api/error-items/${item.id}`, {
                 wrongAnswerText: wrongAnswerInput,
-                mistakeAnalysis: mistakeAnalysisInput,
                 mistakeStatus: normalizedStatus,
             });
-            setIsEditingMistake(false);
-            if (item) {
-                setItem({
-                    ...item,
-                    wrongAnswerText: wrongAnswerInput,
-                    mistakeAnalysis: mistakeAnalysisInput,
-                    mistakeStatus: normalizedStatus,
-                });
-            }
+            setIsEditingWrongAnswer(false);
+            setItem((current) => current && { ...current, wrongAnswerText: wrongAnswerInput, mistakeStatus: normalizedStatus });
             alert(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
             console.error(error);
@@ -451,11 +442,35 @@ export default function ErrorDetailPage() {
         }
     };
 
-    const cancelEditingMistake = () => {
-        setIsEditingMistake(false);
+    const cancelEditingWrongAnswer = () => {
+        setIsEditingWrongAnswer(false);
         setWrongAnswerInput("");
-        setMistakeAnalysisInput("");
         setMistakeStatusInput("unknown");
+    };
+
+    const startEditingMistakeAnalysis = () => {
+        if (item) {
+            setMistakeAnalysisInput(item.mistakeAnalysis || "");
+            setIsEditingMistakeAnalysis(true);
+        }
+    };
+
+    const saveMistakeAnalysisHandler = async () => {
+        if (!item) return;
+        try {
+            await apiClient.put(`/api/error-items/${item.id}`, { mistakeAnalysis: mistakeAnalysisInput });
+            setIsEditingMistakeAnalysis(false);
+            setItem((current) => current && { ...current, mistakeAnalysis: mistakeAnalysisInput });
+            alert(t.common?.messages?.saveSuccess || 'Saved successfully');
+        } catch (error) {
+            console.error(error);
+            alert(t.common?.messages?.saveFailed || 'Save failed');
+        }
+    };
+
+    const cancelEditingMistakeAnalysis = () => {
+        setIsEditingMistakeAnalysis(false);
+        setMistakeAnalysisInput("");
     };
 
     const saveNotes = async () => {
@@ -595,17 +610,22 @@ export default function ErrorDetailPage() {
                             )}
                         </div>
 
-                        {item.originalImageUrl && (
-                            <div className="pt-3">
-                                <div className="flex flex-wrap gap-2">
+                        <div className="pt-3">
+                            <div className="flex flex-wrap gap-2">
+                                {item.originalImageUrl && (
                                     <Button variant="outline" size="sm" onClick={() => setShowQuestionImage(!showQuestionImage)} className="flex items-center gap-2">
                                         {showQuestionImage ? <><EyeOff className="h-4 w-4" />隐藏原题图片</> : <><ImageIcon className="h-4 w-4" />查看原题图片</>}
                                     </Button>
-                                    <RegenerateFigureButton errorItemId={item.id} onDone={(figure) => setItem((current) => current && { ...current, ...figure })} />
-                                </div>
-                                {showQuestionImage && <div className="mt-4"><img src={item.originalImageUrl} alt={t.detail.originalProblem || "Original Problem"} className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}
+                                )}
+                                <ReplaceQuestionImageButton
+                                    errorItemId={item.id}
+                                    hasImage={!!item.originalImageUrl}
+                                    onDone={(originalImageUrl) => { setItem((current) => current && { ...current, originalImageUrl }); setShowQuestionImage(true); }}
+                                />
+                                {item.originalImageUrl && <RegenerateFigureButton errorItemId={item.id} onDone={(figure) => setItem((current) => current && { ...current, ...figure })} />}
                             </div>
-                        )}
+                            {item.originalImageUrl && showQuestionImage && <div className="mt-4"><img src={item.originalImageUrl} alt={t.detail.originalProblem || "Original Problem"} className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -622,13 +642,13 @@ export default function ErrorDetailPage() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><div className="flex justify-between items-center"><CardTitle>{t.editor?.wrongAnswerText || "我的答案"}</CardTitle>{!isEditingMistake && <Button variant="ghost" size="sm" onClick={startEditingMistake}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader>
+                        <CardHeader><div className="flex justify-between items-center"><CardTitle>{t.editor?.wrongAnswerText || "我的答案"}</CardTitle>{!isEditingWrongAnswer && <Button variant="ghost" size="sm" onClick={startEditingWrongAnswer}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader>
                         <CardContent className="space-y-4">
-                            {isEditingMistake ? (
+                            {isEditingWrongAnswer ? (
                                 <div className="space-y-4">
                                     <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.mistakeStatus || "作答状态"}</label><Select value={mistakeStatusInput} onValueChange={setMistakeStatusInput}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_attempted">{t.editor?.mistakeStatuses?.notAttempted || "不会做"}</SelectItem><SelectItem value="wrong_attempt">{t.editor?.mistakeStatuses?.wrongAttempt || "做错了"}</SelectItem><SelectItem value="unknown">{t.editor?.mistakeStatuses?.unknown || "未判断"}</SelectItem></SelectContent></Select></div>
                                     <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.wrongAnswerText || "错误解答原文"}</label><MarkdownEditor value={wrongAnswerInput} onChange={value => { setWrongAnswerInput(value); if (value.trim()) setMistakeStatusInput("wrong_attempt"); }} rows={5} className="w-full font-mono text-sm" /></div>
-                                    <div className="flex gap-2"><Button size="sm" onClick={saveMistakeHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingMistake}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div>
+                                    <div className="flex gap-2"><Button size="sm" onClick={saveWrongAnswerHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingWrongAnswer}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -643,7 +663,7 @@ export default function ErrorDetailPage() {
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card><CardHeader><div className="flex justify-between items-center"><CardTitle>{t.detail.analysis}</CardTitle>{!isEditingAnalysis && <Button variant="ghost" size="sm" onClick={startEditingAnalysis}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader><CardContent>{isEditingAnalysis ? (<div className="space-y-3"><MarkdownEditor value={analysisInput} onChange={setAnalysisInput} placeholder="Enter analysis..." rows={12} className="w-full font-mono text-sm" /><div className="flex gap-2"><Button size="sm" onClick={saveAnalysisHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingAnalysis}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div></div>) : <MarkdownRenderer content={item.analysis} />}</CardContent></Card>
-                    <Card><CardHeader><div className="flex justify-between items-center"><CardTitle>{t.detail?.mistakeAnalysis || "错因分析"}</CardTitle>{!isEditingMistake && <Button variant="ghost" size="sm" onClick={startEditingMistake}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader><CardContent>{isEditingMistake ? (<div className="space-y-4"><div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.mistakeAnalysis || "错因分析"}</label><MarkdownEditor value={mistakeAnalysisInput} onChange={setMistakeAnalysisInput} rows={8} className="w-full font-mono text-sm" /></div><div className="flex gap-2"><Button size="sm" onClick={saveMistakeHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingMistake}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div></div>) : item.mistakeAnalysis ? <MarkdownRenderer content={item.mistakeAnalysis} /> : <p className="text-sm text-muted-foreground italic">{t.detail?.noMistakeAnalysis || "暂无错因分析"}</p>}</CardContent></Card>
+                    <Card><CardHeader><div className="flex justify-between items-center"><CardTitle>{t.detail?.mistakeAnalysis || "错因分析"}</CardTitle>{!isEditingMistakeAnalysis && <Button variant="ghost" size="sm" onClick={startEditingMistakeAnalysis}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button>}</div></CardHeader><CardContent>{isEditingMistakeAnalysis ? (<div className="space-y-4"><div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.mistakeAnalysis || "错因分析"}</label><MarkdownEditor value={mistakeAnalysisInput} onChange={setMistakeAnalysisInput} rows={8} className="w-full font-mono text-sm" /></div><div className="flex gap-2"><Button size="sm" onClick={saveMistakeAnalysisHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingMistakeAnalysis}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div></div>) : item.mistakeAnalysis ? <MarkdownRenderer content={item.mistakeAnalysis} /> : <p className="text-sm text-muted-foreground italic">{t.detail?.noMistakeAnalysis || "暂无错因分析"}</p>}</CardContent></Card>
                 </div>
 
                 <div className="space-y-6">

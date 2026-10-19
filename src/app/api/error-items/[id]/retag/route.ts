@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/current-user";
+import { prisma } from "@/lib/prisma";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { previewRetagErrorItem, retagErrorItem } from "@/lib/retag";
 
 const logger = createLogger('api:error-items:retag');
@@ -24,9 +26,14 @@ export async function POST(
         }
 
         const body = await req.json().catch(() => ({})) as { preview?: unknown };
-        const result = body.preview === true
-            ? await previewRetagErrorItem(id, user.id)
-            : await retagErrorItem(id, user.id);
+        const item = await prisma.errorItem.findUnique({ where: { id }, select: { userId: true, shortId: true, questionText: true } });
+        if (!item || item.userId !== user.id) {
+            return notFound("Item not found");
+        }
+        const result = await trackBackgroundTask(
+            { userId: user.id, kind: 'retag', subject: describeQuestion(item), link: `/error-items/${id}` },
+            () => body.preview === true ? previewRetagErrorItem(id, user.id) : retagErrorItem(id, user.id)
+        );
         return NextResponse.json(result);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

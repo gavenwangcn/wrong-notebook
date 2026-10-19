@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { unauthorized, internalError, badRequest, forbidden } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { startBackgroundTask } from "@/lib/background-tasks";
+import type { BackgroundTaskHandle } from "@/lib/background-tasks";
 import { generateUniqueShortId, isShortId } from "@/lib/short-id";
 import { isPracticeResult, scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-deduplication";
@@ -138,6 +140,7 @@ export async function POST(req: Request) {
         return forbidden("Admin role required");
     }
 
+    let task: BackgroundTaskHandle | null = null;
     try {
         const contentLength = req.headers.get('content-length');
         if (contentLength && parseInt(contentLength, 10) > 50 * 1024 * 1024) {
@@ -168,6 +171,7 @@ export async function POST(req: Request) {
         const masteryIds = new Set<string>();
 
         // 使用事务确保数据一致性
+        task = startBackgroundTask({ userId: user.id, kind: 'data_import' });
         await prisma.$transaction(async (tx) => {
             // 1. 导入 subjects
             const subjectIdMap = new Map<string, string>();
@@ -392,6 +396,7 @@ export async function POST(req: Request) {
         });
 
         if (masteryIds.size) scheduleMasteryEvaluation([...masteryIds]);
+        task.succeed();
 
         logger.info({
             userId: user.id,
@@ -404,6 +409,7 @@ export async function POST(req: Request) {
             stats,
         });
     } catch (error) {
+        task?.fail(error);
         logger.error({ error, userId: user.id }, 'Import failed');
         return internalError("Failed to import data");
     }
