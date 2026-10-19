@@ -11,12 +11,14 @@ import { BackButton } from "@/components/ui/back-button";
 import { ExamCreateForm } from "@/components/exam/exam-create-form";
 import { ExamStatusBadge } from "@/components/exam/exam-status-badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { apiClient } from "@/lib/api-client";
 import type { ExamPaperSummary } from "@/types/api";
 
 export default function ExamsPage() {
     const { timeZone } = useTimeZone();
     const { t } = useLanguage();
+    usePageTitle(t.exam.title);
     const [papers, setPapers] = useState<ExamPaperSummary[] | null>(null);
     const [showForm, setShowForm] = useState(false);
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,6 +41,7 @@ type SubjectKey = typeof SUBJECTS[number]['key'];
 
 export default function TagsPage() {
     const { t } = useLanguage();
+    usePageTitle(t.tags.title);
     const [stats, setStats] = useState<TagStats[]>([]);
     const [loading, setLoading] = useState(true);
 

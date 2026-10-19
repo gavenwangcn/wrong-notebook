@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle, XCircle, RefreshCw, Trash2, Edit, Save, X, Box,
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { MarkdownEditor } from "@/components/markdown-editor";
 import { TagInput } from "@/components/tag-input";
@@ -73,6 +74,7 @@ export default function ErrorDetailPage() {
     const router = useRouter();
     const { t, language } = useLanguage();
     const [item, setItem] = useState<ErrorItemDetail | null>(null);
+    usePageTitle(t.detail.title, item?.subject?.name, item?.shortId);
     const [loading, setLoading] = useState(true);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [notesInput, setNotesInput] = useState("");

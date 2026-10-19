@@ -12,6 +12,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { ExamQuestionCard } from "@/components/exam/exam-question-card";
 import { ExamStatusBadge } from "@/components/exam/exam-status-badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { apiClient } from "@/lib/api-client";
 import type { ExamPaperDetail, PracticeResult } from "@/types/api";
 
@@ -24,6 +25,7 @@ export default function ExamDetailPage() {
     const { t, language } = useLanguage();
     const paperId = params.id as string;
     const [paper, setPaper] = useState<ExamPaperDetail | null>(null);
+    usePageTitle(t.exam.title, paper?.title);
     const [notFound, setNotFound] = useState(false);
     // 录入模式下各题的待保存结果；null 表示未在录入
     const [draft, setDraft] = useState<Record<string, PracticeResult | null> | null>(null);

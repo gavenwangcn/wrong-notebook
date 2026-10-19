@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, RefreshCw, CheckCircle, Eye, Send, XCircle, ArrowLeft, House } from "lucide-react";
 import { ParsedQuestion } from "@/lib/ai/types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
@@ -25,6 +26,7 @@ function PracticeContent() {
     const router = useRouter();
     const errorItemId = searchParams.get("id");
     const { t, language } = useLanguage();
+    usePageTitle(t.practice.title);
 
     const [question, setQuestion] = useState<ParsedQuestion | null>(null);
     const [loading, setLoading] = useState(false);

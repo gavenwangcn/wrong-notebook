@@ -11,6 +11,7 @@ import { apiClient } from "@/lib/api-client";
 import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { processImageFile } from "@/lib/image-utils";
 import { ArrowLeft, Upload, PenLine } from "lucide-react";
 import { ProgressFeedback } from "@/components/ui/progress-feedback";
@@ -32,6 +33,7 @@ export default function AddErrorPage() {
     const [currentImage, setCurrentImage] = useState<string | null>(null);
     const { t, language } = useLanguage();
     const [notebook, setNotebook] = useState<Notebook | null>(null);
+    usePageTitle(t.notebooks.title, notebook?.name, t.pageTitle.addError);
     const [config, setConfig] = useState<AppConfig | null>(null);
 
     // Input mode: "image" for photo upload, "text" for manual text input

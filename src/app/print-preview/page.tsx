@@ -9,6 +9,7 @@ import { QuestionFigure } from "@/components/question-figure";
 import { apiClient } from "@/lib/api-client";
 import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { PRINT_PREVIEW_PAGE_SIZE } from "@/lib/constants/pagination";
 import {
     getPrintPreviewCountLabel,
@@ -21,6 +22,7 @@ function PrintPreviewContent() {
     const searchParams = useSearchParams();
     const { t } = useLanguage();
     const [items, setItems] = useState<ErrorItem[]>([]);
+    usePageTitle(t.printPreview.title);
     const [loading, setLoading] = useState(true);
     const [showAnswers, setShowAnswers] = useState(false);
     const [showAnalysis, setShowAnalysis] = useState(false);

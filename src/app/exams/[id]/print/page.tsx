@@ -9,6 +9,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { apiClient } from "@/lib/api-client";
 import { EXAM_PRINT_CSS, buildExamHtmlDocument, examFileName } from "@/lib/exam-print";
 import type { ExamPaperDetail } from "@/types/api";
@@ -17,6 +18,7 @@ export default function ExamPrintPage() {
     const params = useParams();
     const { t, language } = useLanguage();
     const [paper, setPaper] = useState<ExamPaperDetail | null>(null);
+    usePageTitle(t.exam.title, paper?.title, t.pageTitle.examPrint);
     const [includeAnswers, setIncludeAnswers] = useState(true);
     const sheetRef = useRef<HTMLDivElement>(null);
 

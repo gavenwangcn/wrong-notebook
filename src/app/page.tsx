@@ -12,6 +12,7 @@ import { apiClient } from "@/lib/api-client";
 import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { processImageFile } from "@/lib/image-utils";
 import { Upload, BookOpen, Tags, LogOut, BarChart3, PenLine, FileText } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
@@ -34,6 +35,7 @@ function HomeContent() {
     const [parsedData, setParsedData] = useState<ParsedQuestion | null>(null);
     const [currentImage, setCurrentImage] = useState<string | null>(null);
     const { t, language } = useLanguage();
+    usePageTitle(t.pageTitle.home);
     const searchParams = useSearchParams();
     const router = useRouter();
     const initialNotebookId = searchParams.get("notebook");

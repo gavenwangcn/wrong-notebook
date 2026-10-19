@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
 import { apiClient } from "@/lib/api-client";
@@ -330,6 +331,7 @@ export default function AdminPage() {
     const router = useRouter()
     const { t } = useLanguage()
     const [data, setData] = useState<AdminDashboardData | null>(null)
+    usePageTitle(t.admin.dashboard.title)
     const [loading, setLoading] = useState(true)
 
     const fetchData = useCallback(async () => {

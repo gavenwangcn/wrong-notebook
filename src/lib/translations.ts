@@ -2,6 +2,15 @@ export type Language = 'zh' | 'en';
 
 export const translations = {
     en: {
+        pageTitle: {
+            base: "AI Smart Error Notebook",
+            home: "Add Mistakes",
+            addError: "Add Mistakes",
+            examPrint: "Print",
+            latexTest: "LaTeX Test",
+            login: "Login",
+            register: "Register",
+        },
         common: {
             loading: "Loading...",
             error: "Error",
@@ -966,6 +975,15 @@ export const translations = {
         },
     },
     zh: {
+        pageTitle: {
+            base: "AI智能错题本",
+            home: "录入错题",
+            addError: "录入错题",
+            examPrint: "打印",
+            latexTest: "LaTeX 测试",
+            login: "登录",
+            register: "注册",
+        },
         common: {
             loading: "加载中...",
             error: "错误",

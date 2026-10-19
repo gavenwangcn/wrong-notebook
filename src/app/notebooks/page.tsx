@@ -15,12 +15,14 @@ import { Notebook } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 
 // ... imports
 
 export default function NotebooksPage() {
     const router = useRouter();
     const { t } = useLanguage(); // Use hook
+    usePageTitle(t.notebooks.title);
     const [notebooks, setNotebooks] = useState<Notebook[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);

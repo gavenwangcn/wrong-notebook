@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
@@ -17,6 +18,7 @@ export default function RegisterPage() {
     const { timeZone } = useTimeZone();
     const router = useRouter();
     const { t, language } = useLanguage();
+    usePageTitle(t.pageTitle.register);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");

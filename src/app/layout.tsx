@@ -28,8 +28,9 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+// 浏览器标题由各页面通过 usePageTitle 设置，这里的 <title> 只作首屏默认值；
+// 不放进 metadata，避免 Next 流式输出的 metadata 覆盖页面设置的标题
 export const metadata: Metadata = {
-  title: "AI智能错题本",
   description: "基于AI的智能错题管理系统，帮助学生高效整理、分析和复习错题",
   appleWebApp: {
     capable: true,
@@ -52,6 +53,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <title>AI智能错题本</title>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}

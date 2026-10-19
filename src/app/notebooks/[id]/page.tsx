@@ -15,6 +15,7 @@ import { Notebook } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 
 // ... imports
 
@@ -23,6 +24,7 @@ export default function NotebookDetailPage() {
     const router = useRouter();
     const { t } = useLanguage();
     const [notebook, setNotebook] = useState<Notebook | null>(null);
+    usePageTitle(t.notebooks.title, notebook?.name);
     const [loading, setLoading] = useState(true);
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     // 批量重新生成知识点后递增，用于刷新题目列表

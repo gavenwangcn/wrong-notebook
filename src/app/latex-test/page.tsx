@@ -2,8 +2,13 @@
 
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 
 export default function LatexTestPage() {
+    const { t } = useLanguage();
+    usePageTitle(t.pageTitle.latexTest);
+
     const testCases = [
         {
             title: "单个$符号(行内公式)",

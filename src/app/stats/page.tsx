@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageTitle } from "@/lib/page-title";
 import { WrongAnswerStats } from "@/components/wrong-answer-stats";
 import { PracticeStats } from "@/components/practice-stats";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +12,7 @@ import Link from "next/link";
 
 export default function StatsPage() {
     const { t, language } = useLanguage();
+    usePageTitle(t.stats.headerTitle);
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
