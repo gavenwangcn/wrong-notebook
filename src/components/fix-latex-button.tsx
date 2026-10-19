@@ -28,7 +28,7 @@ interface FixLatexButtonProps {
     onDone: (updated: Partial<Record<LatexField, string>>) => void;
 }
 
-/** 检测题目中的 LaTeX 语法错误，并用 AI 只修复公式写法 */
+/** 检测题目中的 LaTeX 语法错误，并用 AI 只修复公式写法；没有检测到错误时不显示 */
 export function FixLatexButton({ errorItemId, fields, onDone }: FixLatexButtonProps) {
     const { t } = useLanguage();
     const [running, setRunning] = useState(false);
@@ -56,14 +56,16 @@ export function FixLatexButton({ errorItemId, fields, onDone }: FixLatexButtonPr
         }
     };
 
+    if (issueCount === 0 && !running) return null;
+
     return (
         <Button
             variant="outline"
             size="sm"
             onClick={handleClick}
             disabled={running}
-            className={issueCount > 0 ? "border-amber-500 text-amber-700 dark:text-amber-400" : undefined}
-            title={issueCount > 0 ? t.fixLatex.issuesFound.replace("{count}", String(issueCount)) : t.fixLatex.hint}
+            className="border-amber-500 text-amber-700 dark:text-amber-400"
+            title={t.fixLatex.issuesFound.replace("{count}", String(issueCount))}
         >
             {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <SquareFunction className="mr-2 h-4 w-4" />}
             {running ? t.fixLatex.running : t.fixLatex.button}

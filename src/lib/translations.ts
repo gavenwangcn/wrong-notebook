@@ -917,7 +917,6 @@ export const translations = {
         fixLatex: {
             button: "Fix LaTeX",
             running: "Fixing formulas…",
-            hint: "Check the formulas in this question and let AI fix LaTeX syntax errors",
             issuesFound: "{count} LaTeX issue(s) found",
             noIssues: "No LaTeX syntax errors found",
             fixedAll: "Fixed the formulas in: {fields}",
@@ -1881,7 +1880,6 @@ export const translations = {
         fixLatex: {
             button: "修复 LaTeX",
             running: "修复公式中…",
-            hint: "检查本题公式，由 AI 修复 LaTeX 语法错误",
             issuesFound: "检测到 {count} 处 LaTeX 问题",
             noIssues: "未发现 LaTeX 语法错误",
             fixedAll: "已修复以下内容中的公式：{fields}",
