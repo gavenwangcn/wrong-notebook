@@ -231,6 +231,32 @@ describe('/api/error-items', () => {
             expect(data.questionText).toBe('求解 x + 2 = 5');
         });
 
+        it('保存 AI 识别的难度星级，越界时拒绝创建', async () => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'error-item-1', userId: 'user-123', difficultyStars: 4 });
+            const body = { questionText: '鸡兔同笼', answerText: '6', analysis: '假设法', originalImageUrl: '' };
+
+            const ok = await POST(new Request('http://localhost/api/error-items', { method: 'POST', body: JSON.stringify({ ...body, difficultyStars: 4 }) }));
+            expect(ok.status).toBe(201);
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.difficultyStars).toBe(4);
+
+            for (const difficultyStars of [0, 6, 2.5, '3']) {
+                const bad = await POST(new Request('http://localhost/api/error-items', { method: 'POST', body: JSON.stringify({ ...body, difficultyStars }) }));
+                expect(bad.status).toBe(400);
+            }
+            expect(mocks.mockPrismaErrorItem.create).toHaveBeenCalledTimes(1);
+        });
+
+        it('未提供难度星级时保存为空', async () => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'error-item-1', userId: 'user-123' });
+
+            await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '题目', answerText: '答', analysis: '析', originalImageUrl: '' }),
+            }));
+
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.difficultyStars).toBeNull();
+        });
+
         it('应该成功创建错题并关联到科目', async () => {
             const errorItemData = {
                 questionText: '计算 1 + 1',
@@ -500,6 +526,24 @@ describe('/api/error-items', () => {
 
             expect(response.status).toBe(200);
             expect(data.paperLevel).toBe('B');
+        });
+
+        it('可以手动修改和清除难度星级，非法值返回 400', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ id: 'error-item-1', userId: 'user-123', difficultyStars: 2 });
+            mocks.mockPrismaErrorItem.update.mockResolvedValue({ id: 'error-item-1', userId: 'user-123' });
+            const put = (difficultyStars: unknown) => PUT(new Request('http://localhost/api/error-items/error-item-1', {
+                method: 'PUT',
+                body: JSON.stringify({ difficultyStars }),
+            }), { params: Promise.resolve({ id: 'error-item-1' }) });
+
+            expect((await put(5)).status).toBe(200);
+            expect(mocks.mockPrismaErrorItem.update.mock.calls[0][0].data.difficultyStars).toBe(5);
+            expect((await put(null)).status).toBe(200);
+            expect(mocks.mockPrismaErrorItem.update.mock.calls[1][0].data.difficultyStars).toBeNull();
+            for (const value of [0, 6, 1.5, '4']) {
+                expect((await put(value)).status).toBe(400);
+            }
+            expect(mocks.mockPrismaErrorItem.update).toHaveBeenCalledTimes(2);
         });
 
         it('应该拒绝更新其他用户的错题', async () => {

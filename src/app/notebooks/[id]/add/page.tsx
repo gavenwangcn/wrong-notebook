@@ -279,6 +279,7 @@ export default function AddErrorPage() {
                 wrongAnswerText: string;
                 mistakeAnalysis: string;
                 mistakeStatus: string;
+                difficultyStars?: number | null;
                 subject?: string;
             }>("/api/reanswer", {
                 questionText,
@@ -299,6 +300,7 @@ export default function AddErrorPage() {
                 mistakeStatus: (result.mistakeStatus as any) || "unknown",
                 subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
+                difficultyStars: result.difficultyStars ?? null,
             };
 
             if (!confirmBeforeImport) {

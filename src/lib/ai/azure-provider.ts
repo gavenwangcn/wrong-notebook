@@ -1,8 +1,8 @@
 import { AzureOpenAI } from "openai";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput } from "./types";
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt } from './prompts';
 import { getAppConfig } from '../config';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars } from './schema';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
@@ -126,7 +126,8 @@ export class AzureOpenAIProvider implements AIService {
             mistakeStatus,
             subject,
             knowledgePoints,
-            requiresImage
+            requiresImage,
+            difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")),
         };
 
         // Final Schema Validation
@@ -369,7 +370,7 @@ Knowledge Points: ${knowledgePoints.join(", ")}
 
             logger.info('Reanswer parsed successfully');
 
-            return { answerText, analysis, knowledgePoints, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")) };
+            return { answerText, analysis, knowledgePoints, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")), difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")) };
 
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during reanswer');
@@ -461,7 +462,7 @@ Knowledge Points: ${knowledgePoints.join(", ")}
         }
     }
 
-    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]> {
+    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult> {
         const prompt = generateTagSuggestPrompt(input);
 
         logger.info({

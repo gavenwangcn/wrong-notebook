@@ -32,6 +32,7 @@ const importSchema = z.object({
     subjectName: z.string().max(100).nullish(),
     gradeSemester: z.string().max(100).nullish(),
     paperLevel: z.string().max(30).nullish(),
+    difficultyStars: z.number().int().min(1).max(5).nullish(),
     geogebraCommands: z.string().nullish(),
 });
 
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
             subjectName,
             gradeSemester,
             paperLevel,
+            difficultyStars,
             geogebraCommands,
         } = body;
 
@@ -178,6 +180,7 @@ export async function POST(req: Request) {
                         knowledgePoints: JSON.stringify(tagNames),
                         gradeSemester: finalGradeSemester,
                         paperLevel: paperLevel,
+                        difficultyStars: difficultyStars ?? null,
                         geogebraCommands: geogebraCommands || null,
                         masteryLevel: 0,
                         tags: {

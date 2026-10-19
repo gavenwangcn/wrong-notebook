@@ -115,6 +115,7 @@ model ErrorItem {
   masteryLevel     Int     @default(0) // 0: New, 1: Reviewing, 2: Mastered
   gradeSemester    String? // e.g. "Junior High Grade 2, 1st Semester"
   paperLevel       String? // e.g. "A", "B", "Other"
+  difficultyStars  Int?    // 难度星级 1~5（参考高思导引星级），未评定时为空
 
   // 根据举一反三历史推测的掌握情况
   masteryProbability Float?    // 0~1

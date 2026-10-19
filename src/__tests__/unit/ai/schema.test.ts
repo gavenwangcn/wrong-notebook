@@ -4,7 +4,7 @@
  * 测试 Zod 验证 schema，特别是新增的错因分析字段
  */
 import { describe, it, expect } from 'vitest';
-import { ParsedQuestionSchema, safeParseParsedQuestion, parseMasteryEvaluation, extractJsonObject, normalizeSubject, parseTagSuggestion } from '@/lib/ai/schema';
+import { ParsedQuestionSchema, safeParseParsedQuestion, parseMasteryEvaluation, extractJsonObject, normalizeSubject, parseTagSuggestion, parseDifficultyStars } from '@/lib/ai/schema';
 
 describe('ParsedQuestionSchema 验证', () => {
     const validBaseQuestion = {
@@ -172,10 +172,34 @@ describe('知识点选取结果解析', () => {
 
     it('只保留清单内的标签，去重并限制 5 个', () => {
         const text = '{"tags": [" 植树问题", "自创知识点", "植树问题", "鸡兔同笼", "相遇问题", "追及问题", "年龄问题", "周期问题初步"]}';
-        expect(parseTagSuggestion(text, allowed)).toEqual(['植树问题', '鸡兔同笼', '相遇问题', '追及问题', '年龄问题']);
+        expect(parseTagSuggestion(text, allowed).tags).toEqual(['植树问题', '鸡兔同笼', '相遇问题', '追及问题', '年龄问题']);
     });
 
     it('格式不正确时报错', () => {
         expect(() => parseTagSuggestion('{"tag": "植树问题"}', allowed)).toThrow();
+    });
+});
+
+describe('parseDifficultyStars', () => {
+    it.each([
+        [3, 3], ['4', 4], [' 2 星 ', 2], ['★★★', 3], ['⭐⭐⭐⭐⭐', 5], ['3.4', 3], [4.6, 5],
+    ])('识别 %j 为 %i 星', (input, expected) => {
+        expect(parseDifficultyStars(input)).toBe(expected);
+    });
+
+    it.each([[0], [6], ['七星'], [''], [null], [undefined], [Number.NaN], [{}]])('无法识别或越界的 %j 返回 null', (input) => {
+        expect(parseDifficultyStars(input)).toBeNull();
+    });
+
+    it('知识点建议同时解析难度星级，缺失时为 null', () => {
+        expect(parseTagSuggestion('{"tags": ["植树问题"], "difficultyStars": 4}', ['植树问题'])).toEqual({ tags: ['植树问题'], difficultyStars: 4 });
+        expect(parseTagSuggestion('{"tags": ["植树问题"]}', ['植树问题']).difficultyStars).toBeNull();
+    });
+
+    it('题目结构允许 1~5 的整数或空，不允许越界', () => {
+        const base = { questionText: 'q', answerText: 'a', analysis: 'x', subject: '数学', knowledgePoints: [] };
+        expect(ParsedQuestionSchema.safeParse({ ...base, difficultyStars: 3 }).success).toBe(true);
+        expect(ParsedQuestionSchema.safeParse({ ...base, difficultyStars: null }).success).toBe(true);
+        expect(ParsedQuestionSchema.safeParse({ ...base, difficultyStars: 6 }).success).toBe(false);
     });
 });

@@ -19,6 +19,7 @@ export interface ReanswerQuestionResult {
     mistakeAnalysis: string;
     mistakeStatus: MistakeStatus;
     subject?: string; // AI 判断的学科，自定义模板未输出时为空
+    difficultyStars?: number | null; // AI 评定的难度星级 1~5，未输出时为空
 }
 
 export interface GeogebraAnalysisResult {
@@ -59,13 +60,17 @@ export interface TagSuggestionInput {
     gradeSemester?: string | null;
 }
 
+export type { TagSuggestionResult } from './schema';
+import type { TagSuggestionResult } from './schema';
+
 export interface AIService {
     analyzeImage(imageBase64: string, mimeType?: string, language?: 'zh' | 'en', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language?: 'zh' | 'en', difficulty?: DifficultyLevel, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
     reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
-    suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]>;
+    /** 从标签库中选知识点，并评定难度星级 */
+    suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult>;
 }
 
 export interface AIConfig {

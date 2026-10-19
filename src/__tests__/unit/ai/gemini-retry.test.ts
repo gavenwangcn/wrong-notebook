@@ -27,7 +27,8 @@ vi.mock('@/lib/config', () => ({
     })),
 }));
 
-vi.mock('@/lib/ai/schema', () => ({
+vi.mock('@/lib/ai/schema', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/ai/schema')>()),
     safeParseParsedQuestion: vi.fn((data) => ({ success: true, data })),
 }));
 

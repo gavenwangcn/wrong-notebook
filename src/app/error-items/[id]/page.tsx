@@ -20,8 +20,10 @@ import { getMistakeStatusLabel, normalizeMistakeStatusForSave } from "@/lib/mist
 import { NotebookSelector } from "@/components/notebook-selector";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { ShortIdBadge } from "@/components/short-id-badge";
+import { DifficultyStars } from "@/components/difficulty-stars";
 import { MasteryPanel } from "@/components/mastery-panel";
 import { RetagItemButton } from "@/components/retag-item-button";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface KnowledgeTag {
     id: string;
@@ -51,6 +53,7 @@ interface ErrorItemDetail {
     } | null;
     gradeSemester?: string | null;
     paperLevel?: string | null;
+    difficultyStars?: number | null;
     geogebraCommands?: string | null;
 }
 
@@ -144,6 +147,23 @@ export default function ErrorDetailPage() {
             }
         } finally {
             setIsAnalyzingGeogebra(false);
+        }
+    };
+
+    const [savingDifficulty, setSavingDifficulty] = useState(false);
+    const handleDifficultyChange = async (difficultyStars: number | null) => {
+        if (!item) return;
+        const previous = item.difficultyStars ?? null;
+        setItem({ ...item, difficultyStars });
+        setSavingDifficulty(true);
+        try {
+            await apiClient.put(`/api/error-items/${item.id}`, { difficultyStars });
+        } catch (error) {
+            setItem((current) => current && { ...current, difficultyStars: previous });
+            frontendLogger.error('[ErrorDetail]', 'Failed to save difficulty', { error: error instanceof Error ? error.message : String(error) });
+            alert(t.difficulty.saveFailed);
+        } finally {
+            setSavingDifficulty(false);
         }
     };
 
@@ -454,7 +474,7 @@ export default function ErrorDetailPage() {
         <main className="min-h-screen bg-background">
             <div className="container mx-auto p-4 space-y-6 pb-20">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                         <Link href={item.subjectId ? `/notebooks/${item.subjectId}` : "/notebooks"}>
                             <Button variant="ghost" size="icon">
                                 <ArrowLeft className="w-4 h-4" />
@@ -462,6 +482,7 @@ export default function ErrorDetailPage() {
                         </Link>
                         <h1 className="text-2xl font-bold">{t.detail.title}</h1>
                         <ShortIdBadge shortId={item.shortId} />
+                        <DifficultyStars size="md" value={item.difficultyStars} onChange={handleDifficultyChange} disabled={savingDifficulty} />
                     </div>
 
                     <div className="flex flex-wrap gap-2">

@@ -420,7 +420,8 @@ describe('掌握概率与学科相关提示词', () => {
     it('重新解题提示词要求输出学科标签', () => {
         const prompt = generateReanswerPrompt('zh', '1+1=?');
         expect(prompt).toContain('<subject>');
-        expect(prompt).toContain('7 个 XML 标签');
+        expect(prompt).toContain('8 个 XML 标签');
+        expect(prompt).toContain('<difficulty_stars>');
     });
 });
 

@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput } from "./types";
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt } from './prompts';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars } from './schema';
 import { getAppConfig } from '../config';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
@@ -145,7 +145,8 @@ export class GeminiProvider implements AIService {
             mistakeStatus,
             subject,
             knowledgePoints,
-            requiresImage
+            requiresImage,
+            difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")),
         };
 
         // Final Schema Validation
@@ -343,7 +344,7 @@ export class GeminiProvider implements AIService {
 
             logger.info('Reanswer parsed successfully');
 
-            return { answerText, analysis, knowledgePoints: knowledgePointsParsed, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")) };
+            return { answerText, analysis, knowledgePoints: knowledgePointsParsed, wrongAnswerText, mistakeAnalysis, mistakeStatus, subject: normalizeSubject(this.extractTag(text, "subject")), difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")) };
 
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during reanswer');
@@ -426,7 +427,7 @@ export class GeminiProvider implements AIService {
         }
     }
 
-    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]> {
+    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult> {
         const prompt = generateTagSuggestPrompt(input);
 
         logger.info({

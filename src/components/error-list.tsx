@@ -20,6 +20,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ErrorListSelectionBar } from "@/components/error-list-selection-bar";
+import { DifficultyStars } from "@/components/difficulty-stars";
 import { KnowledgeFilter } from "@/components/knowledge-filter";
 import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
@@ -425,10 +426,11 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                                     : cleanText;
                                             })()}
                                         </div>
-                                        <div className="flex flex-wrap gap-2 mt-3">
+                                        <div className="flex flex-wrap items-center gap-2 mt-3">
                                             <Badge variant={item.mistakeStatus === "wrong_attempt" ? "default" : "secondary"} className="text-xs">
                                                 {getMistakeStatusLabel(item.mistakeStatus, language)}
                                             </Badge>
+                                            <DifficultyStars value={item.difficultyStars} showUnrated={false} />
                                         </div>
                                         <div className="flex flex-wrap gap-2 mt-3">
                                             {(expandedTags.has(item.id) ? tags : tags.slice(0, 3)).map((tag: string) => (

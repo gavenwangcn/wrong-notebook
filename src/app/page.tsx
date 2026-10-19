@@ -343,6 +343,7 @@ function HomeContent() {
                 wrongAnswerText: string;
                 mistakeAnalysis: string;
                 mistakeStatus: string;
+                difficultyStars?: number | null;
                 subject?: string;
             }>("/api/reanswer", {
                 questionText,
@@ -363,6 +364,7 @@ function HomeContent() {
                 mistakeStatus: (result.mistakeStatus as any) || "unknown",
                 subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
+                difficultyStars: result.difficultyStars ?? null,
             };
 
             if (!confirmBeforeImport) {

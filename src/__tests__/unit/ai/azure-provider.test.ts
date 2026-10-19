@@ -514,6 +514,6 @@ describe('Azure OpenAI Provider 知识点重新标注', () => {
 
         const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['相遇问题'] });
 
-        expect(tags).toEqual(['相遇问题']);
+        expect(tags).toEqual({ tags: ['相遇问题'], difficultyStars: null });
     });
 });

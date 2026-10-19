@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { unauthorized, forbidden, notFound, internalError } from "@/lib/api-errors";
+import { unauthorized, forbidden, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { findParentTagIdForGrade } from "@/lib/tag-recognition";
 import { normalizeMistakeStatusForSave } from "@/lib/mistake-status";
@@ -75,7 +75,12 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const { knowledgePoints, gradeSemester, paperLevel, questionText, answerText, analysis, subjectId,  wrongAnswerText, mistakeAnalysis, mistakeStatus, geogebraCommands } = body;
+        const { knowledgePoints, gradeSemester, paperLevel, questionText, answerText, analysis, subjectId,  wrongAnswerText, mistakeAnalysis, mistakeStatus, geogebraCommands, difficultyStars } = body;
+        // 难度星级：1~5 的整数，null 表示清除
+        if (difficultyStars !== undefined && difficultyStars !== null
+            && !(Number.isInteger(difficultyStars) && difficultyStars >= 1 && difficultyStars <= 5)) {
+            return badRequest("difficultyStars must be an integer from 1 to 5");
+        }
 
         const errorItem = await prisma.errorItem.findUnique({
             where: { id },
@@ -116,6 +121,7 @@ export async function PUT(
             );
         }
         if (geogebraCommands !== undefined) updateData.geogebraCommands = geogebraCommands || null;
+        if (difficultyStars !== undefined) updateData.difficultyStars = difficultyStars;
 
         // 处理 knowledgePoints (标签)
         if (knowledgePoints !== undefined) {

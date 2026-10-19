@@ -18,6 +18,7 @@ export const ParsedQuestionSchema = z.object({
     ]),
     knowledgePoints: z.array(z.string()).max(5, "知识点最多 5 个"),
     requiresImage: z.boolean().optional().default(false), // 题目是否依赖图片（如几何题）
+    difficultyStars: z.number().int().min(1).max(5).nullable().optional(), // 难度星级 1~5，AI 未给出时为空
 });
 
 /**
@@ -91,11 +92,40 @@ export function normalizeSubject(value: string | null | undefined): ParsedQuesti
 /** 每题最多选取的知识点数量 */
 export const MAX_KNOWLEDGE_TAGS = 5;
 
+/** 难度星级范围 */
+export const MIN_DIFFICULTY_STARS = 1;
+export const MAX_DIFFICULTY_STARS = 5;
+
 /**
- * 解析 AI 选取的知识点，只保留可选清单中存在的标签（去重，最多 5 个）
+ * 解析 AI 给出的难度星级（数字、"3"、"3 星"、"★★★" 均可），无法识别或越界时返回 null
  */
-export function parseTagSuggestion(text: string, allowedTags: string[]): string[] {
-    const parsed = z.object({ tags: z.array(z.string()) }).parse(extractJsonObject(text));
+export function parseDifficultyStars(value: unknown): number | null {
+    let stars: number;
+    if (typeof value === 'number') {
+        stars = value;
+    } else if (typeof value === 'string') {
+        const text = value.trim();
+        const starCount = (text.match(/[★⭐]/gu) || []).length;
+        const digits = text.match(/\d+(\.\d+)?/);
+        stars = starCount > 0 && !digits ? starCount : digits ? Number(digits[0]) : NaN;
+    } else {
+        return null;
+    }
+    if (!Number.isFinite(stars)) return null;
+    const rounded = Math.round(stars);
+    return rounded >= MIN_DIFFICULTY_STARS && rounded <= MAX_DIFFICULTY_STARS ? rounded : null;
+}
+
+export interface TagSuggestionResult {
+    tags: string[];
+    difficultyStars: number | null;
+}
+
+/**
+ * 解析 AI 选取的知识点（只保留可选清单中存在的标签，去重，最多 5 个）和难度星级
+ */
+export function parseTagSuggestion(text: string, allowedTags: string[]): TagSuggestionResult {
+    const parsed = z.object({ tags: z.array(z.string()), difficultyStars: z.unknown().optional() }).parse(extractJsonObject(text));
     const allowed = new Set(allowedTags);
     const result: string[] = [];
     for (const tag of parsed.tags.map((value) => value.trim())) {
@@ -103,5 +133,5 @@ export function parseTagSuggestion(text: string, allowedTags: string[]): string[
             result.push(tag);
         }
     }
-    return result.slice(0, MAX_KNOWLEDGE_TAGS);
+    return { tags: result.slice(0, MAX_KNOWLEDGE_TAGS), difficultyStars: parseDifficultyStars(parsed.difficultyStars) };
 }

@@ -67,6 +67,7 @@ const QUESTION_XML = `
 <analysis>直接相加</analysis>
 <knowledge_points>加法, 20以内加法</knowledge_points>
 <requires_image>false</requires_image>
+<difficulty_stars>2</difficulty_stars>
 `;
 
 function message(text: string, stopReason = 'end_turn', extraBlocks: unknown[] = []) {
@@ -117,6 +118,7 @@ describe('AnthropicProvider', () => {
             answerText: '5',
             knowledgePoints: ['加法', '20以内加法'],
             requiresImage: false,
+            difficultyStars: 2,
         });
     });
 
@@ -136,7 +138,7 @@ describe('AnthropicProvider', () => {
 
         const tags = await provider.suggestKnowledgeTags({ questionText: '2+3', subject: '数学', allowedTags: ['加法', '减法'] });
 
-        expect(tags).toEqual(['加法']);
+        expect(tags).toEqual({ tags: ['加法'], difficultyStars: null });
     });
 
     it('正文为空且因 max_tokens 截断时，用更大的上限重试一次', async () => {

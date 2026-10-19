@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput } from "./types";
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt } from './prompts';
 import { getAppConfig } from '../config';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars } from './schema';
 import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
@@ -85,6 +85,7 @@ function parseQuestionResponse(text: string): ParsedQuestion {
         subject: normalizeSubject(extractTag(text, "subject")) || '其他',
         knowledgePoints: splitKnowledgePoints(extractTag(text, "knowledge_points")),
         requiresImage: extractTag(text, "requires_image")?.toLowerCase().trim() === 'true',
+        difficultyStars: parseDifficultyStars(extractTag(text, "difficulty_stars")),
     };
 
     const validation = safeParseParsedQuestion(result);
@@ -232,6 +233,7 @@ export class AnthropicProvider implements AIService {
                 mistakeAnalysis: extractTag(text, "mistake_analysis") || "",
                 mistakeStatus: normalizeMistakeStatusForSave(extractTag(text, "mistake_status"), wrongAnswerText),
                 subject: normalizeSubject(extractTag(text, "subject")),
+                difficultyStars: parseDifficultyStars(extractTag(text, "difficulty_stars")),
             };
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during reanswer');
@@ -274,7 +276,7 @@ export class AnthropicProvider implements AIService {
         }
     }
 
-    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<string[]> {
+    async suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult> {
         logger.info({ provider: 'Anthropic', subject: input.subject, allowedTagCount: input.allowedTags.length }, 'Tag Suggestion Request');
 
         try {

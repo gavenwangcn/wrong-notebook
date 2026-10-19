@@ -50,7 +50,7 @@ describe('知识点重新生成', () => {
 
     it('preview 模式只返回建议的知识点（含保留的自定义标签），不写数据库', async () => {
         mocks.errorItem.findUnique.mockResolvedValue(item);
-        mocks.suggestKnowledgeTags.mockResolvedValue(['鸡兔同笼']);
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['鸡兔同笼'], difficultyStars: 3 });
         mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
 
         const response = await RETAG_ITEM(new Request('http://localhost', {
@@ -59,7 +59,7 @@ describe('知识点重新生成', () => {
         }), params('e1'));
 
         expect(response.status).toBe(200);
-        expect((await response.json()).tags).toEqual(['鸡兔同笼', '易错']);
+        expect(await response.json()).toMatchObject({ tags: ['鸡兔同笼', '易错'], difficultyStars: 3 });
         expect(mocks.errorItem.update).not.toHaveBeenCalled();
     });
 
@@ -77,7 +77,7 @@ describe('知识点重新生成', () => {
 
     it('替换系统标签、保留自定义标签，并按学生年级取数学知识点', async () => {
         mocks.errorItem.findUnique.mockResolvedValue(item);
-        mocks.suggestKnowledgeTags.mockResolvedValue(['假设法解鸡兔同笼', '鸡兔同笼']);
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['假设法解鸡兔同笼', '鸡兔同笼'], difficultyStars: 2 });
         mocks.knowledgeTag.findMany.mockResolvedValue([
             { id: 'tag-a', name: '假设法解鸡兔同笼' },
             { id: 'tag-b', name: '鸡兔同笼' },
@@ -95,9 +95,21 @@ describe('知识点重新生成', () => {
             where: { id: 'e1' },
             data: {
                 knowledgePoints: JSON.stringify(['假设法解鸡兔同笼', '鸡兔同笼', '易错']),
+                difficultyStars: 2,
                 tags: { disconnect: [{ id: 'old-sys' }], connect: [{ id: 'tag-a' }, { id: 'tag-b' }] },
             },
         });
+    });
+
+    it('AI 未给出难度星级时保留原星级', async () => {
+        mocks.errorItem.findUnique.mockResolvedValue(item);
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['鸡兔同笼'], difficultyStars: null });
+        mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
+
+        const response = await RETAG_ITEM(new Request('http://localhost', { method: 'POST' }), params('e1'));
+
+        expect(response.status).toBe(200);
+        expect(mocks.errorItem.update.mock.calls[0][0].data).not.toHaveProperty('difficultyStars');
     });
 
     it('他人的题目返回 404，AI 未选出知识点时返回 400 且不修改', async () => {
@@ -106,7 +118,7 @@ describe('知识点重新生成', () => {
         expect(foreign.status).toBe(404);
 
         mocks.errorItem.findUnique.mockResolvedValueOnce(item);
-        mocks.suggestKnowledgeTags.mockResolvedValueOnce([]);
+        mocks.suggestKnowledgeTags.mockResolvedValueOnce({ tags: [], difficultyStars: null });
         const empty = await RETAG_ITEM(new Request('http://localhost', { method: 'POST' }), params('e1'));
         expect(empty.status).toBe(400);
         expect((await empty.json()).message).toBe('NO_TAGS_SELECTED');
@@ -129,7 +141,7 @@ describe('知识点重新生成', () => {
         mocks.errorItem.findUnique
             .mockResolvedValueOnce(item)
             .mockResolvedValueOnce({ ...item, questionText: '' });
-        mocks.suggestKnowledgeTags.mockResolvedValue(['鸡兔同笼']);
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['鸡兔同笼'], difficultyStars: 3 });
         mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
 
         const started = await START_JOB(new Request('http://localhost', { method: 'POST' }), params('nb-1'));

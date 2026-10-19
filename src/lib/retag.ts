@@ -18,16 +18,18 @@ const CONCURRENCY = 2;
 export interface RetagResult {
     errorItemId: string;
     tags: string[];
+    difficultyStars: number | null; // AI 评定的难度星级，未给出时为空
 }
 
 interface TagSuggestion {
     tagNames: string[];                  // 新系统标签 + 保留的自定义标签
+    difficultyStars: number | null;
     newTagIds: string[];
     oldSystemTags: { id: string; name: string }[];
 }
 
 /**
- * 用 AI 从当前知识点库中为一道题选取知识点（不保存）：系统标签换成 AI 选出的，保留自定义标签
+ * 用 AI 从当前知识点库中为一道题选取知识点并评定难度星级（不保存）：系统标签换成 AI 选出的，保留自定义标签
  */
 async function suggestTagsForItem(errorItemId: string, userId: string): Promise<TagSuggestion> {
     const item = await prisma.errorItem.findUnique({
@@ -64,7 +66,7 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
             ? calculateGrade(item.user.educationStage, item.user.enrollmentYear, new Date(), 'zh')
             : null);
 
-    const chosen = await getAIService().suggestKnowledgeTags({
+    const { tags: chosen, difficultyStars } = await getAIService().suggestKnowledgeTags({
         questionText: item.questionText,
         answerText: item.answerText,
         analysis: item.analysis,
@@ -90,6 +92,7 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
 
     return {
         tagNames: [...newTags, ...customTags.map((tag) => tag.name).filter((name) => !newTags.includes(name))],
+        difficultyStars,
         newTagIds: newTags.map((name) => tagIdByName.get(name)!),
         oldSystemTags: item.tags.filter((tag) => tag.isSystem).map(({ id, name }) => ({ id, name })),
     };
@@ -99,20 +102,22 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
  * 只返回 AI 建议的知识点、不保存，供编辑标签时预填
  */
 export async function previewRetagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
-    const { tagNames } = await suggestTagsForItem(errorItemId, userId);
-    return { errorItemId, tags: tagNames };
+    const { tagNames, difficultyStars } = await suggestTagsForItem(errorItemId, userId);
+    return { errorItemId, tags: tagNames, difficultyStars };
 }
 
 /**
- * 用 AI 从当前知识点库中为一道题重新选取知识点并保存：替换原有系统标签，保留自定义标签
+ * 用 AI 从当前知识点库中为一道题重新选取知识点并评定难度星级后保存：替换原有系统标签，保留自定义标签；
+ * AI 未给出星级时保留原星级
  */
 export async function retagErrorItem(errorItemId: string, userId: string): Promise<RetagResult> {
-    const { tagNames, newTagIds, oldSystemTags } = await suggestTagsForItem(errorItemId, userId);
+    const { tagNames, newTagIds, oldSystemTags, difficultyStars } = await suggestTagsForItem(errorItemId, userId);
 
     await prisma.errorItem.update({
         where: { id: errorItemId },
         data: {
             knowledgePoints: JSON.stringify(tagNames),
+            ...(difficultyStars !== null ? { difficultyStars } : {}),
             tags: {
                 disconnect: oldSystemTags.map((tag) => ({ id: tag.id })),
                 connect: newTagIds.map((id) => ({ id })),
@@ -120,8 +125,8 @@ export async function retagErrorItem(errorItemId: string, userId: string): Promi
         },
     });
 
-    logger.info({ errorItemId, before: oldSystemTags.map((tag) => tag.name), after: tagNames }, 'Error item retagged');
-    return { errorItemId, tags: tagNames };
+    logger.info({ errorItemId, before: oldSystemTags.map((tag) => tag.name), after: tagNames, difficultyStars }, 'Error item retagged');
+    return { errorItemId, tags: tagNames, difficultyStars };
 }
 
 export interface RetagJobStatus {

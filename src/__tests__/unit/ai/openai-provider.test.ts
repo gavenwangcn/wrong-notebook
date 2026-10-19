@@ -75,6 +75,14 @@ describe('OpenAI Provider 响应解析', () => {
     });
 
     describe('parseResponse', () => {
+        it('解析难度星级标签，缺失或非法时为 null', () => {
+            const base = '<question_text>Q</question_text><answer_text>A</answer_text><analysis>An</analysis><subject>数学</subject>';
+            expect(asPrivateProvider(provider).parseResponse(base + '<difficulty_stars>4</difficulty_stars>').difficultyStars).toBe(4);
+            expect(asPrivateProvider(provider).parseResponse(base + '<difficulty_stars>★★</difficulty_stars>').difficultyStars).toBe(2);
+            expect(asPrivateProvider(provider).parseResponse(base).difficultyStars).toBeNull();
+            expect(asPrivateProvider(provider).parseResponse(base + '<difficulty_stars>9</difficulty_stars>').difficultyStars).toBeNull();
+        });
+
         it('应该正确解析包含所有必需标签的响应', () => {
             const mockResponse = `
 <question_text>求函数 f(x) = x^2 的最小值</question_text>
@@ -299,7 +307,7 @@ describe('OpenAI Provider 知识点重新标注', () => {
 
         const tags = await provider.suggestKnowledgeTags({ questionText: '题目', subject: '数学', allowedTags: ['植树问题'] });
 
-        expect(tags).toEqual(['植树问题']);
+        expect(tags).toEqual({ tags: ['植树问题'], difficultyStars: null });
     });
 });
 

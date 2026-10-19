@@ -7,6 +7,7 @@ import { createLogger } from "@/lib/logger";
 import { generateUniqueShortId, isShortId } from "@/lib/short-id";
 import { isPracticeResult, scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-deduplication";
+import { parseDifficultyStars } from "@/lib/ai/schema";
 
 const logger = createLogger('api:import');
 
@@ -61,6 +62,7 @@ interface ImportData {
         masteryLevel: number;
         gradeSemester: string | null;
         paperLevel: string | null;
+        difficultyStars?: number | null; // 旧版导出文件没有该字段
         createdAt: string;
         updatedAt: string;
         tags: Array<{ id: string; name: string; subject: string }>;
@@ -284,6 +286,7 @@ export async function POST(req: Request) {
                         masteryLevel: safeMasteryLevel(item.masteryLevel),
                         gradeSemester: item.gradeSemester,
                         paperLevel: item.paperLevel,
+                        difficultyStars: parseDifficultyStars(item.difficultyStars),
                         createdAt: safeParseDate(item.createdAt),
                     },
                 });

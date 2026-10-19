@@ -22,6 +22,7 @@ import { normalizeMistakeStatusForSave, type MistakeStatus } from "@/lib/mistake
 import type { ReanswerQuestionResult } from "@/lib/ai/types";
 import { buildReanswerRequestBody } from "@/lib/reanswer-request";
 import { GeogebraDemo } from "@/components/geogebra-demo";
+import { DifficultyStars } from "@/components/difficulty-stars";
 
 interface ParsedQuestionWithSubject extends ParsedQuestion {
     subjectId?: string;
@@ -126,6 +127,8 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                     result.mistakeStatus,
                     result.wrongAnswerText
                 ),
+                // 重新解题给出星级时更新，否则保留原星级
+                difficultyStars: result.difficultyStars ?? prev.difficultyStars,
             }));
 
             alert(t.editor.reanswerSuccess || '✅ Answer and analysis updated!');
@@ -280,6 +283,17 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                                     <SelectItem value="other">{t.editor.paperLevels?.other || "Other"}</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>{t.difficulty.label}</Label>
+                        <div>
+                            <DifficultyStars
+                                size="md"
+                                value={data.difficultyStars}
+                                onChange={(difficultyStars) => setData({ ...data, difficultyStars })}
+                            />
                         </div>
                     </div>
 

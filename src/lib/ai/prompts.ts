@@ -114,6 +114,18 @@ export interface PromptOptions {
   prefetchedEnglishTags?: string[];
 }
 
+/**
+ * 难度星级规则（1~5 星），参考《高思学校竞赛数学导引》各题左侧的星级标注：
+ * 一二星约为课本及校内拔高难度，三四星为常规奥数难度，五星为竞赛压轴难度。
+ */
+export const DIFFICULTY_STARS_RULES = `请参考《高思学校竞赛数学导引》（每讲分兴趣篇、拓展篇、超越篇，题目左侧标 1~5 颗星）的星级标准，结合题目所在年级评定难度：
+- 1 星：课本基础题，直接套用概念、公式或简单计算即可（相当于兴趣篇前几题）。
+- 2 星：校内拔高题，需要两三步推理或简单综合（相当于兴趣篇后几题）。
+- 3 星：常规奥数题，小升初、杯赛常见难度，需要掌握该专题的典型方法（相当于拓展篇）。
+- 4 星：较难奥数题，需要构造、分类讨论、转化或多种方法综合（相当于拓展篇末题、超越篇前几题）。
+- 5 星：竞赛压轴题，集训队水平，思路巧妙、步骤长（相当于超越篇难题）。
+非数学学科按同样的 1~5 级划分：1 星为基础识记，3 星为综合应用，5 星为竞赛或压轴难度。`;
+
 export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
 你是一位世界顶尖的、经验丰富的、专业的跨学科考试分析专家（Interdisciplinary Exam Analysis Expert）。你的核心任务是极致准确地分析用户提供的考试题目图片，全面理解所有文本、图表和隐含约束，并提供一个完整、高度结构化且专业的解决方案。
 
@@ -143,6 +155,11 @@ export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE
 <mistake_status>
 填写以下值之一：wrong_attempt（图片中有错误解答或错误步骤）、not_attempted（没有错误解答，像是完全不会做或未作答）、unknown（无法判断）。
 </mistake_status>
+
+<difficulty_stars>
+只填写 1 到 5 之间的一个整数，表示题目难度星级。
+${DIFFICULTY_STARS_RULES}
+</difficulty_stars>
 
 <mistake_analysis>
 如果图片中包含错误解答，请分析错误可能发生在哪一步、为什么错、导致了什么后果；如果没有错误解答，请留空。
@@ -211,7 +228,7 @@ export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE
 - 每题最多 5 个标签。
 
 【!!! 关键格式与内容约束 (CRITICAL RULES) !!!】
-1. **格式严格**：必须严格包含上述 9 个 XML 标签，除此之外不要输出任何其他“开场白”或“结束语”。
+1. **格式严格**：必须严格包含上述 10 个 XML 标签，除此之外不要输出任何其他“开场白”或“结束语”。
 2. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 3. **内容完整**：如果包含子问题，请在 question_text 中完整列出。
 4. **禁止图片**：严禁包含任何图片链接或 markdown 图片语法。
@@ -508,8 +525,13 @@ export const DEFAULT_REANSWER_TEMPLATE = `【角色与核心任务 (ROLE AND COR
 判断题目所属学科，只能填写以下之一：数学、物理、化学、生物、英语、语文、历史、地理、政治、其他
 </subject>
 
+<difficulty_stars>
+只填写 1 到 5 之间的一个整数，表示题目难度星级。
+${DIFFICULTY_STARS_RULES}
+</difficulty_stars>
+
 【!!! 关键格式与内容约束 (CRITICAL RULES) !!!】
-1. **格式严格**：必须严格包含上述 7 个 XML 标签，不要输出其他内容。
+1. **格式严格**：必须严格包含上述 8 个 XML 标签，不要输出其他内容。
 2. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 3. **题目不变**：不要修改或重复题目内容，只提供答案和解析。
 
@@ -751,7 +773,7 @@ export function generateMasteryPrompt(input: {
  * 根据题目内容，从给定的知识点清单中选出最相关的知识点
  */
 export const DEFAULT_TAG_SUGGEST_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
-你是一位熟悉课程大纲的{{subject}}老师。请阅读下面这道题目，从【可选知识点】中选出这道题考查的知识点。
+你是一位熟悉课程大纲的{{subject}}老师。请阅读下面这道题目，从【可选知识点】中选出这道题考查的知识点，并评定题目难度星级。
 
 【题目】
 {{question_text}}
@@ -772,9 +794,12 @@ export const DEFAULT_TAG_SUGGEST_TEMPLATE = `【角色与核心任务 (ROLE AND 
 2. 选择 1 到 5 个，按相关程度从高到低排列；优先选择最能概括本题解题方法的知识点。
 3. 竞赛/思维类题目（如鸡兔同笼、植树问题、行程问题、数论、计数）优先选择对应的专题知识点。
 
+【难度星级】
+${DIFFICULTY_STARS_RULES}
+
 【输出格式】
-只输出一个 JSON 对象，不要输出任何其他内容：
-{"tags": ["知识点1", "知识点2"]}`;
+只输出一个 JSON 对象，不要输出任何其他内容（difficultyStars 为 1~5 的整数）：
+{"tags": ["知识点1", "知识点2"], "difficultyStars": 3}`;
 
 /**
  * 生成知识点重新标注提示词

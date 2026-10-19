@@ -73,6 +73,7 @@ export interface ErrorItem {
     masteryEvaluatedAt?: string | null;
     gradeSemester?: string | null;
     paperLevel?: string | null;
+    difficultyStars?: number | null; // 难度星级 1~5
 
     createdAt: string;
     updatedAt: string;
