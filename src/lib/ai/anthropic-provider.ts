@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt } from './prompts';
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt } from './prompts';
 import { getAppConfig } from '../config';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
@@ -86,6 +86,7 @@ function parseQuestionResponse(text: string): ParsedQuestion {
         knowledgePoints: splitKnowledgePoints(extractTag(text, "knowledge_points")),
         requiresImage: extractTag(text, "requires_image")?.toLowerCase().trim() === 'true',
         difficultyStars: parseDifficultyStars(extractTag(text, "difficulty_stars")),
+        ...parseFigure(extractTag(text, "has_figure"), extractTag(text, "figure_svg")),
     };
 
     const validation = safeParseParsedQuestion(result);
@@ -183,10 +184,11 @@ export class AnthropicProvider implements AIService {
         }
     }
 
-    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null): Promise<ParsedQuestion> {
+    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null, originalFigureSvg?: string | null): Promise<ParsedQuestion> {
         const config = getAppConfig();
         const systemPrompt = generateSimilarQuestionPrompt(language, originalQuestion, knowledgePoints, difficulty, {
-            customTemplate: config.prompts?.similar
+            customTemplate: config.prompts?.similar,
+            originalFigureSvg,
         }, gradeSemester);
         const userPrompt = `\nOriginal Question: "${originalQuestion}"\nKnowledge Points: ${knowledgePoints.join(", ")}\n    `;
 
@@ -282,6 +284,23 @@ export class AnthropicProvider implements AIService {
             return parseTagSuggestion(text, input.allowedTags);
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during tag suggestion');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async generateFigureSvg(imageBase64: string, mimeType: string, questionText?: string | null): Promise<FigureResult> {
+        logger.info({ provider: 'Anthropic', model: this.model, imageSize: imageBase64.length }, 'Figure SVG Request');
+
+        try {
+            const text = await this.complete(generateFigurePrompt(questionText), [
+                imageBlock(imageBase64, mimeType),
+                { type: 'text', text: '请重新绘制图中题目的配图。' },
+            ], 8192);
+            logger.debug({ rawResponse: text }, 'Figure SVG AI raw response');
+            return parseFigure(extractTag(text, "has_figure"), extractTag(text, "figure_svg"));
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
             this.handleError(error);
             throw error;
         }

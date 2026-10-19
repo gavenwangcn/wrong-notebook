@@ -114,6 +114,8 @@ export interface PromptOptions {
   prefetchedEnglishTags?: string[];
   // 错题本学段 + 学科下的全部知识点；提供时直接使用，不再按学科、年级取标签
   candidateTags?: CandidateTags;
+  // 举一反三时原题的 SVG 配图，供 AI 参考重新画图
+  originalFigureSvg?: string | null;
 }
 
 /**
@@ -127,6 +129,15 @@ export const DIFFICULTY_STARS_RULES = `请参考《高思学校竞赛数学导�
 - 4 星：较难奥数题，需要构造、分类讨论、转化或多种方法综合（相当于拓展篇末题、超越篇前几题）。
 - 5 星：竞赛压轴题，集训队水平，思路巧妙、步骤长（相当于超越篇难题）。
 非数学学科按同样的 1~5 级划分：1 星为基础识记，3 星为综合应用，5 星为竞赛或压轴难度。`;
+
+/**
+ * 用 SVG 重绘题目配图的规则（识别、举一反三、单独生成配图共用）
+ */
+export const FIGURE_SVG_RULES = `- 输出一个完整的 <svg> 元素，包含 xmlns="http://www.w3.org/2000/svg" 和 viewBox（建议宽 400~600），不要用 Markdown 代码块包裹。
+- 白色背景、黑色线条（stroke="#000"，线宽 1.5~2），需要区分的区域可用浅灰填充；不要使用彩色装饰。
+- 按原图比例和相对位置绘制，保留所有标注：顶点字母、数字、长度、角度、单位、箭头和虚线等，文字用 <text>（font-size 14~18）。
+- 只使用基本图形元素：line、polyline、polygon、rect、circle、ellipse、path、text、g、defs、marker。
+- 严禁使用 <image>、<script>、<foreignObject>、外部链接、外部字体或事件属性。`;
 
 export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
 你是一位世界顶尖的、经验丰富的、专业的跨学科考试分析专家（Interdisciplinary Exam Analysis Expert）。你的核心任务是极致准确地分析用户提供的考试题目图片，全面理解所有文本、图表和隐含约束，并提供一个完整、高度结构化且专业的解决方案。
@@ -149,6 +160,16 @@ export const DEFAULT_ANALYZE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE
 <requires_image>
 判断这道题是否需要依赖图片才能正确解答。如果题目包含几何图形、函数图像、实验装置图、电路图等必须看图才能理解的内容，填写 true；如果只需要文字描述即可理解（如英语题、纯文字数学题），填写 false。
 </requires_image>
+
+<has_figure>
+判断题目本身是否带有配图（几何图形、函数图像、示意图、统计图、实验装置图、电路图等；不含学生的作答痕迹和纯文字表格）。有配图填 true，否则填 false。
+</has_figure>
+
+<figure_svg>
+如果 has_figure 为 true，用 SVG 重新绘制题目配图：
+${FIGURE_SVG_RULES}
+如果 has_figure 为 false，请留空。
+</figure_svg>
 
 <wrong_answer_text>
 如果图片中包含学生已经写出的错误解答、错误步骤、草稿或错误答案，请尽量按原样摘录；如果没有看到学生错误解答，请留空。
@@ -230,7 +251,7 @@ ${DIFFICULTY_STARS_RULES}
 - 每题最多 5 个标签。
 
 【!!! 关键格式与内容约束 (CRITICAL RULES) !!!】
-1. **格式严格**：必须严格包含上述 10 个 XML 标签，除此之外不要输出任何其他“开场白”或“结束语”。
+1. **格式严格**：必须严格包含上述 12 个 XML 标签，除此之外不要输出任何其他“开场白”或“结束语”。
 2. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 3. **内容完整**：如果包含子问题，请在 question_text 中完整列出。
 4. **禁止图片**：严禁包含任何图片链接或 markdown 图片语法。
@@ -285,11 +306,57 @@ export const DEFAULT_SIMILAR_TEMPLATE = `你是一位资深的K12教育题目生
 * **直接使用标准的 LaTeX 符号**（如 $\frac{1}{2}$），**不要**进行 JSON 转义。
 </analysis>
 
+{{figure_instruction}}
+
 ###关键格式与内容约束 (CRITICAL RULES) !!!
 1. **纯文本**：内容作为纯文本处理，**不要转义反斜杠**。
 
 {{grade_instruction}}
 {{provider_hints}}`;
+
+/** 举一反三新题的配图要求：原题有配图时，新题按新的数据重新画图 */
+function generateSimilarFigureInstruction(originalFigureSvg?: string | null): string {
+  const reference = originalFigureSvg
+    ? `原题配图如下（SVG），新题若沿用类似图形，必须按新题的条件和数据重新绘制，不要直接照抄：\n${originalFigureSvg}`
+    : '原题没有配图；只有新题确实需要图形才能理解时才画图。';
+  return `<figure_svg>
+如果新题目需要配图，在此处用 SVG 绘制新题目的配图，图中的字母、数字和标注必须与新题目一致：
+${FIGURE_SVG_RULES}
+${reference}
+新题目不需要配图时请留空。
+</figure_svg>`;
+}
+
+/**
+ * 单独为已有题目重绘配图的提示词（详情页「AI 重新生成配图」）
+ */
+export const DEFAULT_FIGURE_TEMPLATE = `【角色与核心任务 (ROLE AND CORE TASK)】
+你是一位擅长绘制试题插图的老师。请观察用户提供的题目图片，判断题目是否带有配图；如果有，用 SVG 精确地重新绘制该配图。
+
+【题目文字（供参考，用于核对图中标注）】
+{{question_text}}
+
+【输出格式】
+只输出以下两个标签，不要输出其他内容：
+
+<has_figure>
+题目本身是否带有配图（几何图形、函数图像、示意图、统计图、实验装置图、电路图等；不含学生的作答痕迹和纯文字表格）。有配图填 true，否则填 false。
+</has_figure>
+
+<figure_svg>
+如果 has_figure 为 true，用 SVG 重新绘制题目配图：
+${FIGURE_SVG_RULES}
+如果 has_figure 为 false，请留空。
+</figure_svg>`;
+
+/**
+ * 生成单独重绘配图的提示词
+ */
+export function generateFigurePrompt(questionText?: string | null): string {
+  return replaceVariables(DEFAULT_FIGURE_TEMPLATE, {
+    question_text: questionText?.trim() || '（无题目文字）',
+  }).trim();
+}
 
 /**
  * Helper to replace placeholders in template
@@ -475,6 +542,7 @@ export function generateSimilarQuestionPrompt(
   const template = options?.customTemplate || DEFAULT_SIMILAR_TEMPLATE;
 
   return replaceVariables(template, {
+    figure_instruction: generateSimilarFigureInstruction(options?.originalFigureSvg),
     difficulty_level: difficulty.toUpperCase(),
     difficulty_instruction: difficultyInstruction,
     language_instruction: langInstruction,

@@ -9,6 +9,7 @@ import {
     generateReanswerPrompt,
     generateMasteryPrompt,
     generateTagSuggestPrompt,
+    generateFigurePrompt,
     generateGradeInstruction,
     gradeSemesterToDisplayName,
     gradeSemesterToGradeNumber,
@@ -37,6 +38,21 @@ describe('AI Prompts', () => {
     });
 
     describe('generateAnalyzePrompt', () => {
+        it('要求判断是否有配图并用 SVG 重绘', () => {
+            const prompt = generateAnalyzePrompt('zh', 7, '数学');
+            expect(prompt).toContain('<has_figure>');
+            expect(prompt).toContain('<figure_svg>');
+            expect(prompt).toContain('12 个 XML 标签');
+            expect(prompt).toContain('严禁使用 <image>、<script>');
+        });
+
+        it('单独重绘配图的提示词带上题干用于核对标注', () => {
+            const prompt = generateFigurePrompt('如图，AB=3');
+            expect(prompt).toContain('如图，AB=3');
+            expect(prompt).toContain('<figure_svg>');
+            expect(generateFigurePrompt(null)).toContain('（无题目文字）');
+        });
+
         it('提供错题本候选知识点时只列出这些标签，不再按学科、年级取标签', () => {
             const prompt = generateAnalyzePrompt('zh', 4, '数学', {
                 candidateTags: { subjectName: '数学', tags: ['鸡兔同笼', '植树问题'] },
@@ -118,6 +134,17 @@ describe('AI Prompts', () => {
     });
 
     describe('generateSimilarQuestionPrompt', () => {
+        it('原题有配图时附上原题 SVG，并要求按新题数据重新绘制', () => {
+            const svg = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="1"/></svg>';
+            const prompt = generateSimilarQuestionPrompt('zh', '如图求面积', ['面积'], 'medium', { originalFigureSvg: svg });
+            expect(prompt).toContain('<figure_svg>');
+            expect(prompt).toContain(svg);
+            expect(prompt).toContain('重新绘制');
+            const noFigure = generateSimilarQuestionPrompt('zh', '1+1=?', ['加法'], 'medium');
+            expect(noFigure).toContain('原题没有配图');
+            expect(noFigure).not.toContain('{{figure_instruction}}');
+        });
+
         const originalQuestion = '已知 x + y = 5，求 x² + y² 的最小值';
         const knowledgePoints = ['一元二次方程', '最值问题'];
 

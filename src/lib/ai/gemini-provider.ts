@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt } from './prompts';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars } from './schema';
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt } from './prompts';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { getAppConfig } from '../config';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
@@ -147,6 +147,7 @@ export class GeminiProvider implements AIService {
             knowledgePoints,
             requiresImage,
             difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")),
+            ...parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg")),
         };
 
         // Final Schema Validation
@@ -241,10 +242,11 @@ export class GeminiProvider implements AIService {
         }
     }
 
-    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null): Promise<ParsedQuestion> {
+    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null, originalFigureSvg?: string | null): Promise<ParsedQuestion> {
         const config = getAppConfig();
         const prompt = generateSimilarQuestionPrompt(language, originalQuestion, knowledgePoints, difficulty, {
-            customTemplate: config.prompts?.similar
+            customTemplate: config.prompts?.similar,
+            originalFigureSvg,
         }, gradeSemester);
 
         logger.box('🎯 Generate Similar Question Request', {
@@ -441,6 +443,31 @@ export class GeminiProvider implements AIService {
             return parseTagSuggestion(text, input.allowedTags);
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during tag suggestion');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async generateFigureSvg(imageBase64: string, mimeType: string, questionText?: string | null): Promise<FigureResult> {
+        const prompt = generateFigurePrompt(questionText);
+        logger.info({ provider: 'Gemini', model: this.modelName, imageSize: imageBase64.length }, 'Figure SVG Request');
+
+        try {
+            const response = await this.retryOperation(() => this.ai.models.generateContent({
+                model: this.modelName,
+                contents: [
+                    { text: prompt },
+                    { inlineData: { data: imageBase64, mimeType } },
+                ],
+            }));
+
+            const text = response.text || '';
+            logger.debug({ rawResponse: text }, 'Figure SVG AI raw response');
+
+            if (!text) throw new Error(response.candidates?.[0]?.finishReason === 'MAX_TOKENS' ? AI_OUTPUT_TRUNCATED : "Empty response from AI");
+            return parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg"));
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
             this.handleError(error);
             throw error;
         }

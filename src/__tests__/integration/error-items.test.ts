@@ -247,6 +247,37 @@ describe('/api/error-items', () => {
             expect(mocks.mockPrismaErrorItem.create).toHaveBeenCalledTimes(1);
         });
 
+        it('保存配图前净化 SVG；有有效配图时标记为有配图', async () => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'error-item-1', userId: 'user-123' });
+            const figureSvg = '<svg viewBox="0 0 10 10" onload="alert(1)"><script>alert(1)</script><rect width="5" height="5"/></svg>';
+
+            await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '如图', answerText: '答', analysis: '析', originalImageUrl: '', figureSvg }),
+            }));
+
+            const data = mocks.mockPrismaErrorItem.create.mock.calls[0][0].data;
+            expect(data.hasFigure).toBe(true);
+            expect(data.figureSvg).toContain('<rect');
+            expect(data.figureSvg).not.toMatch(/script|onload/);
+        });
+
+        it('无效 SVG 丢弃，未提供配图时 hasFigure 为 false', async () => {
+            mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'error-item-1', userId: 'user-123' });
+
+            await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '题', answerText: '答', analysis: '析', originalImageUrl: '', figureSvg: '<div>not svg</div>' }),
+            }));
+            await POST(new Request('http://localhost/api/error-items', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '题2', answerText: '答', analysis: '析', originalImageUrl: '' }),
+            }));
+
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data).toMatchObject({ hasFigure: false, figureSvg: null });
+            expect(mocks.mockPrismaErrorItem.create.mock.calls[1][0].data).toMatchObject({ hasFigure: false, figureSvg: null });
+        });
+
         it('未提供难度星级时保存为空', async () => {
             mocks.mockPrismaErrorItem.create.mockResolvedValue({ id: 'error-item-1', userId: 'user-123' });
 

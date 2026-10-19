@@ -16,6 +16,8 @@ export const EXAM_PRINT_CSS = `
 .exam-sheet .exam-label { font-weight: 600; color: #444; }
 .exam-sheet .markdown-content p { margin: 4px 0; }
 .exam-sheet .markdown-content img { max-width: 100%; }
+.exam-sheet .question-figure { margin: 8px 0; break-inside: avoid; page-break-inside: avoid; }
+.exam-sheet .question-figure img { display: block; margin: 0 auto; max-width: 100%; max-height: 360px; background: #fff; }
 .exam-sheet .markdown-content table { border-collapse: collapse; }
 .exam-sheet .markdown-content td, .exam-sheet .markdown-content th { border: 1px solid #999; padding: 2px 6px; }
 @media print { .exam-sheet { padding: 0; max-width: none; } @page { size: A4; margin: 15mm; } }

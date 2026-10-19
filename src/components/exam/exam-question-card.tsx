@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { RESULT_BADGE_CLASS } from "@/components/mastery-panel";
 import { PracticeResultPicker } from "@/components/practice-result-picker";
+import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { ExamQuestionDetail, PracticeResult } from "@/types/api";
 
@@ -65,6 +66,7 @@ export function ExamQuestionCard({ question, editingResult, onResultChange }: Ex
                 {question.status === "ready" && question.questionText && (
                     <>
                         <MarkdownRenderer content={question.questionText} />
+                        <QuestionFigure svg={question.figureSvg} />
                         <button
                             type="button"
                             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"

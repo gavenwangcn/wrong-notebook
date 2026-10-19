@@ -6,6 +6,7 @@ import { getServerSession } from "next-auth";
 import { unauthorized, internalError, notFound, validationError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { PRACTICE_RESULTS, scheduleMasteryEvaluation } from "@/lib/mastery";
+import { MAX_FIGURE_SVG_LENGTH, sanitizeFigureSvg } from "@/lib/figure-svg";
 
 const logger = createLogger('api:practice:record');
 
@@ -18,6 +19,7 @@ const recordSchema = z.object({
     questionText: z.string().max(20000).nullable().optional(),
     answerText: z.string().max(20000).nullable().optional(),
     analysis: z.string().max(50000).nullable().optional(),
+    figureSvg: z.string().max(MAX_FIGURE_SVG_LENGTH).nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -33,6 +35,7 @@ export async function POST(req: Request) {
             return validationError("Invalid practice record", parsed.error.issues);
         }
         const { errorItemId, subject, difficulty, questionText, answerText, analysis } = parsed.data;
+        const figureSvg = sanitizeFigureSvg(parsed.data.figureSvg);
         // 兼容旧客户端只传 isCorrect 的情况
         const result = parsed.data.result
             ?? (parsed.data.isCorrect === true ? 'correct' : parsed.data.isCorrect === false ? 'wrong' : undefined);
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
                     questionText,
                     answerText,
                     analysis,
+                    figureSvg,
                     source: 'practice',
                 } : {}),
             },

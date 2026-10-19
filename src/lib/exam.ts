@@ -83,7 +83,7 @@ async function generateQuestion(questionId: string, difficulty: DifficultyLevel,
         where: { id: questionId },
         select: {
             errorItem: {
-                select: { questionText: true, knowledgePoints: true, gradeSemester: true, tags: { select: { name: true } } },
+                select: { questionText: true, knowledgePoints: true, gradeSemester: true, figureSvg: true, tags: { select: { name: true } } },
             },
         },
     });
@@ -98,7 +98,8 @@ async function generateQuestion(questionId: string, difficulty: DifficultyLevel,
             parseTagNames(question.errorItem),
             language,
             difficulty,
-            question.errorItem.gradeSemester
+            question.errorItem.gradeSemester,
+            question.errorItem.figureSvg
         );
         await prisma.examQuestion.update({
             where: { id: questionId },
@@ -107,6 +108,7 @@ async function generateQuestion(questionId: string, difficulty: DifficultyLevel,
                 questionText: generated.questionText,
                 answerText: generated.answerText,
                 analysis: generated.analysis,
+                figureSvg: generated.figureSvg ?? null,
                 error: null,
             },
         });
@@ -183,6 +185,7 @@ export async function recordExamResults(paperId: string, userId: string, takenAt
                     questionText: true,
                     answerText: true,
                     analysis: true,
+                    figureSvg: true,
                     practiceRecordId: true,
                     errorItem: { select: { subject: { select: { name: true } } } },
                 },
@@ -225,6 +228,7 @@ export async function recordExamResults(paperId: string, userId: string, takenAt
                         questionText: question.questionText,
                         answerText: question.answerText,
                         analysis: question.analysis,
+                        figureSvg: question.figureSvg,
                     },
                 });
                 await tx.examQuestion.update({ where: { id: questionId }, data: { practiceRecordId: record.id } });

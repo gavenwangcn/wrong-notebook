@@ -118,6 +118,8 @@ model ErrorItem {
   gradeSemester    String? // e.g. "Junior High Grade 2, 1st Semester"
   paperLevel       String? // e.g. "A", "B", "Other"
   difficultyStars  Int?    // 难度星级 1~5（参考高思导引星级），未评定时为空
+  hasFigure        Boolean @default(false) // 识别时判断题目是否有配图
+  figureSvg        String? // AI 用 SVG 重绘的题目配图（已净化），显示和打印时使用
 
   // 根据举一反三历史推测的掌握情况
   masteryProbability Float?    // 0~1
@@ -164,6 +166,7 @@ model PracticeRecord {
   wrongAnswerText String? // 本次作答快照，避免重复导入时覆盖原题
   mistakeAnalysis String?
   originalImageUrl String?
+  figureSvg    String?  // 举一反三新题的 SVG 配图
   source       String   @default("practice") // practice | exam | duplicate_import
   examQuestion ExamQuestion?
   
@@ -206,6 +209,7 @@ model ExamQuestion {
   questionText  String?
   answerText    String?
   analysis      String?
+  figureSvg     String?    // 新题的 SVG 配图
   error         String?
   practiceRecordId String? @unique
   practiceRecord   PracticeRecord? @relation(fields: [practiceRecordId], references: [id], onDelete: SetNull)

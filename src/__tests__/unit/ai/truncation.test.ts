@@ -30,6 +30,22 @@ describe('withTruncationRetry', () => {
         expect(call).toHaveBeenCalledTimes(2);
     });
 
+    it('正文写到一半被截断时也用更大的上限重试', async () => {
+        const partial = { choices: [{ finish_reason: 'length', message: { content: '<question_text>半截' } }] };
+        const call = vi.fn().mockResolvedValueOnce(partial).mockResolvedValueOnce(answered);
+
+        expect(await withTruncationRetry(call, 8192)).toBe(answered);
+        expect(call.mock.calls.map((args) => args[0])).toEqual([8192, TRUNCATION_RETRY_MAX_TOKENS]);
+    });
+
+    it('重试后仍只有部分正文时返回该结果，由调用方尽力解析', async () => {
+        const partial = { choices: [{ finish_reason: 'length', message: { content: '部分' } }] };
+        const call = vi.fn().mockResolvedValue(partial);
+
+        expect(await withTruncationRetry(call, 8192)).toBe(partial);
+        expect(call).toHaveBeenCalledTimes(2);
+    });
+
     it('有部分正文的截断不视为空结果', () => {
         expect(isTruncatedWithoutContent({ choices: [{ finish_reason: 'length', message: { content: '部分内容' } }] })).toBe(false);
         expect(isTruncatedWithoutContent(truncated)).toBe(true);

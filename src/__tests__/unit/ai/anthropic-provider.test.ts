@@ -142,6 +142,17 @@ describe('AnthropicProvider', () => {
         expect(tags).toEqual({ tags: ['加法'], difficultyStars: null });
     });
 
+    it('单独重绘配图：以图片块发送并解析配图', async () => {
+        mocks.create.mockResolvedValue(message('<has_figure>true</has_figure><figure_svg><svg><rect width="2" height="2"/></svg></figure_svg>'));
+        const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
+
+        const figure = await provider.generateFigureSvg('QUJD', 'image/jpeg', '如图');
+
+        expect(mocks.create.mock.calls[0][0].messages[0].content[0]).toMatchObject({ type: 'image', source: { media_type: 'image/jpeg', data: 'QUJD' } });
+        expect(figure).toMatchObject({ hasFigure: true });
+        expect(figure.figureSvg).toContain('<rect');
+    });
+
     it('正文为空且因 max_tokens 截断时，用更大的上限重试一次', async () => {
         mocks.create
             .mockResolvedValueOnce({ content: [{ type: 'thinking', thinking: '...', signature: 'x' }], stop_reason: 'max_tokens', usage: {} })

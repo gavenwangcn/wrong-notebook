@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { QuestionFigure } from "@/components/question-figure";
 import { apiClient } from "@/lib/api-client";
 import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -256,6 +257,8 @@ function PrintPreviewContent() {
                             {showQuestionText && item.questionText ? (
                                 <div className="mb-4">
                                     <MarkdownRenderer content={item.questionText} />
+                                    {/* 有 SVG 配图时打印配图，不再打印拍照原图 */}
+                                    <QuestionFigure svg={item.figureSvg} />
                                 </div>
                             ) : (
                                 item.originalImageUrl && (

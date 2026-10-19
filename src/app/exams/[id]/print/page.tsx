@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BackButton } from "@/components/ui/back-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { EXAM_PRINT_CSS, buildExamHtmlDocument, examFileName } from "@/lib/exam-print";
@@ -81,6 +82,7 @@ export default function ExamPrintPage() {
                             <span className="exam-source">{t.exam.sourceLabel}: {question.sourceShortId}</span>
                         </div>
                         <MarkdownRenderer content={question.questionText!} />
+                        <QuestionFigure svg={question.figureSvg} />
                         <div className="exam-answer-space" />
                     </section>
                 ))}

@@ -76,6 +76,36 @@ describe('OpenAI Provider 响应解析', () => {
     });
 
     describe('parseResponse', () => {
+        it('解析配图标签，SVG 经净化', () => {
+            const base = '<question_text>Q</question_text><answer_text>A</answer_text><analysis>An</analysis><subject>数学</subject>';
+            const parsed = asPrivateProvider(provider).parseResponse(base + '<has_figure>true</has_figure><figure_svg><svg onload="x()"><rect width="1" height="1"/></svg></figure_svg>');
+            expect(parsed.hasFigure).toBe(true);
+            expect(parsed.figureSvg).toContain('<rect');
+            expect(parsed.figureSvg).not.toContain('onload');
+            expect(asPrivateProvider(provider).parseResponse(base)).toMatchObject({ hasFigure: false, figureSvg: null });
+        });
+
+        it('举一反三时把原题配图放进提示词，并解析新题配图', async () => {
+            mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<question_text>新题</question_text><answer_text>A</answer_text><analysis>An</analysis><figure_svg><svg><circle r="2"/></svg></figure_svg>' } }] });
+            const original = '<svg xmlns="http://www.w3.org/2000/svg"><circle r="1"/></svg>';
+
+            const result = await provider.generateSimilarQuestion('原题', ['面积'], 'zh', 'medium', null, original);
+
+            expect(mockCompletionCreate.mock.calls[0][0].messages[0].content).toContain(original);
+            expect(result.figureSvg).toContain('<circle r="2"/>');
+        });
+
+        it('单独重绘配图：发送原题图片并解析结果', async () => {
+            mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<has_figure>true</has_figure><figure_svg><svg><line x1="0" y1="0" x2="1" y2="1"/></svg></figure_svg>' } }] });
+
+            const figure = await provider.generateFigureSvg('QUJD', 'image/png', '如图');
+
+            const request = mockCompletionCreate.mock.calls[0][0];
+            expect(request.messages[1].content[0].image_url.url).toBe('data:image/png;base64,QUJD');
+            expect(figure.hasFigure).toBe(true);
+            expect(figure.figureSvg).toContain('<line');
+        });
+
         it('解析难度星级标签，缺失或非法时为 null', () => {
             const base = '<question_text>Q</question_text><answer_text>A</answer_text><analysis>An</analysis><subject>数学</subject>';
             expect(asPrivateProvider(provider).parseResponse(base + '<difficulty_stars>4</difficulty_stars>').difficultyStars).toBe(4);

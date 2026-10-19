@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Loader2, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
+import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import type { PracticeHistoryResponse } from "@/types/api";
@@ -122,6 +123,7 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
                                     {expanded === record.id && record.questionText && (
                                         <div className="space-y-2 rounded-md bg-muted/40 p-3">
                                             <MarkdownRenderer content={record.questionText} />
+                                            <QuestionFigure svg={record.figureSvg} />
                                             {record.wrongAnswerText && (
                                                 <div className="border-t pt-2">
                                                     <p className="mb-1 font-medium">{t.editor.wrongAnswerText}</p>

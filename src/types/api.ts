@@ -76,6 +76,8 @@ export interface ErrorItem {
     gradeSemester?: string | null;
     paperLevel?: string | null;
     difficultyStars?: number | null; // 难度星级 1~5
+    hasFigure?: boolean;             // 是否有配图
+    figureSvg?: string | null;       // AI 重绘的 SVG 配图
 
     createdAt: string;
     updatedAt: string;
@@ -284,6 +286,7 @@ export interface PracticeHistoryRecord {
     wrongAnswerText?: string | null;
     mistakeAnalysis?: string | null;
     originalImageUrl?: string | null;
+    figureSvg?: string | null;
     createdAt: string;
     exam: { paperId: string; order: number; title: string } | null;
 }
@@ -325,6 +328,7 @@ export interface ExamQuestionDetail {
     questionText: string | null;
     answerText: string | null;
     analysis: string | null;
+    figureSvg?: string | null;
     error: string | null;
     notebookName: string | null;
     result: PracticeResult | null;

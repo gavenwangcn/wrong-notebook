@@ -1,6 +1,7 @@
 /**
  * 推理模型（如 MiniMax、DeepSeek-R1）会先输出思考过程，思考过长时会把 max_tokens 全部用完，
- * 返回 finish_reason = "length" 且正文为空。此时用更大的输出上限重试一次，仍被截断则报明确错误。
+ * 返回 finish_reason = "length" 且正文为空或只有一半（如配图 SVG 较长时）。
+ * 此时用更大的输出上限重试一次；仍没有正文则报明确错误，仍只有部分正文时返回该结果尽力解析。
  */
 
 export const AI_OUTPUT_TRUNCATED = 'AI_OUTPUT_TRUNCATED';
@@ -12,6 +13,11 @@ interface ChatCompletionLike {
     choices?: Array<{ finish_reason?: string | null; message?: { content?: string | null } | null }>;
 }
 
+/** 是否因输出长度上限被截断 */
+function isTruncated(response: ChatCompletionLike | null | undefined): boolean {
+    return response?.choices?.[0]?.finish_reason === 'length';
+}
+
 /** 是否因输出长度上限被截断且没有任何正文 */
 export function isTruncatedWithoutContent(response: ChatCompletionLike | null | undefined): boolean {
     const choice = response?.choices?.[0];
@@ -19,7 +25,7 @@ export function isTruncatedWithoutContent(response: ChatCompletionLike | null | 
 }
 
 /**
- * 以 maxTokens 调用一次；若正文为空且因长度截断，用 TRUNCATION_RETRY_MAX_TOKENS 重试一次
+ * 以 maxTokens 调用一次；若因长度截断，用 TRUNCATION_RETRY_MAX_TOKENS 重试一次
  */
 export async function withTruncationRetry<T extends ChatCompletionLike>(
     call: (maxTokens: number) => Promise<T>,
@@ -27,11 +33,12 @@ export async function withTruncationRetry<T extends ChatCompletionLike>(
     onRetry?: () => void
 ): Promise<T> {
     const first = await call(maxTokens);
-    if (!isTruncatedWithoutContent(first)) {
+    if (!isTruncated(first)) {
         return first;
     }
     if (maxTokens >= TRUNCATION_RETRY_MAX_TOKENS) {
-        throw new Error(AI_OUTPUT_TRUNCATED);
+        if (isTruncatedWithoutContent(first)) throw new Error(AI_OUTPUT_TRUNCATED);
+        return first;
     }
     onRetry?.();
     const second = await call(TRUNCATION_RETRY_MAX_TOKENS);

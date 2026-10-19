@@ -822,6 +822,14 @@ export const translations = {
             sourceLabel: "Source ID",
             notReadyHint: "Questions that failed to generate are left out of the printout.",
         },
+        figure: {
+            alt: "Question figure",
+            regenerate: "AI Redraw Figure",
+            regenerating: "Drawing figure…",
+            noFigure: "AI found no figure in this question",
+            failed: "Failed to generate the figure",
+            noImage: "No original image to draw the figure from",
+        },
         difficulty: {
             label: "Difficulty",
             unrated: "Unrated",
@@ -1663,6 +1671,14 @@ export const translations = {
             analysisLabel: "解析",
             sourceLabel: "来源 ID",
             notReadyHint: "生成失败的题目不会出现在打印稿中。",
+        },
+        figure: {
+            alt: "题目配图",
+            regenerate: "AI 重新生成配图",
+            regenerating: "生成配图中…",
+            noFigure: "AI 判断本题没有配图",
+            failed: "生成配图失败",
+            noImage: "没有原题图片，无法生成配图",
         },
         difficulty: {
             label: "难度",

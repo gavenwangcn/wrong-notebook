@@ -15,6 +15,7 @@ import { apiClient } from "@/lib/api-client";
 import { AppConfig } from "@/types/api";
 import type { PracticeResult } from "@/types/api";
 import { PracticeResultCard } from "@/components/practice-result-card";
+import { QuestionFigure } from "@/components/question-figure";
 import { frontendLogger } from "@/lib/frontend-logger";
 
 export const dynamic = 'force-dynamic';
@@ -250,6 +251,7 @@ function PracticeContent() {
                         </CardHeader>
                         <CardContent>
                             <MarkdownRenderer content={question.questionText} className="font-medium" />
+                            <QuestionFigure svg={question.figureSvg} />
                         </CardContent>
                     </Card>
 

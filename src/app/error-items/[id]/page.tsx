@@ -21,6 +21,8 @@ import { NotebookSelector } from "@/components/notebook-selector";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { ShortIdBadge } from "@/components/short-id-badge";
 import { DifficultyStars } from "@/components/difficulty-stars";
+import { QuestionFigure } from "@/components/question-figure";
+import { RegenerateFigureButton } from "@/components/regenerate-figure-button";
 import { MasteryPanel } from "@/components/mastery-panel";
 import { RetagItemButton } from "@/components/retag-item-button";
 import { frontendLogger } from "@/lib/frontend-logger";
@@ -54,6 +56,8 @@ interface ErrorItemDetail {
     gradeSemester?: string | null;
     paperLevel?: string | null;
     difficultyStars?: number | null;
+    hasFigure?: boolean;
+    figureSvg?: string | null;
     geogebraCommands?: string | null;
 }
 
@@ -530,7 +534,7 @@ export default function ErrorDetailPage() {
                                 <Textarea value={questionInput} onChange={e => setQuestionInput(e.target.value)} placeholder="Enter question text..." rows={8} className="w-full font-mono text-sm" />
                                 <div className="flex gap-2"><Button size="sm" onClick={saveQuestionHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingQuestion}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div>
                             </div>
-                        ) : <MarkdownRenderer content={item.questionText} />}
+                        ) : <><MarkdownRenderer content={item.questionText} /><QuestionFigure svg={item.figureSvg} /></>}
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center"><h4 className="text-sm font-semibold">{t.editor?.tags || "Knowledge Tags"}</h4>{!isEditingTags && <div className="flex"><RetagItemButton errorItemId={item.id} onDone={() => fetchItem(item.id)} /><Button variant="ghost" size="sm" onClick={startEditingTags}><Edit className="h-4 w-4 mr-1" />{t.common?.edit || "Edit"}</Button></div>}</div>
@@ -563,9 +567,12 @@ export default function ErrorDetailPage() {
 
                         {item.originalImageUrl && (
                             <div className="pt-3">
-                                <Button variant="outline" size="sm" onClick={() => setShowQuestionImage(!showQuestionImage)} className="flex items-center gap-2">
-                                    {showQuestionImage ? <><EyeOff className="h-4 w-4" />隐藏原题图片</> : <><ImageIcon className="h-4 w-4" />查看原题图片</>}
-                                </Button>
+                                <div className="flex flex-wrap gap-2">
+                                    <Button variant="outline" size="sm" onClick={() => setShowQuestionImage(!showQuestionImage)} className="flex items-center gap-2">
+                                        {showQuestionImage ? <><EyeOff className="h-4 w-4" />隐藏原题图片</> : <><ImageIcon className="h-4 w-4" />查看原题图片</>}
+                                    </Button>
+                                    <RegenerateFigureButton errorItemId={item.id} onDone={(figure) => setItem((current) => current && { ...current, ...figure })} />
+                                </div>
                                 {showQuestionImage && <div className="mt-4"><img src={item.originalImageUrl} alt={t.detail.originalProblem || "Original Problem"} className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}
                             </div>
                         )}

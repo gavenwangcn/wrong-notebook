@@ -152,7 +152,8 @@ describe('/api/practice', () => {
                 expect.any(Array),
                 'zh',
                 'medium', // 默认难度
-                undefined
+                undefined,
+                undefined // 原题无配图
             );
         });
 
@@ -200,7 +201,8 @@ describe('/api/practice', () => {
                 ['一元一次方程', '移项'], // 解析后的标签数组
                 'zh',
                 'medium',
-                undefined
+                undefined,
+                undefined // 原题无配图
             );
         });
 
@@ -250,7 +252,8 @@ describe('/api/practice', () => {
                 [], // 空数组
                 'zh',
                 'medium',
-                undefined
+                undefined,
+                undefined // 原题无配图
             );
         });
 
@@ -393,6 +396,26 @@ describe('/api/practice', () => {
     });
 
     describe('POST /api/practice/record (记录练习结果)', () => {
+        it('举一反三新题的配图净化后随记录保存', async () => {
+            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({ userId: 'user-123' });
+            mocks.mockPrismaPracticeRecord.create.mockResolvedValue({ id: 'record-1' });
+
+            const response = await RECORD_POST(new Request('http://localhost/api/practice/record', {
+                method: 'POST',
+                body: JSON.stringify({
+                    errorItemId: 'error-item-1',
+                    result: 'correct',
+                    questionText: '新题',
+                    figureSvg: '<svg viewBox="0 0 4 4"><script>x()</script><line x1="0" y1="0" x2="4" y2="4"/></svg>',
+                }),
+            }));
+
+            expect(response.status).toBeLessThan(300);
+            const data = mocks.mockPrismaPracticeRecord.create.mock.calls[0][0].data;
+            expect(data.figureSvg).toContain('<line');
+            expect(data.figureSvg).not.toContain('script');
+        });
+
         it('应该成功记录正确的练习结果', async () => {
             const createdRecord = {
                 id: 'record-1',

@@ -13,6 +13,7 @@ import { generateUniqueShortId } from "@/lib/short-id";
 import { resolveNotebookForSubject } from "@/lib/notebook-resolver";
 import { scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion, runQuestionImportTransaction } from "@/lib/question-deduplication";
+import { MAX_FIGURE_SVG_LENGTH, sanitizeFigureSvg } from "@/lib/figure-svg";
 
 const logger = createLogger('api:error-items');
 
@@ -33,6 +34,8 @@ const importSchema = z.object({
     gradeSemester: z.string().max(100).nullish(),
     paperLevel: z.string().max(30).nullish(),
     difficultyStars: z.number().int().min(1).max(5).nullish(),
+    hasFigure: z.boolean().optional(),
+    figureSvg: z.string().max(MAX_FIGURE_SVG_LENGTH).nullish(),
     geogebraCommands: z.string().nullish(),
 });
 
@@ -61,6 +64,9 @@ export async function POST(req: Request) {
             difficultyStars,
             geogebraCommands,
         } = body;
+        // 配图 SVG 入库前再净化一次，无效时丢弃
+        const figureSvg = sanitizeFigureSvg(body.figureSvg);
+        const hasFigure = !!body.hasFigure || figureSvg !== null;
 
         // 记录请求参数（不记录完整图片数据）
         logger.debug({
@@ -181,6 +187,8 @@ export async function POST(req: Request) {
                         gradeSemester: finalGradeSemester,
                         paperLevel: paperLevel,
                         difficultyStars: difficultyStars ?? null,
+                        hasFigure,
+                        figureSvg,
                         geogebraCommands: geogebraCommands || null,
                         masteryLevel: 0,
                         tags: {

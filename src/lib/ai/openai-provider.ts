@@ -1,8 +1,8 @@
 import OpenAI from "openai";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt } from './prompts';
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt } from './prompts';
 import { getAppConfig } from '../config';
-import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars } from './schema';
+import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
@@ -148,6 +148,7 @@ export class OpenAIProvider implements AIService {
             knowledgePoints,
             requiresImage,
             difficultyStars: parseDifficultyStars(this.extractTag(text, "difficulty_stars")),
+            ...parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg")),
         };
 
         // Final Schema Validation (just to be safe, though likely compliant by now)
@@ -304,10 +305,11 @@ export class OpenAIProvider implements AIService {
         }
     }
 
-    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null): Promise<ParsedQuestion> {
+    async generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language: 'zh' | 'en' = 'zh', difficulty: DifficultyLevel = 'medium', gradeSemester?: string | null, originalFigureSvg?: string | null): Promise<ParsedQuestion> {
         const config = getAppConfig();
         const systemPrompt = generateSimilarQuestionPrompt(language, originalQuestion, knowledgePoints, difficulty, {
-            customTemplate: config.prompts?.similar
+            customTemplate: config.prompts?.similar,
+            originalFigureSvg,
         }, gradeSemester);
         const userPrompt = `\nOriginal Question: "${originalQuestion}"\nKnowledge Points: ${knowledgePoints.join(", ")}\n    `;
 
@@ -549,6 +551,32 @@ export class OpenAIProvider implements AIService {
             return parseTagSuggestion(text, input.allowedTags);
         } catch (error) {
             logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during tag suggestion');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    async generateFigureSvg(imageBase64: string, mimeType: string, questionText?: string | null): Promise<FigureResult> {
+        const prompt = generateFigurePrompt(questionText);
+        logger.info({ provider: 'OpenAI', model: this.model, imageSize: imageBase64.length }, 'Figure SVG Request');
+
+        try {
+            const response = await withTruncationRetry((maxTokens) => this.openai.chat.completions.create({
+                model: this.model,
+                messages: [
+                    { role: "system", content: prompt },
+                    { role: "user", content: [{ type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } }] },
+                ],
+                max_tokens: maxTokens,
+            }), 8192, () => logger.warn('Output truncated by reasoning, retrying with larger max_tokens'));
+
+            const text = response.choices[0]?.message?.content || '';
+            logger.debug({ rawResponse: text }, 'Figure SVG AI raw response');
+
+            if (!text) throw new Error("Empty response from AI");
+            return parseFigure(this.extractTag(text, "has_figure"), this.extractTag(text, "figure_svg"));
+        } catch (error) {
+            logger.error({ error, stack: error instanceof Error ? error.stack : undefined }, 'Error during figure SVG generation');
             this.handleError(error);
             throw error;
         }

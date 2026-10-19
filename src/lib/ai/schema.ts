@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sanitizeFigureSvg } from '../figure-svg';
 
 /**
  * Zod schema for validating AI-parsed questions
@@ -19,6 +20,8 @@ export const ParsedQuestionSchema = z.object({
     knowledgePoints: z.array(z.string()).max(5, "知识点最多 5 个"),
     requiresImage: z.boolean().optional().default(false), // 题目是否依赖图片（如几何题）
     difficultyStars: z.number().int().min(1).max(5).nullable().optional(), // 难度星级 1~5，AI 未给出时为空
+    hasFigure: z.boolean().optional(), // 题目是否带配图
+    figureSvg: z.string().nullable().optional(), // AI 重绘的 SVG 配图（已净化）
 });
 
 /**
@@ -134,4 +137,18 @@ export function parseTagSuggestion(text: string, allowedTags: string[]): TagSugg
         }
     }
     return { tags: result.slice(0, MAX_KNOWLEDGE_TAGS), difficultyStars: parseDifficultyStars(parsed.difficultyStars) };
+}
+
+export interface FigureResult {
+    hasFigure: boolean;
+    figureSvg: string | null;
+}
+
+/**
+ * 解析 AI 输出的 <has_figure> 与 <figure_svg>：SVG 经净化，无效时为空；
+ * 画出了有效配图时视为有配图
+ */
+export function parseFigure(hasFigureRaw: string | null | undefined, figureSvgRaw: string | null | undefined): FigureResult {
+    const figureSvg = sanitizeFigureSvg(figureSvgRaw);
+    return { hasFigure: hasFigureRaw?.trim().toLowerCase() === 'true' || figureSvg !== null, figureSvg };
 }

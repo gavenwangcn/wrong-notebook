@@ -215,10 +215,10 @@ describe('/api/exams', () => {
 
             await generateExamPaper('p1', 'zh');
 
-            expect(mocks.generateSimilarQuestion).toHaveBeenCalledWith('原题1', ['函数'], 'zh', 'hard', null);
+            expect(mocks.generateSimilarQuestion).toHaveBeenCalledWith('原题1', ['函数'], 'zh', 'hard', null, undefined);
             expect(mocks.examQuestion.update).toHaveBeenCalledWith({
                 where: { id: 'q1' },
-                data: { status: 'ready', questionText: '新题', answerText: '答', analysis: '析', error: null },
+                data: { status: 'ready', questionText: '新题', answerText: '答', analysis: '析', figureSvg: null, error: null },
             });
             expect(mocks.examQuestion.update).toHaveBeenCalledWith({ where: { id: 'q2' }, data: { status: 'failed', error: 'SOURCE_DELETED' } });
             expect(mocks.examPaper.update).toHaveBeenLastCalledWith({ where: { id: 'p1' }, data: { status: 'partial' } });

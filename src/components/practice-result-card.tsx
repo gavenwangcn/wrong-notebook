@@ -15,7 +15,7 @@ interface PracticeResultCardProps {
     errorItemId: string;
     /** 根据用户答案自动判题得到的建议结果 */
     suggested: PracticeResult | null;
-    question: { questionText: string; answerText: string; analysis: string; subject?: string };
+    question: { questionText: string; answerText: string; analysis: string; subject?: string; figureSvg?: string | null };
     difficulty: string;
 }
 
@@ -40,6 +40,7 @@ export function PracticeResultCard({ errorItemId, suggested, question, difficult
                 questionText: question.questionText,
                 answerText: question.answerText,
                 analysis: question.analysis,
+                figureSvg: question.figureSvg ?? null,
             });
             setSaved(true);
         } catch (err) {

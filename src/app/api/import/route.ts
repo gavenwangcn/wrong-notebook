@@ -9,6 +9,7 @@ import { isPracticeResult, scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-deduplication";
 import { parseDifficultyStars } from "@/lib/ai/schema";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
+import { sanitizeFigureSvg } from "@/lib/figure-svg";
 
 const logger = createLogger('api:import');
 
@@ -66,6 +67,8 @@ interface ImportData {
         gradeSemester: string | null;
         paperLevel: string | null;
         difficultyStars?: number | null; // 旧版导出文件没有该字段
+        hasFigure?: boolean;             // 旧版导出文件没有该字段
+        figureSvg?: string | null;       // 旧版导出文件没有该字段
         createdAt: string;
         updatedAt: string;
         tags: Array<{ id: string; name: string; subject: string }>;
@@ -294,6 +297,8 @@ export async function POST(req: Request) {
                         gradeSemester: item.gradeSemester,
                         paperLevel: item.paperLevel,
                         difficultyStars: parseDifficultyStars(item.difficultyStars),
+                        hasFigure: item.hasFigure === true || sanitizeFigureSvg(item.figureSvg) !== null,
+                        figureSvg: sanitizeFigureSvg(item.figureSvg),
                         createdAt: safeParseDate(item.createdAt),
                     },
                 });

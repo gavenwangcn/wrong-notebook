@@ -23,6 +23,7 @@ import type { ReanswerQuestionResult } from "@/lib/ai/types";
 import { buildReanswerRequestBody } from "@/lib/reanswer-request";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { DifficultyStars } from "@/components/difficulty-stars";
+import { QuestionFigure } from "@/components/question-figure";
 
 interface ParsedQuestionWithSubject extends ParsedQuestion {
     subjectId?: string;
@@ -423,6 +424,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                         </CardHeader>
                         <CardContent>
                             <MarkdownRenderer content={data.questionText} />
+                            <QuestionFigure svg={data.figureSvg} />
                         </CardContent>
                     </Card>
 
