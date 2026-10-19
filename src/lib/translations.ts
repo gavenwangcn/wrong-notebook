@@ -187,6 +187,9 @@ export const translations = {
             expandTagsTooltip: "Click to expand {count} tags",
             collapseTagsTooltip: "Click to collapse",
             dialog: {
+                stageLabel: "Stage",
+                subjectLabel: "Subject",
+                scopeHint: "Stage and subject cannot be changed after creation. AI picks knowledge tags only from this stage and subject.",
                 title: "Create New Notebook",
                 desc: "Create separate notebooks for different subjects or chapters",
                 nameLabel: "Notebook Name",
@@ -1027,6 +1030,9 @@ export const translations = {
             expandTagsTooltip: "点击展开 {count} 个标签",
             collapseTagsTooltip: "点击收起",
             dialog: {
+                stageLabel: "学段",
+                subjectLabel: "学科",
+                scopeHint: "学段和学科创建后不可修改，AI 只会从该学段、该学科的知识点中选择标签。",
                 title: "创建新错题本",
                 desc: "为不同科目或章节创建独立的错题本",
                 nameLabel: "错题本名称",

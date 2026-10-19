@@ -1,9 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult } from "./types";
+import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt } from './prompts';
 import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars } from './schema';
-import { getMathTagsFromDB, getTagsFromDB } from './tag-service';
+import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
@@ -148,15 +148,12 @@ export class AnthropicProvider implements AIService {
         return response.text;
     }
 
-    async analyzeImage(imageBase64: string, mimeType: string = "image/jpeg", language: 'zh' | 'en' = 'zh', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null): Promise<ParsedQuestion> {
+    async analyzeImage(imageBase64: string, mimeType: string = "image/jpeg", language: 'zh' | 'en' = 'zh', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ParsedQuestion> {
         const config = getAppConfig();
         const systemPrompt = generateAnalyzePrompt(language, grade, subject, {
             customTemplate: config.prompts?.analyze,
-            prefetchedMathTags: (subject === '数学' || !subject) ? await getMathTagsFromDB(grade || null) : [],
-            prefetchedPhysicsTags: (subject === '物理' || !subject) ? await getTagsFromDB('physics') : [],
-            prefetchedChemistryTags: (subject === '化学' || !subject) ? await getTagsFromDB('chemistry') : [],
-            prefetchedBiologyTags: (subject === '生物' || !subject) ? await getTagsFromDB('biology') : [],
-            prefetchedEnglishTags: (subject === '英语' || !subject) ? await getTagsFromDB('english') : [],
+            // 有错题本学段 + 学科时直接使用其全部知识点，否则按学科、年级取标签
+            ...(candidateTags ? { candidateTags } : await prefetchSubjectTags(subject, grade)),
         }, gradeSemester);
 
         logger.box('🔍 AI Image Analysis Request', {
@@ -206,8 +203,8 @@ export class AnthropicProvider implements AIService {
         }
     }
 
-    async reanswerQuestion(questionText: string, language: 'zh' | 'en' = 'zh', subject?: string | null, imageBase64?: string, gradeSemester?: string | null): Promise<ReanswerQuestionResult> {
-        const prompt = generateReanswerPrompt(language, questionText, subject, undefined, gradeSemester);
+    async reanswerQuestion(questionText: string, language: 'zh' | 'en' = 'zh', subject?: string | null, imageBase64?: string, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ReanswerQuestionResult> {
+        const prompt = generateReanswerPrompt(language, questionText, subject, { candidateTags }, gradeSemester);
 
         logger.info({
             provider: 'Anthropic',

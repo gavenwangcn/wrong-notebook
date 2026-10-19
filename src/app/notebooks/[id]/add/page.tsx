@@ -285,6 +285,7 @@ export default function AddErrorPage() {
                 questionText,
                 language,
                 subject: notebook?.name || undefined,
+                subjectId: notebookId,
             }, { timeout: aiTimeout });
 
             setAnalysisStep('processing');

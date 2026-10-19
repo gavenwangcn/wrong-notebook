@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ErrorList } from "@/components/error-list";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
 import { RetagNotebookButton } from "@/components/retag-notebook-button";
+import { NotebookScopeLabel } from "@/components/notebook-scope-label";
 
 import { Notebook } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
@@ -80,6 +81,8 @@ export default function NotebookDetailPage() {
                             </Button>
                         </div>
                         <p className="text-muted-foreground text-sm sm:text-base">
+                            <NotebookScopeLabel notebook={notebook} />
+                            {" · "}
                             {(t.notebooks?.totalErrors || "Total {count} errors").replace("{count}", (notebook._count?.errorItems || 0).toString())}
                         </p>
                     </div>

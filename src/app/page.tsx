@@ -349,6 +349,7 @@ function HomeContent() {
                 questionText,
                 language,
                 subject: matchedNotebook?.name || undefined,
+                subjectId: matchedNotebook?.id,
             }, { timeout: aiTimeout });
 
             setAnalysisStep('processing');

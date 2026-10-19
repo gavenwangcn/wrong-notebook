@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
     subject: { findUnique: vi.fn() },
     suggestKnowledgeTags: vi.fn(),
     getMathTagsFromDB: vi.fn(),
-    getTagsFromDB: vi.fn(),
+    getScopeTagsFromDB: vi.fn(),
     session: { user: { email: 'user@example.com' }, expires: '2099-01-01' },
 }));
 
@@ -18,7 +18,7 @@ vi.mock('@/lib/prisma', () => ({
     prisma: { user: mocks.user, errorItem: mocks.errorItem, knowledgeTag: mocks.knowledgeTag, subject: mocks.subject },
 }));
 vi.mock('@/lib/ai', () => ({ getAIService: vi.fn(() => ({ suggestKnowledgeTags: mocks.suggestKnowledgeTags })) }));
-vi.mock('@/lib/ai/tag-service', () => ({ getMathTagsFromDB: mocks.getMathTagsFromDB, getTagsFromDB: mocks.getTagsFromDB }));
+vi.mock('@/lib/ai/tag-service', () => ({ getMathTagsFromDB: mocks.getMathTagsFromDB, getScopeTagsFromDB: mocks.getScopeTagsFromDB }));
 vi.mock('next-auth', () => ({ getServerSession: vi.fn(() => Promise.resolve(mocks.session)) }));
 vi.mock('@/lib/auth', () => ({ authOptions: {} }));
 
@@ -33,7 +33,7 @@ const item = {
     answerText: '鸡 6 兔 4',
     analysis: '假设法',
     gradeSemester: '四年级上',
-    subject: { name: '数学' },
+    subject: { name: '数学', stage: 'primary', subjectKey: 'math' },
     tags: [
         { id: 'old-sys', name: '100以内加法', isSystem: true },
         { id: 'custom-1', name: '易错', isSystem: false },
@@ -45,6 +45,7 @@ describe('知识点重新生成', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.user.findUnique.mockResolvedValue({ id: 'user-1' });
+        mocks.getScopeTagsFromDB.mockResolvedValue(['鸡兔同笼', '假设法解鸡兔同笼', '植树问题']);
         mocks.getMathTagsFromDB.mockResolvedValue(['鸡兔同笼', '假设法解鸡兔同笼', '植树问题']);
     });
 
@@ -75,7 +76,7 @@ describe('知识点重新生成', () => {
         expect(mocks.suggestKnowledgeTags).not.toHaveBeenCalled();
     });
 
-    it('替换系统标签、保留自定义标签，并按学生年级取数学知识点', async () => {
+    it('替换系统标签、保留自定义标签，候选知识点取错题本学段 + 学科下的全部标签', async () => {
         mocks.errorItem.findUnique.mockResolvedValue(item);
         mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['假设法解鸡兔同笼', '鸡兔同笼'], difficultyStars: 2 });
         mocks.knowledgeTag.findMany.mockResolvedValue([
@@ -89,7 +90,8 @@ describe('知识点重新生成', () => {
 
         expect(response.status).toBe(200);
         expect(data.tags).toEqual(['假设法解鸡兔同笼', '鸡兔同笼', '易错']);
-        expect(mocks.getMathTagsFromDB).toHaveBeenCalledWith(expect.any(Number));
+        expect(mocks.getScopeTagsFromDB).toHaveBeenCalledWith('math', 'primary');
+        expect(mocks.getMathTagsFromDB).not.toHaveBeenCalled();
         expect(mocks.suggestKnowledgeTags.mock.calls[0][0]).toMatchObject({ subject: '数学', gradeSemester: '四年级上' });
         expect(mocks.errorItem.update).toHaveBeenCalledWith({
             where: { id: 'e1' },
@@ -99,6 +101,30 @@ describe('知识点重新生成', () => {
                 tags: { disconnect: [{ id: 'old-sys' }], connect: [{ id: 'tag-a' }, { id: 'tag-b' }] },
             },
         });
+    });
+
+    it('高中物理错题本取高中物理的全部知识点', async () => {
+        mocks.errorItem.findUnique.mockResolvedValue({ ...item, subject: { name: '物理错题', stage: 'senior_high', subjectKey: 'physics' } });
+        mocks.getScopeTagsFromDB.mockResolvedValue(['牛顿第二定律']);
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['牛顿第二定律'], difficultyStars: 3 });
+        mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-n', name: '牛顿第二定律' }]);
+
+        const response = await RETAG_ITEM(new Request('http://localhost', { method: 'POST' }), params('e1'));
+
+        expect(response.status).toBe(200);
+        expect(mocks.getScopeTagsFromDB).toHaveBeenCalledWith('physics', 'senior_high');
+        expect(mocks.suggestKnowledgeTags.mock.calls[0][0]).toMatchObject({ subject: '物理', allowedTags: ['牛顿第二定律'] });
+    });
+
+    it('不在错题本中的题目仍按学生年级取数学知识点', async () => {
+        mocks.errorItem.findUnique.mockResolvedValue({ ...item, subject: null });
+        mocks.suggestKnowledgeTags.mockResolvedValue({ tags: ['鸡兔同笼'], difficultyStars: 2 });
+        mocks.knowledgeTag.findMany.mockResolvedValue([{ id: 'tag-b', name: '鸡兔同笼' }]);
+
+        await RETAG_ITEM(new Request('http://localhost', { method: 'POST' }), params('e1'));
+
+        expect(mocks.getMathTagsFromDB).toHaveBeenCalledWith(expect.any(Number));
+        expect(mocks.getScopeTagsFromDB).not.toHaveBeenCalled();
     });
 
     it('AI 未给出难度星级时保留原星级', async () => {

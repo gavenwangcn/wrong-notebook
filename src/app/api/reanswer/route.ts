@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { badRequest, createErrorResponse, ErrorCode } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
+import { resolveNotebookScope } from "@/lib/notebook-scope";
 
 const logger = createLogger('api:reanswer');
 
@@ -20,7 +23,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { questionText, language = 'zh', subject, imageBase64, gradeSemester } = body;
+        const { questionText, language = 'zh', subject, imageBase64, gradeSemester, subjectId } = body;
 
         logger.debug({
             questionLength: questionText?.length,
@@ -35,10 +38,22 @@ export async function POST(req: Request) {
             return badRequest("Missing question text");
         }
 
+        // 指定了错题本时，知识点只能从该错题本学段 + 学科下的全部标签中选择
+        let candidateTags;
+        if (typeof subjectId === 'string' && subjectId && session.user?.email) {
+            const notebook = await prisma.subject.findFirst({
+                where: { id: subjectId, user: { email: session.user.email } },
+                select: { name: true, stage: true, subjectKey: true },
+            });
+            if (notebook) {
+                candidateTags = await getNotebookCandidateTags(resolveNotebookScope(notebook));
+            }
+        }
+
         const aiService = getAIService();
 
         // 根据是否有图片选择不同的重新解题方式
-        const result = await aiService.reanswerQuestion(questionText, language, subject, imageBase64, gradeSemester);
+        const result = await aiService.reanswerQuestion(questionText, language, subject, imageBase64, gradeSemester, candidateTags);
 
         logger.info('Reanswer successful');
 

@@ -5,7 +5,8 @@
 
 import { prisma } from '@/lib/prisma';
 import { createLogger } from '@/lib/logger';
-import type { GradeLevel } from './types';
+import type { CandidateTags, GradeLevel } from './types';
+import { isGradeInStage, SUBJECT_DISPLAY_NAMES, type NotebookScope, type NotebookStage, type NotebookSubject } from '@/lib/notebook-scope';
 
 const logger = createLogger('ai:tag-service');
 
@@ -147,4 +148,63 @@ export async function getTagsFromDB(subject: string): Promise<string[]> {
         logger.error({ error }, 'getTagsFromDB error');
         return [];
     }
+}
+
+/**
+ * 获取某学科、某学段下的全部知识点（该学段所有年级节点下的叶子标签，按名称去重，保持标签库顺序）
+ */
+export async function getScopeTagsFromDB(subject: NotebookSubject, stage: NotebookStage): Promise<string[]> {
+    try {
+        const tags = await prisma.knowledgeTag.findMany({
+            where: { subject, isSystem: true },
+            select: { id: true, name: true, parentId: true },
+            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+        });
+
+        const children = new Map<string, typeof tags>();
+        for (const tag of tags) {
+            if (tag.parentId) {
+                const list = children.get(tag.parentId) || [];
+                list.push(tag);
+                children.set(tag.parentId, list);
+            }
+        }
+
+        const names = new Set<string>();
+        const collect = (tag: (typeof tags)[number]) => {
+            const kids = children.get(tag.id);
+            if (!kids?.length) {
+                names.add(tag.name);
+                return;
+            }
+            kids.forEach(collect);
+        };
+        tags.filter((tag) => !tag.parentId && isGradeInStage(tag.name, stage)).forEach(collect);
+        return Array.from(names);
+    } catch (error) {
+        logger.error({ error, subject, stage }, 'getScopeTagsFromDB error');
+        return [];
+    }
+}
+
+/** 错题本学段 + 学科对应的候选知识点（直接交给 AI，不再按年级计算范围） */
+export async function getNotebookCandidateTags(scope: NotebookScope): Promise<CandidateTags | undefined> {
+    if (!scope.subject) return undefined;
+    return {
+        subjectName: SUBJECT_DISPLAY_NAMES[scope.subject],
+        tags: await getScopeTagsFromDB(scope.subject, scope.stage),
+    };
+}
+
+/**
+ * 未指定错题本时的旧逻辑：数学按学生年级取标签，其他学科取全部；未知学科时各科都取，让 AI 判断
+ */
+export async function prefetchSubjectTags(subject: string | null | undefined, grade: GradeLevel | null | undefined) {
+    return {
+        prefetchedMathTags: (subject === '数学' || !subject) ? await getMathTagsFromDB(grade || null) : [],
+        prefetchedPhysicsTags: (subject === '物理' || !subject) ? await getTagsFromDB('physics') : [],
+        prefetchedChemistryTags: (subject === '化学' || !subject) ? await getTagsFromDB('chemistry') : [],
+        prefetchedBiologyTags: (subject === '生物' || !subject) ? await getTagsFromDB('biology') : [],
+        prefetchedEnglishTags: (subject === '英语' || !subject) ? await getTagsFromDB('english') : [],
+    };
 }

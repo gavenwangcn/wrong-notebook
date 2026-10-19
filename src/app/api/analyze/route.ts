@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { getAIService } from "@/lib/ai";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { calculateGradeNumber, inferSubjectFromName } from "@/lib/knowledge-tags";
+import { calculateGradeNumber } from "@/lib/knowledge-tags";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { prisma } from "@/lib/prisma";
 import { badRequest, internalError, createErrorResponse, ErrorCode } from "@/lib/api-errors";
-import type { GradeLevel } from "@/lib/ai/types";
+import type { CandidateTags, GradeLevel } from "@/lib/ai/types";
+import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
+import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger('api:analyze');
@@ -51,14 +53,15 @@ export async function POST(req: Request) {
         // 先获取用户年级信息，用于动态生成 AI prompt 中的标签列表
         let userGrade: GradeLevel | null = null;
         let userGradeSemester: string | null = null;
-        let subjectName: 'math' | 'physics' | 'chemistry' | 'biology' | 'english' | 'chinese' | 'history' | 'geography' | 'politics' | null = null;
+        let subjectChinese: string | null = null;
+        let candidateTags: CandidateTags | undefined;
 
         if (session?.user?.email) {
             try {
                 // 获取用户信息
                 const user = await prisma.user.findUnique({
                     where: { email: session.user.email },
-                    select: { educationStage: true, enrollmentYear: true }
+                    select: { id: true, educationStage: true, enrollmentYear: true }
                 });
 
                 if (user) {
@@ -69,16 +72,18 @@ export async function POST(req: Request) {
                     logger.debug({ userGrade, userGradeSemester }, 'Calculated user grade');
                 }
 
-                // 获取错题本信息以推断学科
-                if (subjectId) {
-                    const subject = await prisma.subject.findUnique({
+                // 错题本的学段 + 学科决定候选知识点：直接取该范围内的全部标签
+                if (subjectId && user) {
+                    const notebook = await prisma.subject.findUnique({
                         where: { id: subjectId },
-                        select: { name: true }
+                        select: { name: true, userId: true, stage: true, subjectKey: true }
                     });
 
-                    if (subject) {
-                        subjectName = inferSubjectFromName(subject.name);
-                        logger.debug({ subjectName, subjectDisplayName: subject.name }, 'Inferred subject');
+                    if (notebook && notebook.userId === user.id) {
+                        const scope = resolveNotebookScope(notebook);
+                        subjectChinese = scope.subject ? SUBJECT_DISPLAY_NAMES[scope.subject] : null;
+                        candidateTags = await getNotebookCandidateTags(scope);
+                        logger.debug({ scope, candidateTagCount: candidateTags?.tags.length }, 'Notebook scope resolved');
                     }
                 }
             } catch (error) {
@@ -88,23 +93,9 @@ export async function POST(req: Request) {
         }
 
 
-        // 将内部科目名称转换为中文科目名称
-        const subjectNameMapping: Record<string, string> = {
-            'math': '数学',
-            'physics': '物理',
-            'chemistry': '化学',
-            'biology': '生物',
-            'english': '英语',
-            'chinese': '语文',
-            'history': '历史',
-            'geography': '地理',
-            'politics': '政治',
-        };
-        const subjectChinese = subjectName ? subjectNameMapping[subjectName] : null;
-
         logger.info({ userGrade, userGradeSemester, subject: subjectChinese }, 'Calling AI service for image analysis');
         const aiService = getAIService();
-        const analysisResult = await aiService.analyzeImage(imageBase64, mimeType, language, userGrade, subjectChinese, userGradeSemester);
+        const analysisResult = await aiService.analyzeImage(imageBase64, mimeType, language, userGrade, subjectChinese, userGradeSemester, candidateTags);
 
         logger.debug({
             knowledgePointsCount: analysisResult.knowledgePoints?.length,

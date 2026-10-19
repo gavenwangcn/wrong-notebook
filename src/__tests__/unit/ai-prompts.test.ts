@@ -37,6 +37,16 @@ describe('AI Prompts', () => {
     });
 
     describe('generateAnalyzePrompt', () => {
+        it('提供错题本候选知识点时只列出这些标签，不再按学科、年级取标签', () => {
+            const prompt = generateAnalyzePrompt('zh', 4, '数学', {
+                candidateTags: { subjectName: '数学', tags: ['鸡兔同笼', '植树问题'] },
+                prefetchedMathTags: ['不应出现的年级标签'],
+            });
+            expect(prompt).toContain('**数学标签:**');
+            expect(prompt).toContain('"鸡兔同笼", "植树问题"');
+            expect(prompt).not.toContain('不应出现的年级标签');
+        });
+
         it('应该生成中文提示词', () => {
             const prompt = generateAnalyzePrompt('zh');
             expect(prompt).toContain('中文');
@@ -154,6 +164,14 @@ describe('AI Prompts', () => {
     });
 
     describe('generateReanswerPrompt', () => {
+        it('提供错题本候选知识点时要求只从中选择，否则不出现该约束', () => {
+            const withTags = generateReanswerPrompt('zh', '鸡兔同笼', '数学', { candidateTags: { subjectName: '数学', tags: ['鸡兔同笼'] } });
+            expect(withTags).toContain('只能从以下数学知识点中选择');
+            expect(withTags).toContain('"鸡兔同笼"');
+            expect(generateReanswerPrompt('zh', '鸡兔同笼', '数学')).not.toContain('只能从以下');
+            expect(generateReanswerPrompt('zh', '鸡兔同笼', '数学')).not.toContain('{{knowledge_points_rule}}');
+        });
+
         const questionText = '求解方程 2x + 3 = 7';
 
         it('应该生成中文重新解题提示词', () => {

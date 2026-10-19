@@ -36,6 +36,7 @@ vi.mock('@/lib/ai/schema', async (importOriginal) => ({
 vi.mock('@/lib/ai/tag-service', () => ({
     getMathTagsFromDB: vi.fn().mockResolvedValue([]),
     getTagsFromDB: vi.fn().mockResolvedValue([]),
+    prefetchSubjectTags: vi.fn(() => Promise.resolve({})),
 }));
 
 import { GeminiProvider } from '@/lib/ai/gemini-provider';

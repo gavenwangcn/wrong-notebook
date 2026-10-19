@@ -56,6 +56,7 @@ vi.mock('@/lib/config', () => ({
 vi.mock('@/lib/ai/tag-service', () => ({
     getMathTagsFromDB: vi.fn(() => Promise.resolve([])),
     getTagsFromDB: vi.fn(() => Promise.resolve([])),
+    prefetchSubjectTags: vi.fn(() => Promise.resolve({})),
 }));
 
 import { AnthropicProvider } from '@/lib/ai/anthropic-provider';

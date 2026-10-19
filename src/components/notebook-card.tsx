@@ -4,10 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotebookScopeLabel } from "@/components/notebook-scope-label";
 
 interface NotebookCardProps {
     id: string;
     name: string;
+    stage?: string | null;
+    subjectKey?: string | null;
     errorCount: number;
     onClick: () => void;
     onRename?: () => void;
@@ -15,7 +18,7 @@ interface NotebookCardProps {
     itemLabel?: string;
 }
 
-export function NotebookCard({ id, name, errorCount, onClick, onRename, onDelete, itemLabel = "items" }: NotebookCardProps) {
+export function NotebookCard({ id, name, stage, subjectKey, errorCount, onClick, onRename, onDelete, itemLabel = "items" }: NotebookCardProps) {
     return (
         <Card
             className="cursor-pointer hover:border-primary/50 transition-colors relative group"
@@ -61,6 +64,9 @@ export function NotebookCard({ id, name, errorCount, onClick, onRename, onDelete
                 <div className="flex items-center gap-2">
                     <Badge variant="secondary">
                         {errorCount} {itemLabel}
+                    </Badge>
+                    <Badge variant="outline">
+                        <NotebookScopeLabel notebook={{ name, stage, subjectKey }} />
                     </Badge>
                 </div>
             </CardContent>

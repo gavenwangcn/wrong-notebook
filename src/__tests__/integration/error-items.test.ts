@@ -160,7 +160,8 @@ describe('/api/error-items', () => {
             await post({ ...baseData, subjectName: '物理' });
 
             expect(mocks.mockPrismaSubject.upsert).toHaveBeenCalledWith(expect.objectContaining({
-                create: { name: '物理', userId: 'user-123' },
+                // 新错题本学段取用户的教育阶段，学科由名称推断
+                create: { name: '物理', userId: 'user-123', stage: 'junior_high', subjectKey: 'physics' },
             }));
             expect(mocks.mockPrismaErrorItem.create.mock.calls[0][0].data.subjectId).toBe('nb-physics');
         });

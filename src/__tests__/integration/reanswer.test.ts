@@ -32,6 +32,13 @@ vi.mock('@/lib/auth', () => ({
     authOptions: {},
 }));
 
+const scopeMocks = vi.hoisted(() => ({
+    findFirst: vi.fn(),
+    getNotebookCandidateTags: vi.fn(),
+}));
+vi.mock('@/lib/prisma', () => ({ prisma: { subject: { findFirst: scopeMocks.findFirst } } }));
+vi.mock('@/lib/ai/tag-service', () => ({ getNotebookCandidateTags: scopeMocks.getNotebookCandidateTags }));
+
 // Import after mocks
 import { POST } from '@/app/api/reanswer/route';
 
@@ -92,6 +99,7 @@ describe('/api/reanswer', () => {
                 'zh',
                 '英语',
                 undefined,
+                undefined,
                 undefined
             );
         });
@@ -125,6 +133,7 @@ describe('/api/reanswer', () => {
                 'zh',
                 '数学',
                 imageBase64,
+                undefined,
                 undefined
             );
         });
@@ -154,6 +163,7 @@ describe('/api/reanswer', () => {
                 'en',
                 undefined,
                 undefined,
+                undefined,
                 undefined
             );
         });
@@ -180,6 +190,7 @@ describe('/api/reanswer', () => {
             expect(mocks.mockAIService.reanswerQuestion).toHaveBeenCalledWith(
                 expect.any(String),
                 'zh', // 默认中文
+                undefined,
                 undefined,
                 undefined,
                 undefined
@@ -377,6 +388,7 @@ describe('/api/reanswer', () => {
                 'zh',
                 '数学',
                 undefined,
+                undefined,
                 undefined
             );
         });
@@ -430,6 +442,40 @@ describe('/api/reanswer', () => {
 
             expect(response.status).toBe(200);
             expect(data.answerText).toContain('frac');
+        });
+    });
+
+    describe('按错题本限定候选知识点', () => {
+        it('传入错题本 ID 时，只查当前用户的错题本，并把其学段 + 学科的全部知识点交给 AI', async () => {
+            const candidateTags = { subjectName: '数学', tags: ['鸡兔同笼', '植树问题'] };
+            scopeMocks.findFirst.mockResolvedValue({ name: '数学', stage: 'primary', subjectKey: 'math' });
+            scopeMocks.getNotebookCandidateTags.mockResolvedValue(candidateTags);
+            mocks.mockAIService.reanswerQuestion.mockResolvedValue({ answerText: 'a', analysis: 'x', knowledgePoints: [] });
+
+            const response = await POST(new Request('http://localhost/api/reanswer', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '鸡兔同笼', subject: '数学', subjectId: 'nb-1' }),
+            }));
+
+            expect(response.status).toBe(200);
+            expect(scopeMocks.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: 'nb-1', user: { email: 'user@example.com' } },
+            }));
+            expect(scopeMocks.getNotebookCandidateTags).toHaveBeenCalledWith({ stage: 'primary', subject: 'math' });
+            expect(mocks.mockAIService.reanswerQuestion.mock.calls[0][5]).toEqual(candidateTags);
+        });
+
+        it('错题本不存在或不属于当前用户时不限定', async () => {
+            scopeMocks.findFirst.mockResolvedValue(null);
+            mocks.mockAIService.reanswerQuestion.mockResolvedValue({ answerText: 'a', analysis: 'x', knowledgePoints: [] });
+
+            await POST(new Request('http://localhost/api/reanswer', {
+                method: 'POST',
+                body: JSON.stringify({ questionText: '题目', subjectId: 'nb-foreign' }),
+            }));
+
+            expect(scopeMocks.getNotebookCandidateTags).not.toHaveBeenCalled();
+            expect(mocks.mockAIService.reanswerQuestion.mock.calls[0][5]).toBeUndefined();
         });
     });
 });

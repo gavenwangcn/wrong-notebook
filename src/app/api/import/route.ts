@@ -8,6 +8,7 @@ import { generateUniqueShortId, isShortId } from "@/lib/short-id";
 import { isPracticeResult, scheduleMasteryEvaluation } from "@/lib/mastery";
 import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-deduplication";
 import { parseDifficultyStars } from "@/lib/ai/schema";
+import { resolveNotebookScope } from "@/lib/notebook-scope";
 
 const logger = createLogger('api:import');
 
@@ -26,6 +27,8 @@ interface ImportData {
     subjects: Array<{
         id: string;
         name: string;
+        stage?: string | null;      // 旧版导出文件没有
+        subjectKey?: string | null; // 旧版导出文件没有
         userId: string;
         createdAt: string;
         updatedAt: string;
@@ -172,9 +175,13 @@ export async function POST(req: Request) {
                 if (existing) {
                     subjectIdMap.set(subject.id, existing.id);
                 } else {
+                    // 旧版导出文件没有学段和学科：学段按小学，学科由名称推断
+                    const scope = resolveNotebookScope(subject);
                     const created = await tx.subject.create({
                         data: {
                             name: subject.name,
+                            stage: scope.stage,
+                            subjectKey: scope.subject,
                             userId: targetUserId,
                         },
                     });

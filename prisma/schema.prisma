@@ -70,9 +70,11 @@ model KnowledgeTag {
 }
 
 model Subject {
-  id     String @id @default(cuid())
-  name   String
-  userId String
+  id         String  @id @default(cuid())
+  name       String
+  stage      String  @default("primary") // 学段：primary / junior_high / senior_high，仅创建时设置
+  subjectKey String? // 学科：math / english / physics 等，仅创建时设置；为空时按名称推断
+  userId     String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   errorItems ErrorItem[]

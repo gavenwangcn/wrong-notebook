@@ -63,10 +63,16 @@ export interface TagSuggestionInput {
 export type { TagSuggestionResult } from './schema';
 import type { TagSuggestionResult } from './schema';
 
+/** 交给 AI 的候选知识点：来自错题本的学段 + 学科，AI 只能从中选择 */
+export interface CandidateTags {
+    subjectName: string;   // 中文学科名，如「数学」
+    tags: string[];
+}
+
 export interface AIService {
-    analyzeImage(imageBase64: string, mimeType?: string, language?: 'zh' | 'en', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
+    analyzeImage(imageBase64: string, mimeType?: string, language?: 'zh' | 'en', grade?: GradeLevel | null, subject?: string | null, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ParsedQuestionFromSchema>;
     generateSimilarQuestion(originalQuestion: string, knowledgePoints: string[], language?: 'zh' | 'en', difficulty?: DifficultyLevel, gradeSemester?: string | null): Promise<ParsedQuestionFromSchema>;
-    reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null): Promise<ReanswerQuestionResult>;
+    reanswerQuestion(questionText: string, language?: 'zh' | 'en', subject?: string | null, imageBase64?: string, gradeSemester?: string | null, candidateTags?: CandidateTags): Promise<ReanswerQuestionResult>;
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
     /** 从标签库中选知识点，并评定难度星级 */

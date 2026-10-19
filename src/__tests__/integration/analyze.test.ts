@@ -54,6 +54,9 @@ vi.mock('@/lib/knowledge-tags', () => ({
     inferSubjectFromName: vi.fn(() => 'math'),
 }));
 
+const mockGetNotebookCandidateTags = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/ai/tag-service', () => ({ getNotebookCandidateTags: mockGetNotebookCandidateTags }));
+
 // Import after mocks
 import { POST } from '@/app/api/analyze/route';
 import { getServerSession } from 'next-auth';
@@ -169,6 +172,41 @@ describe('/api/analyze', () => {
             const response = await POST(request);
 
             expect(response.status).toBe(200);
+        });
+
+        it('错题本的学段 + 学科下的全部知识点作为候选标签交给 AI', async () => {
+            mocks.mockPrismaUser.findUnique.mockResolvedValue({ id: 'user-1', educationStage: 'primary', enrollmentYear: 2023 });
+            mocks.mockPrismaSubject.findUnique.mockResolvedValue({ name: '物理错题', userId: 'user-1', stage: 'senior_high', subjectKey: 'physics' });
+            const candidateTags = { subjectName: '物理', tags: ['牛顿第二定律', '动能定理'] };
+            mockGetNotebookCandidateTags.mockResolvedValue(candidateTags);
+            mocks.mockAIService.analyzeImage.mockResolvedValue({ questionText: 'q', answerText: 'a', analysis: 'x', knowledgePoints: [] });
+
+            const response = await POST(new Request('http://localhost/api/analyze', {
+                method: 'POST',
+                body: JSON.stringify({ imageBase64: 'data:image/png;base64,test', subjectId: 'nb-physics' }),
+            }));
+
+            expect(response.status).toBe(200);
+            expect(mockGetNotebookCandidateTags).toHaveBeenCalledWith({ stage: 'senior_high', subject: 'physics' });
+            const args = mocks.mockAIService.analyzeImage.mock.calls[0];
+            expect(args[4]).toBe('物理');
+            expect(args[6]).toEqual(candidateTags);
+        });
+
+        it('他人的错题本不参与，按未指定错题本处理', async () => {
+            mocks.mockPrismaUser.findUnique.mockResolvedValue({ id: 'user-1', educationStage: 'primary', enrollmentYear: 2023 });
+            mocks.mockPrismaSubject.findUnique.mockResolvedValue({ name: '数学', userId: 'other-user', stage: 'primary', subjectKey: 'math' });
+            mocks.mockAIService.analyzeImage.mockResolvedValue({ questionText: 'q', answerText: 'a', analysis: 'x', knowledgePoints: [] });
+
+            await POST(new Request('http://localhost/api/analyze', {
+                method: 'POST',
+                body: JSON.stringify({ imageBase64: 'data:image/png;base64,test', subjectId: 'nb-foreign' }),
+            }));
+
+            expect(mockGetNotebookCandidateTags).not.toHaveBeenCalled();
+            const args = mocks.mockAIService.analyzeImage.mock.calls[0];
+            expect(args[4]).toBeNull();
+            expect(args[6]).toBeUndefined();
         });
 
         it('应该支持英文语言', async () => {

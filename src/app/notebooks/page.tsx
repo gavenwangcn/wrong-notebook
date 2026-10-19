@@ -8,7 +8,7 @@ import { ShortIdLocator } from "@/components/short-id-locator";
 import { Plus, House } from "lucide-react";
 import Link from "next/link";
 import { NotebookCard } from "@/components/notebook-card";
-import { CreateNotebookDialog } from "@/components/create-notebook-dialog";
+import { CreateNotebookDialog, type CreateNotebookInput } from "@/components/create-notebook-dialog";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
 
 import { Notebook } from "@/types/api";
@@ -41,9 +41,9 @@ export default function NotebooksPage() {
         }
     };
 
-    const handleCreate = async (name: string) => {
+    const handleCreate = async (input: CreateNotebookInput) => {
         try {
-            await apiClient.post("/api/notebooks", { name });
+            await apiClient.post("/api/notebooks", input);
             await fetchNotebooks();
         } catch (error: any) {
             console.error(error);
@@ -134,6 +134,8 @@ export default function NotebooksPage() {
                                 key={notebook.id}
                                 id={notebook.id}
                                 name={notebook.name}
+                                stage={notebook.stage}
+                                subjectKey={notebook.subjectKey}
                                 errorCount={notebook._count?.errorItems || 0}
                                 onClick={() => handleNotebookClick(notebook.id)}
                                 onRename={() => setRenameTarget(notebook)}

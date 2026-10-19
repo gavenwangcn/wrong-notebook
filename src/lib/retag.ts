@@ -1,16 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getAIService } from "@/lib/ai";
-import { getMathTagsFromDB, getTagsFromDB } from "@/lib/ai/tag-service";
-import { calculateGradeNumber, inferSubjectFromName } from "@/lib/knowledge-tags";
+import { getMathTagsFromDB, getScopeTagsFromDB } from "@/lib/ai/tag-service";
+import { calculateGradeNumber } from "@/lib/knowledge-tags";
 import { calculateGrade } from "@/lib/grade-calculator";
+import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger('retag');
-
-const SUBJECT_DISPLAY_NAMES: Record<string, string> = {
-    math: '数学', physics: '物理', chemistry: '化学', biology: '生物', english: '英语',
-    chinese: '语文', history: '历史', geography: '地理', politics: '政治',
-};
 
 // 批量重新标注时同时处理的题目数
 const CONCURRENCY = 2;
@@ -40,7 +36,7 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
             answerText: true,
             analysis: true,
             gradeSemester: true,
-            subject: { select: { name: true } },
+            subject: { select: { name: true, stage: true, subjectKey: true } },
             tags: { select: { id: true, name: true, isSystem: true } },
             user: { select: { educationStage: true, enrollmentYear: true } },
         },
@@ -52,11 +48,13 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
         throw new Error('NO_QUESTION_TEXT');
     }
 
-    // 无法从错题本名称判断学科时按数学处理（与识别时的默认行为一致）
-    const subjectKey = inferSubjectFromName(item.subject?.name ?? null) || 'math';
-    const allowedTags = subjectKey === 'math'
-        ? await getMathTagsFromDB(calculateGradeNumber(item.user.educationStage, item.user.enrollmentYear))
-        : await getTagsFromDB(subjectKey);
+    // 候选知识点 = 错题本学段 + 学科下的全部标签；
+    // 不在错题本中或错题本学科未知时按数学处理，并按学生年级取标签（与识别时的默认行为一致）
+    const scope = item.subject ? resolveNotebookScope(item.subject) : null;
+    const subjectKey = scope?.subject || 'math';
+    const allowedTags = scope?.subject
+        ? await getScopeTagsFromDB(scope.subject, scope.stage)
+        : await getMathTagsFromDB(calculateGradeNumber(item.user.educationStage, item.user.enrollmentYear));
     if (allowedTags.length === 0) {
         throw new Error('NO_AVAILABLE_TAGS');
     }

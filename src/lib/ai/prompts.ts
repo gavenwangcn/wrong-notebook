@@ -3,7 +3,7 @@
  * This module provides centralized prompt management
  */
 
-import type { GradeLevel } from './types';
+import type { CandidateTags, GradeLevel } from './types';
 
 /**
  * 将 gradeSemester 字符串转换为年级数字（用于标签过滤）
@@ -112,6 +112,8 @@ export interface PromptOptions {
   prefetchedChemistryTags?: string[];
   prefetchedBiologyTags?: string[];
   prefetchedEnglishTags?: string[];
+  // 错题本学段 + 学科下的全部知识点；提供时直接使用，不再按学科、年级取标签
+  candidateTags?: CandidateTags;
 }
 
 /**
@@ -366,7 +368,16 @@ export function generateAnalyzePrompt(
   // 根据科目决定显示哪些标签（节省 token，提高准确性）
   let tagsSection = "";
 
-  if (subject === '数学') {
+  if (options?.candidateTags) {
+    const { subjectName, tags } = options.candidateTags;
+    tagsSection = `**${subjectName}标签:**
+本题所在错题本的学段与学科下的全部知识点如下，请使用其中的**精确标签名称**：
+${tags.length > 0 ? tags.map(tag => `"${tag}"`).join(", ") : '（无可用标签）'}
+
+**重要提示**：
+- 必须从上述列表中选择精确匹配的标签，不要改写、不要自创
+- 每题最多 5 个标签`;
+  } else if (subject === '数学') {
     tagsSection = `**数学标签 (Math Tags):**
 使用课程大纲（人教版课内知识点，小学另含高思竞赛数学课外拓展知识点）中的**精确标签名称**，可选标签如下：
 ${mathTagsString}
@@ -507,6 +518,7 @@ export const DEFAULT_REANSWER_TEMPLATE = `【角色与核心任务 (ROLE AND COR
 
 <knowledge_points>
 在此处填写知识点，使用逗号分隔，例如：知识点1, 知识点2, 知识点3
+{{knowledge_points_rule}}
 </knowledge_points>
 
 <wrong_answer_text>
@@ -692,6 +704,9 @@ export function generateReanswerPrompt(
     language_instruction: langInstruction,
     question_text: questionText,
     subject_hint: subjectHint,
+    knowledge_points_rule: options?.candidateTags
+      ? `只能从以下${options.candidateTags.subjectName}知识点中选择 1 到 5 个，必须与名称完全一致，不要改写、不要自创：\n${options.candidateTags.tags.map(tag => `"${tag}"`).join(", ") || '（无可用标签）'}`
+      : '',
     grade_instruction: generateGradeInstruction(gradeSemester),
     provider_hints: options?.providerHints || ''
   }).trim();

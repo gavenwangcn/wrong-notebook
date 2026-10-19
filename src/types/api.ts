@@ -37,6 +37,8 @@ export interface ModelsResponse {
 export interface Notebook {
     id: string;
     name: string;
+    stage?: string;              // 学段：primary / junior_high / senior_high
+    subjectKey?: string | null;  // 学科：math / english 等
     userId: string;
     createdAt: string;
     updatedAt: string;
