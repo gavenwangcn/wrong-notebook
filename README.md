@@ -145,10 +145,10 @@ docker run -d --name wrong-notebook \
 | `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure` 或 `anthropic` |
 | `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
 | `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
-| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 如 `gemini-2.5-pro` |
+| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
 | `OPENAI_API_KEY` | OpenAI API Key | 无 | 从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
 | `OPENAI_BASE_URL` | OpenAI API 地址 | `https://api.openai.com/v1` | 使用兼容服务时填写其地址 |
-| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` | |
+| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` | 推荐 `gpt-6.1-sol` |
 | `AZURE_OPENAI_API_KEY` | Azure API Key | 无 | 从 Azure 门户获取 |
 | `AZURE_OPENAI_ENDPOINT` | Azure Endpoint | 无 | 如 `https://xxx.openai.azure.com` |
 | `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称 |
@@ -181,6 +181,21 @@ AI 配置可在网页中动态修改，无需重启服务器。
 
 「提示词」页可自定义识别和举一反三的提示词模板。
 
+### 模型要求
+
+所选模型需要满足以下条件，否则部分功能无法使用或效果较差：
+
+| 要求 | 用到的功能 | 说明 |
+| :--- | :--- | :--- |
+| **支持图片输入（多模态）** | 拍照/截图识别题目、AI 重新生成配图、有原图时的重新生成解答 | 纯文本模型只能使用文字录入，识别图片会失败 |
+| **能写准确的 SVG 代码** | 题目配图、举一反三和试卷新题的配图、SVG 动画讲解 | 这些「图片」都由模型输出 SVG 代码生成，**不调用图片生成模型**，也不需要模型具备出图能力；模型的几何作图和 SVG 动画（SMIL）能力决定配图与动画的质量 |
+| **较长的单次输出** | SVG 动画讲解（上限 16384 token）、识别题目（含配图，上限 8192 token） | 输出被截断时会用 32768 token 重试一次，模型的最大输出不足 16K 时，动画讲解容易生成失败 |
+| **严格遵循输出格式** | 所有 AI 功能 | 结果按 `<answer_text>`、`<svg_animation>` 等标签或 JSON 解析，格式不符会提示「AI 返回格式异常，可能模型不兼容」 |
+| **规范的 LaTeX** | 题目、答案、解析 | 公式须能被 KaTeX 显示；出现语法错误时可用详情页的「修复 LaTeX」修正 |
+| **较强的数学推理** | 解答、错因分析、难度星级、掌握概率评估 | 推理（思考）模型可以使用，思考内容会被自动忽略；思考耗时较长时，管理员可在「设置 → 通用」中调大「AI 分析超时时间」 |
+
+推荐使用各提供商当前的多模态旗舰或快速模型，例如 `gemini-3.8-flash`、`gpt-6.1-sol`、`claude-sonnet-5-5`。使用兼容接口的第三方模型时，请先确认它支持图片输入。
+
 ### 配置样例
 
 #### Google Gemini
@@ -189,7 +204,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | :--- | :--- |
 | API Key | [Google AI Studio](https://aistudio.google.com/apikey) → 创建 API Key |
 | Base URL | 默认 `https://generativelanguage.googleapis.com`，通常无需修改 |
-| 模型 | `gemini-2.5-flash`（推荐）、`gemini-2.5-pro` 等 |
+| 模型 | `gemini-3.8-flash`（推荐）等 |
 
 #### OpenAI
 
@@ -197,7 +212,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | :--- | :--- |
 | API Key | [OpenAI Platform](https://platform.openai.com/api-keys) → Create new secret key |
 | Base URL | 默认 `https://api.openai.com/v1` |
-| 模型 | `gpt-4o` 等 |
+| 模型 | `gpt-6.1-sol`（推荐）等 |
 
 > **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、智谱 GLM、月之暗面 Kimi、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
 
