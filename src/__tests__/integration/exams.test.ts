@@ -16,8 +16,12 @@ const mocks = vi.hoisted(() => {
         errorItem: { findMany: vi.fn() },
         examPaper: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), delete: vi.fn() },
         examQuestion: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
-        transaction: vi.fn(async (callback: (client: typeof tx) => Promise<unknown>) => callback(tx)),
+        practiceRecord: { updateMany: vi.fn() },
+        transaction: vi.fn(async (arg: ((client: typeof tx) => Promise<unknown>) | Promise<unknown>[]) => (
+            Array.isArray(arg) ? Promise.all(arg) : arg(tx)
+        )),
         generateSimilarQuestion: vi.fn(),
+        reanswerQuestion: vi.fn(),
         scheduleMasteryEvaluation: vi.fn(),
         session: { user: { email: 'user@example.com' }, expires: '2099-01-01' },
     };
@@ -30,10 +34,11 @@ vi.mock('@/lib/prisma', () => ({
         errorItem: mocks.errorItem,
         examPaper: mocks.examPaper,
         examQuestion: mocks.examQuestion,
+        practiceRecord: mocks.practiceRecord,
         $transaction: mocks.transaction,
     },
 }));
-vi.mock('@/lib/ai', () => ({ getAIService: vi.fn(() => ({ generateSimilarQuestion: mocks.generateSimilarQuestion })) }));
+vi.mock('@/lib/ai', () => ({ getAIService: vi.fn(() => ({ generateSimilarQuestion: mocks.generateSimilarQuestion, reanswerQuestion: mocks.reanswerQuestion })) }));
 vi.mock('@/lib/mastery', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@/lib/mastery')>()),
     scheduleMasteryEvaluation: mocks.scheduleMasteryEvaluation,
@@ -45,6 +50,7 @@ vi.mock('@/lib/config', () => ({ getAppTimeZone: vi.fn(() => 'Asia/Shanghai') })
 import { POST as CREATE, GET as LIST } from '@/app/api/exams/route';
 import { GET as DETAIL, DELETE } from '@/app/api/exams/[id]/route';
 import { POST as RESULTS } from '@/app/api/exams/[id]/results/route';
+import { POST as REGENERATE } from '@/app/api/exams/[id]/questions/[questionId]/regenerate/route';
 import { generateExamPaper } from '@/lib/exam';
 import { getAppTimeZone } from '@/lib/config';
 
@@ -246,6 +252,105 @@ describe('/api/exams', () => {
 
             expect(response.status).toBe(404);
             expect(mocks.transaction).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('POST 单题重新生成', () => {
+        const questionParams = (id: string, questionId: string) => ({ params: Promise.resolve({ id, questionId }) });
+        const regenerate = (body: object) => REGENERATE(json('http://localhost', 'POST', body), questionParams('p1', 'q1'));
+        const question = (practiceCount: number) => ({
+            paperId: 'p1',
+            status: 'ready',
+            questionText: '旧题',
+            paper: { userId: 'user-1', title: '试卷', difficulty: 'hard' },
+            errorItem: {
+                questionText: '原题', knowledgePoints: null, gradeSemester: '初二上', figureSvg: null,
+                tags: [{ name: '函数' }], subject: { name: '数学', stage: 'junior_high', subjectKey: 'math' },
+            },
+            _count: { practiceRecords: practiceCount },
+        });
+        const regenerated = { status: 'ready', questionText: '新题', answerText: '新答', analysis: '新析', figureSvg: null, error: null };
+
+        it('未录入结果时重新生成题目和解答，并刷新试卷状态', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce(question(0)).mockResolvedValueOnce(regenerated);
+            mocks.generateSimilarQuestion.mockResolvedValue({ questionText: '新题', answerText: '新答', analysis: '新析' });
+            mocks.examQuestion.updateMany.mockResolvedValue({ count: 1 });
+            mocks.examQuestion.findMany.mockResolvedValue([{ status: 'ready' }, { status: 'ready' }]);
+
+            const response = await regenerate({ mode: 'question', language: 'zh' });
+
+            expect(response.status).toBe(200);
+            expect(await response.json()).toEqual(regenerated);
+            expect(mocks.generateSimilarQuestion).toHaveBeenCalledWith('原题', ['函数'], 'zh', 'hard', '初二上', null);
+            expect(mocks.examQuestion.updateMany).toHaveBeenCalledWith({
+                where: { id: 'q1', practiceRecords: { none: {} } },
+                data: { status: 'ready', questionText: '新题', answerText: '新答', analysis: '新析', figureSvg: null, error: null },
+            });
+            expect(mocks.examPaper.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { status: 'ready' } });
+        });
+
+        it('已录入结果时不能重新生成题目', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce(question(1));
+
+            const response = await regenerate({ mode: 'question' });
+
+            expect(response.status).toBe(409);
+            expect((await response.json()).message).toBe('HAS_RESULTS');
+            expect(mocks.generateSimilarQuestion).not.toHaveBeenCalled();
+        });
+
+        it('生成期间录入了结果时不覆盖题目', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce(question(0));
+            mocks.generateSimilarQuestion.mockResolvedValue({ questionText: '新题', answerText: '新答', analysis: '新析' });
+            mocks.examQuestion.updateMany.mockResolvedValue({ count: 0 });
+
+            const response = await regenerate({ mode: 'question' });
+
+            expect(response.status).toBe(409);
+            expect(mocks.examPaper.update).not.toHaveBeenCalled();
+        });
+
+        it('已录入结果时可重新生成解答，并同步录入记录的解答快照', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce(question(2)).mockResolvedValueOnce({ ...regenerated, questionText: '旧题' });
+            mocks.reanswerQuestion.mockResolvedValue({ answerText: '新答', analysis: '新析' });
+
+            const response = await regenerate({ mode: 'answer', language: 'en' });
+
+            expect(response.status).toBe(200);
+            expect(mocks.reanswerQuestion).toHaveBeenCalledWith('旧题', 'en', expect.any(String), undefined, '初二上');
+            const data = { answerText: '新答', analysis: '新析' };
+            expect(mocks.examQuestion.update).toHaveBeenCalledWith({ where: { id: 'q1' }, data });
+            expect(mocks.practiceRecord.updateMany).toHaveBeenCalledWith({ where: { examQuestionId: 'q1' }, data });
+            expect(mocks.generateSimilarQuestion).not.toHaveBeenCalled();
+        });
+
+        it('原题已删除时不能重新生成题目', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce({ ...question(0), errorItem: null });
+
+            const response = await regenerate({ mode: 'question' });
+
+            expect(response.status).toBe(400);
+            expect((await response.json()).message).toBe('SOURCE_DELETED');
+        });
+
+        it('生成中的题目不能重新生成', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce({ ...question(0), status: 'pending' });
+
+            expect((await regenerate({ mode: 'answer' })).status).toBe(409);
+        });
+
+        it('不能操作他人试卷或其他试卷的题目', async () => {
+            mocks.examQuestion.findUnique.mockResolvedValueOnce({ ...question(0), paper: { ...question(0).paper, userId: 'other' } });
+            expect((await regenerate({ mode: 'answer' })).status).toBe(404);
+
+            mocks.examQuestion.findUnique.mockResolvedValueOnce({ ...question(0), paperId: 'p2' });
+            expect((await regenerate({ mode: 'answer' })).status).toBe(404);
+            expect(mocks.reanswerQuestion).not.toHaveBeenCalled();
+        });
+
+        it('校验重新生成方式', async () => {
+            expect((await regenerate({ mode: 'all' })).status).toBe(400);
+            expect(mocks.examQuestion.findUnique).not.toHaveBeenCalled();
         });
     });
 

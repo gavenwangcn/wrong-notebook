@@ -173,10 +173,12 @@ export default function ExamDetailPage() {
                     {paper.questions.map((question) => (
                         <ExamQuestionCard
                             key={question.id}
+                            paperId={paper.id}
                             question={question}
                             editingResult={draft ? draft[question.id] ?? null : undefined}
                             onResultChange={(result) => setDraft((prev) => (prev ? { ...prev, [question.id]: result } : prev))}
                             onDeleteAttempt={deleteAttempt}
+                            onRegenerated={load}
                         />
                     ))}
                 </div>

@@ -11,19 +11,23 @@ import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { RESULT_BADGE_CLASS } from "@/components/mastery-panel";
 import { PracticeResultPicker } from "@/components/practice-result-picker";
 import { QuestionFigure } from "@/components/question-figure";
+import { ExamQuestionRegenerate } from "@/components/exam/exam-question-regenerate";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { ExamQuestionDetail, PracticeResult } from "@/types/api";
 
 interface ExamQuestionCardProps {
+    paperId: string;
     question: ExamQuestionDetail;
     /** 录入模式下的待保存结果；undefined 表示非录入模式 */
     editingResult?: PracticeResult | null;
     onResultChange?: (result: PracticeResult) => void;
     /** 录入模式下删除某次已录入的结果 */
     onDeleteAttempt?: (attemptId: string) => void;
+    /** 单题重新生成完成后回调 */
+    onRegenerated?: () => void;
 }
 
-export function ExamQuestionCard({ question, editingResult, onResultChange, onDeleteAttempt }: ExamQuestionCardProps) {
+export function ExamQuestionCard({ paperId, question, editingResult, onResultChange, onDeleteAttempt, onRegenerated }: ExamQuestionCardProps) {
     const { t } = useLanguage();
     const { timeZone } = useTimeZone();
     const [showAnswer, setShowAnswer] = useState(false);
@@ -104,6 +108,10 @@ export function ExamQuestionCard({ question, editingResult, onResultChange, onDe
                             </div>
                         )}
                     </>
+                )}
+
+                {!isEditing && onRegenerated && (
+                    <ExamQuestionRegenerate paperId={paperId} question={question} onDone={onRegenerated} />
                 )}
 
                 {isEditing && question.status === "ready" && question.errorItemId && onResultChange && (
