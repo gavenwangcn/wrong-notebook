@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import { acceptConfirmDialog } from './helpers';
 
 test('Upload image, correct, save, and verify in notebook', async ({ page }) => {
     // 增加测试超时时间
@@ -28,6 +29,10 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
     await page.getByLabel(/^密码$|^Password$/).fill('123456');
     await page.getByRole('button', { name: /登录|Login/ }).click();
     await page.waitForURL('**/', { timeout: 15000 });
+
+    // 开启「导入前人工确认」，识别后进入校对页而不是直接入库
+    const prefRes = await page.request.patch('/api/user', { data: { confirmBeforeImport: true } });
+    expect(prefRes.ok()).toBeTruthy();
 
     // 2. Ensure a Notebook exists
     // Go to Notebooks page
@@ -129,14 +134,9 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
         // Wait for Detail Page
         await expect(page.getByRole('heading', { level: 1, name: /详情|Detail/ })).toBeVisible({ timeout: 5000 });
 
-        // Setup dialog handler for item deletion
-        page.once('dialog', async dialog => {
-            console.log(`Item Delete Dialog: ${dialog.message()}`);
-            await dialog.accept();
-        });
-
         // Click Delete Button
         await page.getByRole('button', { name: /删除|Delete/ }).click();
+        await acceptConfirmDialog(page);
 
         // Wait to be redirected back to notebook page
         await page.waitForURL(/\/notebooks\/.+/, { timeout: 5000 });
@@ -150,12 +150,6 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
     // 13. Delete the Notebook
     await page.goto('/notebooks');
 
-    // Setup dialog handler for notebook deletion
-    page.once('dialog', async dialog => {
-        console.log(`Notebook Delete Dialog: ${dialog.message()}`);
-        await dialog.accept();
-    });
-
     // Locate the delete button specifically for the "数学" notebook
     const notebookCard = page.locator('.group').filter({ hasText: '数学' }).first();
 
@@ -164,6 +158,7 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
 
     // Click the delete button (Trash icon)
     await notebookCard.getByRole('button').last().click();
+    await acceptConfirmDialog(page);
 
     // 14. Verify Notebook Deleted
     await expect(page.getByText('数学', { exact: true })).not.toBeVisible({ timeout: 5000 });

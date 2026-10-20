@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { acceptConfirmDialog } from './helpers';
 
 test.describe('Authentication Flow', () => {
 
@@ -108,15 +109,12 @@ test.describe('Authentication Flow', () => {
         // 使用更长的超时时间等待用户行出现
         await expect(userRow).toBeVisible({ timeout: 10000 });
 
-        // Setup dialog handler for delete confirmation
-        page.once('dialog', async dialog => {
-            console.log(`Delete User Dialog: ${dialog.message()}`);
-            await dialog.accept();
-        });
-
         // Click Delete button in that row (Trash icon)
         // The button has title "Delete" or "删除"
         await userRow.getByRole('button', { name: /Delete|删除/ }).click();
+
+        // 删除确认为页面内确认框
+        await acceptConfirmDialog(page);
 
         // Verify user is gone
         await expect(page.locator('tr').filter({ hasText: user.email })).not.toBeVisible({ timeout: 5000 });
