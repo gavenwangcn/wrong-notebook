@@ -1,6 +1,6 @@
 # 版本发布指南
 
-本文档说明如何发布新版本 Docker 镜像。
+本文档说明如何从公开 `main` 发布新版本 Docker 镜像。下例的 `github` 远程指向公开仓库；私有部署分支不能用于公开发版。
 
 ## 版本标签策略
 
@@ -22,7 +22,7 @@ npm version 2026.10.19 --no-git-tag-version
 git status
 git add .
 git commit -m "feat: 新功能描述"
-git push origin main
+git push github main
 ```
 
 ### 2. 创建版本标签
@@ -38,7 +38,7 @@ git tag v2026.10.19 <commit-sha>
 ### 3. 推送标签触发构建
 
 ```bash
-git push origin v2026.10.19
+git push github v2026.10.19
 ```
 
 ### 4. 查看构建状态
@@ -64,13 +64,13 @@ git push origin v2026.10.19
 services:
   wrong-notebook:
     # 推荐：锁定精确版本
-    image: ghcr.io/wttwins/wrong-notebook:2026.10.19
+    image: ghcr.io/margrop/wrong-notebook:2026.10.19
     
     # 或：自动获取当月更新
-    image: ghcr.io/wttwins/wrong-notebook:2026.10
+    image: ghcr.io/margrop/wrong-notebook:2026.10
     
     # 不推荐：始终最新（生产环境慎用）
-    image: ghcr.io/wttwins/wrong-notebook:latest
+    image: ghcr.io/margrop/wrong-notebook:latest
 ```
 
 ## 常用命令
@@ -83,7 +83,7 @@ git tag -l
 git tag -d v2026.10.19
 
 # 删除远程标签
-git push origin --delete v2026.10.19
+git push github --delete v2026.10.19
 
 # 查看标签对应的提交
 git show v2026.10.19

@@ -261,6 +261,7 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 | [TABLE_RECOGNITION.md](doc/TABLE_RECOGNITION.md) | 表格识别 |
 | [PROJECT_OVERVIEW.md](doc/PROJECT_OVERVIEW.md)、[operational_flow.md](doc/operational_flow.md) | 项目结构与操作流程（部分内容早于本仓库新增功能） |
 | [release-guide.md](doc/release-guide.md) | 版本发布 |
+| [BRANCH_WORKFLOW.md](doc/BRANCH_WORKFLOW.md) | 公开主线与上传前检查 |
 | [setup-wsl-network.md](doc/setup-wsl-network.md) | WSL 网络配置 |
 
 ## 🛠️ 实用脚本

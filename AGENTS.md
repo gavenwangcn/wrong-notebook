@@ -75,7 +75,10 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 
 ## Git 与提交
 
-- 提交前展示 `git status` 与 `git diff`，经用户确认后再 `git add` / `git commit`。
+- `main` 为公开主线，禁止反向合并私有部署分支。向 GitHub 推送前运行 `python3 scripts/check-public-history.py <待推送引用>`；每个工作副本用 `git config core.hooksPath .githooks` 启用上传前检查。
+- 分支边界、检查和公开发布流程见 `doc/BRANCH_WORKFLOW.md`。
+
+- 向 GitHub 推送前展示 `git status` 与拟推送的 `git diff`，经用户确认后再执行 `git push`（包括分支、标签和历史重写）。本地 `git add` / `git commit` 及推送 Gitea 无需单独确认。
 - 提交信息格式：`<type>: <中文描述>`，type 取 feat / fix / docs / style / refactor / test / chore / ci。
 - 提交信息中不添加 AI 署名。
 - `main` 为公开主线；公开远程名称为 `github`。私有部署分支仅推送到受限远程，禁止将其提交或合并记录带入公开历史。

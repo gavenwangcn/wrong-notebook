@@ -9,10 +9,23 @@ on:
     branches: [main]
 
 jobs:
+  publication-check:
+    runs-on: ubuntu-latest
+    name: Public History Check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check public history before continuing CI
+        run: |
+          python3 -m unittest discover -s tests/publication -v
+          python3 scripts/check-public-history.py HEAD
+
   # ============================================
   # 测试阶段（仅 main 分支 push 或 PR）
   # ============================================
   unit-test:
+    needs: publication-check
     runs-on: ubuntu-latest
     name: Unit Tests
     # 只在非 tag push 时运行测试
