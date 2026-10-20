@@ -6,6 +6,8 @@
 
 一个基于 AI 的智能错题管理系统：拍照或输入题目后，由 AI 识别、解答、打知识点标签并评定难度，支持错题本管理、举一反三练习、组卷打印和掌握程度跟踪。
 
+🌐 **项目介绍页**：<https://blog.margrop.net/wrong-notebook-github-pages/>
+
 > 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
 
 ## 🖼️ 功能预览
@@ -190,9 +192,65 @@
 
 AI 的 API Key 等也可以在登录后通过网页设置填写，见下文「AI 模型配置」一节。
 
-### 方式二：Docker 部署
+### 方式二：Docker 镜像部署（推荐）
 
-本仓库的功能需要用源码构建镜像。构建过程中会在镜像内运行全部测试，并完成生产构建：
+每次发版都会把镜像发布到 GitHub Container Registry：`ghcr.io/margrop/wrong-notebook`，支持 `linux/amd64` 和 `linux/arm64`，可直接拉取，不需要源码。
+
+| 镜像标签 | 说明 |
+| --- | --- |
+| `2026.10.20` 等精确版本 | 推荐，升级时可控 |
+| `2026.10` | 当月最新版本 |
+| `latest` | 最新正式版本 |
+
+可用版本见 [Releases](https://github.com/margrop/wrong-notebook/releases)。
+
+1. **准备目录和密钥**：
+
+   ```bash
+   mkdir -p wrong-notebook/data wrong-notebook/config
+   cd wrong-notebook
+   openssl rand -base64 32   # 生成的字符串用作 NEXTAUTH_SECRET
+   ```
+
+2. **启动容器**（任选一种）：
+
+   使用 `docker run`：
+
+   ```bash
+   docker run -d --name wrong-notebook \
+     --restart always \
+     -e NEXTAUTH_SECRET="上一步生成的密钥" \
+     -e NEXTAUTH_URL="http://你的IP或域名:3000" \
+     -p 3000:3000 \
+     -v "$(pwd)/data:/app/data" \
+     -v "$(pwd)/config:/app/config" \
+     ghcr.io/margrop/wrong-notebook:latest
+   ```
+
+   使用 Docker Compose：下载仓库中的 [`docker-compose.yml`](docker-compose.yml) 放到当前目录，修改 `NEXTAUTH_SECRET`（及 `NEXTAUTH_URL`）后执行：
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. **登录**：访问 `http://你的IP或域名:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。**登录后请尽快修改密码**，再在网页设置中填写 AI 的 API Key。
+
+4. **升级**：拉取新镜像并重建容器，数据保留在挂载目录中，启动时只执行数据库迁移。
+
+   ```bash
+   docker compose pull && docker compose up -d
+   # 使用 docker run 时：docker pull 新镜像后 docker rm -f wrong-notebook，再执行上面的 docker run
+   ```
+
+   升级前建议先备份 `data/` 目录。
+
+数据保存在挂载的 `data/`（SQLite 数据库）和 `config/`（网页中保存的 AI 配置等）目录。设置页「关于」和 `/api/health` 显示当前运行的版本。HTTPS 部署见 [HTTPS 配置指南](doc/HTTPS_SETUP.md) 和 `docker-compose.https.yml`。
+
+> 上游项目的镜像 `ghcr.io/wttwins/wrong-notebook` **不包含**本仓库新增的功能，请使用 `ghcr.io/margrop/wrong-notebook`。
+
+### 方式三：从源码构建镜像
+
+需要修改代码或使用未发布的改动时，可以自行构建。构建过程中会在镜像内运行全部测试，并完成生产构建：
 
 ```bash
 docker build -t wrong-notebook:local .
@@ -200,16 +258,12 @@ docker build -t wrong-notebook:local .
 docker run -d --name wrong-notebook \
   -e NEXTAUTH_SECRET="your_secret_key" \
   -p 3000:3000 \
-  -v $(pwd)/data:/app/data \
-  -v $(pwd)/config:/app/config \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/config:/app/config" \
   wrong-notebook:local
 ```
 
-也可以使用仓库中的 `docker-compose.yml`，把其中的 `image` 改为 `wrong-notebook:local` 后执行 `docker compose up -d`。
-
-> `docker-compose.yml` 默认的 `ghcr.io/wttwins/wrong-notebook` 是上游项目发布的镜像，**不包含**本仓库新增的功能。
-
-数据保存在挂载的 `data/`（SQLite 数据库）和 `config/`（网页中保存的 AI 配置等）目录。已有数据库启动时只执行数据库迁移，不会重建数据。HTTPS 部署见 [HTTPS 配置指南](doc/HTTPS_SETUP.md) 和 `docker-compose.https.yml`。
+使用 `docker-compose.yml` 时，把其中的 `image` 改为 `wrong-notebook:local` 即可。
 
 ## 🔧 环境变量
 
