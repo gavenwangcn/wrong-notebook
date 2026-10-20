@@ -1,8 +1,95 @@
+<p align="center">
+  <img src="public/icons/icon.png" width="128" height="128" alt="智能错题本应用图标">
+</p>
+
 # Smart Wrong Notebook (智能错题本)
 
 一个基于 AI 的智能错题管理系统：拍照或输入题目后，由 AI 识别、解答、打知识点标签并评定难度，支持错题本管理、举一反三练习、组卷打印和掌握程度跟踪。
 
 > 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
+
+## 🖼️ 功能预览
+
+以下截图采集自实际运行的应用（2026-10-20），展示已有题目、讲解和试卷。用户名已遮挡，可点击图片查看大图。
+
+**错题管理**：在同一页面查看题目摘要、难度星级和知识点，按年级、学期、掌握情况及 A/B 卷筛选，也可通过题目 ID 定位、比较相似度或批量打印。
+
+![错题本中的真实题目卡片、难度星级、知识点标签与筛选入口](doc/screenshots/notebook.png)
+
+<details>
+<summary><strong>录入与偏好：拍照上传、文字录入、人工确认和可配置判重</strong></summary>
+
+首页提供拍照上传、手动输入和直接录入入口，支持拖拽图片与剪贴板粘贴。
+
+![首页的拍照上传、手动输入、直接录入和剪贴板粘贴入口](doc/screenshots/upload.png)
+
+通用设置可调整导入前人工确认、SVG 动画讲解、GeoGebra 动态演示和题目判重相似度阈值。
+
+![通用设置中的导入确认、动画讲解、GeoGebra 和判重阈值](doc/screenshots/preferences.png)
+
+</details>
+
+<details>
+<summary><strong>题目详情：公式排版、难度星级、知识点和试题信息</strong></summary>
+
+一道错题集中展示题干、知识点、年级学期与试卷等级，可核对原题图片，并从详情页进入举一反三。
+
+![真实错题详情中的公式、难度星级、知识点和年级学期信息](doc/screenshots/question-detail.png)
+
+</details>
+
+<details>
+<summary><strong>SVG 动画讲解：把解题思路变成分步骤的动态演示</strong></summary>
+
+下图为已有六边形染色题的动画讲解，展示区域关系与递推计数过程；播放器支持暂停、拖动进度、重播和全屏。
+
+![六边形染色题的 SVG 动画讲解、递推计数表与播放控制](doc/screenshots/svg-animation.png)
+
+</details>
+
+<details>
+<summary><strong>复习反馈：回看变式题、作答历史和 AI 掌握概率</strong></summary>
+
+原题下汇总举一反三和试卷作答结果，展开记录可回看变式题与答案。AI 根据实际作答历史评估掌握概率，辅助安排后续复习。
+
+![已有试卷变式题、先错后对的作答历史与 AI 掌握概率评估](doc/screenshots/mastery-history.png)
+
+</details>
+
+<details>
+<summary><strong>组卷与打印：针对错题生成试卷，做完后按题回填结果</strong></summary>
+
+生成的试卷保留来源题目 ID，并展示各次作答结果，方便回到原题跟踪复习效果。
+
+![已生成的真实错题试卷、来源 ID 和多次作答结果](doc/screenshots/exam.png)
+
+打印预览可选择包含答案页，支持下载 HTML、打印或通过浏览器保存为 PDF。
+
+![真实试卷的打印预览、来源 ID、答案页开关和导出入口](doc/screenshots/exam-print.png)
+
+</details>
+
+<details>
+<summary><strong>知识点库：按学科、年级、章节逐级浏览</strong></summary>
+
+标准标签库按教学层级组织知识点，同时提供自定义标签和使用统计入口。
+
+![数学知识点按四年级、几何图形、角和四边形逐级展开](doc/screenshots/knowledge-tags.png)
+
+</details>
+
+<details>
+<summary><strong>学习统计：查看错题分布、掌握率、练习正确率和趋势</strong></summary>
+
+错题统计展示累计错题、已掌握数量、掌握率、科目分布和月度趋势。
+
+![真实错题数量、掌握率、科目分布和月度趋势图表](doc/screenshots/error-stats.png)
+
+练习统计单独展示累计练习、正确率和活跃月份，并按学科、难度观察练习分布与趋势。
+
+![真实练习次数、正确率、活跃月份与练习趋势图表](doc/screenshots/practice-stats.png)
+
+</details>
 
 ## ✨ 主要功能
 
