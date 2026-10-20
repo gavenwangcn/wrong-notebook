@@ -8,11 +8,10 @@
 
 - 月、日不补零：2026 年 1 月 5 日写作 `v2026.1.5`，不能写成 `v2026.01.05`（npm 版本号不允许前导零）。
 - 同一天需要再次发布时，可追加预发布后缀，如 `v2026.10.19-1`（带 `-` 的标签不会更新 `latest`）。
-- `package.json` 的 `version` 字段与标签保持一致（不含 `v`），设置页「关于」中显示为 `v` + 版本号。可用以下命令修改：
-
-```bash
-npm version 2026.10.19 --no-git-tag-version
-```
+- 版本号在构建镜像时由 Git 标签自动得出（环境变量 `APP_VERSION`），发版无需修改代码。设置页「关于」和 `/api/health` 显示该版本号（不含 `v`）。
+  - 推送标签触发的构建使用标签本身的版本，如 `2026.10.19`。
+  - 其他构建（`scripts/build-image.sh`、手动镜像构建）使用 `git describe` 的结果；标签之后还有提交时形如 `2026.10.19-3-gabc1234`。
+  - 取不到标签时（本地开发、浅克隆）回退到 `package.json` 的 `version`，该字段无需随发版更新。
 
 ## 发布操作流程
 
@@ -38,8 +37,11 @@ git tag v2026.10.19 <commit-sha>
 ### 3. 推送标签触发构建
 
 ```bash
+python3 scripts/check-public-history.py v2026.10.19
 git push github v2026.10.19
 ```
+
+首次发布后，GHCR 镜像默认为私有，需在 GitHub 的 Packages → wrong-notebook → Package settings 中改为 Public。
 
 ### 4. 查看构建状态
 

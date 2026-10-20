@@ -50,10 +50,14 @@ WORKDIR /app
 
 ARG APP_REVISION=unknown
 ENV APP_REVISION=${APP_REVISION}
+# 由 Git 标签得出的版本号，留空时运行时回退到 package.json 的版本
+ARG APP_VERSION=
+ENV APP_VERSION=${APP_VERSION}
 # Existing installations keep their accounts and tag IDs during deployment.
 ENV PRESERVE_EXISTING_DATA=true
 LABEL org.opencontainers.image.source="https://github.com/margrop/wrong-notebook" \
-      org.opencontainers.image.revision="${APP_REVISION}"
+      org.opencontainers.image.revision="${APP_REVISION}" \
+      org.opencontainers.image.version="${APP_VERSION}"
 
 ENV NODE_ENV=production
 # Uncomment the following line in case you want to disable telemetry during runtime.
