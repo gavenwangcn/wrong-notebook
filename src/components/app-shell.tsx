@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { BarChart3, BookOpen, FileText, LogOut, PlusCircle, Shield, Tags } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { BroadcastNotification } from "@/components/broadcast-notification";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -99,7 +98,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </Button>
                             </Link>
                         )}
-                        <BroadcastNotification />
                         <SettingsDialog />
                         <Button
                             variant="ghost"
