@@ -191,5 +191,6 @@ jobs:
           build-args: |
             APP_VERSION=${{ steps.meta.outputs.version }}
             APP_REVISION=${{ github.sha }}
+            TEST_TIMEOUT_MS=120000
           cache-from: type=gha
           cache-to: type=gha,mode=max

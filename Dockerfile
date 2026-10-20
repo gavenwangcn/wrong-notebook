@@ -15,9 +15,11 @@ RUN npm ci
 # CI uses the same Node version and native dependencies as production builds.
 FROM deps AS ci
 WORKDIR /app
+# QEMU 模拟构建其他架构时测试会慢数倍，可调大单个测试和钩子的超时（毫秒）
+ARG TEST_TIMEOUT_MS=5000
 COPY . .
 RUN npx prisma generate \
-    && npm test \
+    && npm test -- --testTimeout="${TEST_TIMEOUT_MS}" --hookTimeout="${TEST_TIMEOUT_MS}" \
     && sh -n docker-entrypoint.sh \
     && bash -n scripts/ci.sh scripts/build-image.sh
 
