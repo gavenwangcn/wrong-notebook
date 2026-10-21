@@ -59,7 +59,9 @@ export interface MasteryEvaluationResult {
 export interface TagSuggestionInput {
     questionText: string;
     answerText?: string | null;
-    analysis?: string | null;
+    analysis?: string | null;         // 解答过程
+    wrongAnswerText?: string | null;  // 学生作答
+    mistakeAnalysis?: string | null;  // 错因分析
     subject: string;          // 中文学科名，如「数学」
     allowedTags: string[];    // 可选知识点（标签库中的精确名称）
     gradeSemester?: string | null;

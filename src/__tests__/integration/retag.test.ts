@@ -32,6 +32,8 @@ const item = {
     questionText: '鸡兔同笼，共 10 个头 28 条腿',
     answerText: '鸡 6 兔 4',
     analysis: '假设法',
+    wrongAnswerText: '鸡 4 兔 6',
+    mistakeAnalysis: '数量算反',
     gradeSemester: '四年级上',
     subject: { name: '数学', stage: 'primary', subjectKey: 'math' },
     tags: [
@@ -92,7 +94,15 @@ describe('知识点重新生成', () => {
         expect(data.tags).toEqual(['假设法解鸡兔同笼', '鸡兔同笼', '易错']);
         expect(mocks.getScopeTagsFromDB).toHaveBeenCalledWith('math', 'primary');
         expect(mocks.getMathTagsFromDB).not.toHaveBeenCalled();
-        expect(mocks.suggestKnowledgeTags.mock.calls[0][0]).toMatchObject({ subject: '数学', gradeSemester: '四年级上' });
+        expect(mocks.suggestKnowledgeTags.mock.calls[0][0]).toMatchObject({
+            subject: '数学',
+            gradeSemester: '四年级上',
+            questionText: '鸡兔同笼，共 10 个头 28 条腿',
+            answerText: '鸡 6 兔 4',
+            analysis: '假设法',
+            wrongAnswerText: '鸡 4 兔 6',
+            mistakeAnalysis: '数量算反',
+        });
         expect(mocks.errorItem.update).toHaveBeenCalledWith({
             where: { id: 'e1' },
             data: {

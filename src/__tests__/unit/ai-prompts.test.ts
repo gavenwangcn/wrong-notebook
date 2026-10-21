@@ -486,4 +486,27 @@ describe('知识点重新标注提示词', () => {
         expect(prompt).toContain('数学老师');
         expect(prompt).not.toContain('禁止使用超纲知识');
     });
+
+    it('题目与解答过程、学生作答、错因分析一并交给 AI', () => {
+        const prompt = generateTagSuggestPrompt({
+            questionText: '鸡兔同笼，共 10 个头 28 条腿',
+            answerText: '鸡 6 兔 4',
+            analysis: '假设全是鸡，则有 20 条腿，少 8 条，每只兔多 2 条腿，兔有 4 只',
+            wrongAnswerText: '鸡 4 兔 6',
+            mistakeAnalysis: '把鸡和兔的数量算反',
+            subject: '数学',
+            allowedTags: ['假设法解鸡兔同笼'],
+        });
+
+        expect(prompt).toContain('【解答过程】\n假设全是鸡，则有 20 条腿');
+        expect(prompt).toContain('【学生作答】\n鸡 4 兔 6');
+        expect(prompt).toContain('【错因分析】\n把鸡和兔的数量算反');
+        expect(prompt).not.toContain('{{');
+    });
+
+    it('缺少解答过程时以「（无）」占位', () => {
+        const prompt = generateTagSuggestPrompt({ questionText: '1+1=?', subject: '数学', allowedTags: ['加法'] });
+        expect(prompt).toContain('【解答过程】\n（无）');
+        expect(prompt).toContain('【学生作答】\n（无）');
+    });
 });

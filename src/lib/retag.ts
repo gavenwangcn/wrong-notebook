@@ -29,7 +29,7 @@ interface TagSuggestion {
 }
 
 /**
- * 用 AI 从当前知识点库中为一道题选取知识点并评定难度星级（不保存）：系统标签换成 AI 选出的，保留自定义标签
+ * 用 AI 从当前知识点库中为一道题选取知识点并评定难度星级（不保存）：题目与解答过程一并交给 AI；系统标签换成 AI 选出的，保留自定义标签
  */
 async function suggestTagsForItem(errorItemId: string, userId: string): Promise<TagSuggestion> {
     const item = await prisma.errorItem.findUnique({
@@ -39,6 +39,8 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
             questionText: true,
             answerText: true,
             analysis: true,
+            wrongAnswerText: true,
+            mistakeAnalysis: true,
             gradeSemester: true,
             paperLevel: true,
             subject: { select: { name: true, stage: true, subjectKey: true } },
@@ -73,6 +75,8 @@ async function suggestTagsForItem(errorItemId: string, userId: string): Promise<
         questionText: item.questionText,
         answerText: item.answerText,
         analysis: item.analysis,
+        wrongAnswerText: item.wrongAnswerText,
+        mistakeAnalysis: item.mistakeAnalysis,
         subject: SUBJECT_DISPLAY_NAMES[subjectKey],
         allowedTags,
         gradeSemester,
