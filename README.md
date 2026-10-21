@@ -315,7 +315,7 @@ wrong-notebook --port 3000
 | `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
 | `OPENAI_API_KEY` | OpenAI API Key | 无 | 从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
 | `OPENAI_BASE_URL` | OpenAI API 地址 | `https://api.openai.com/v1` | 使用兼容服务时填写其地址 |
-| `OPENAI_MODEL` | OpenAI 模型 | `gpt-4o` | 推荐 `gpt-6.1-sol` |
+| `OPENAI_MODEL` | OpenAI 模型 | `gpt-6.1-sol` | 兼容服务填写对应平台的模型 ID |
 | `AZURE_OPENAI_API_KEY` | Azure API Key | 无 | 从 Azure 门户获取 |
 | `AZURE_OPENAI_ENDPOINT` | Azure Endpoint | 无 | 如 `https://xxx.openai.azure.com` |
 | `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称 |

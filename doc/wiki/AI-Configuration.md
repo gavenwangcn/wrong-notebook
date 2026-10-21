@@ -16,7 +16,7 @@ AI 设置、连接测试、模型列表与提示词设置只向管理员开放�
 | 提供商 | 必需参数 | 地址与默认模型 |
 | --- | --- | --- |
 | Gemini | API Key、可用模型 | 官方 API；代码默认 `gemini-2.5-flash` |
-| OpenAI 或兼容接口 | API Key、模型 | 默认 `https://api.openai.com/v1`；代码默认 `gpt-4o` |
+| OpenAI 或兼容接口 | API Key、模型 | 默认 `https://api.openai.com/v1`；代码默认 `gpt-6.1-sol` |
 | Azure OpenAI | API Key、Endpoint、部署名称 | API 版本默认 `2024-02-15-preview`；模型字段用于显示 |
 | Anthropic 或兼容接口 | API Key、模型 | 默认 `https://api.anthropic.com`；代码默认 `claude-sonnet-5-5` |
 

@@ -156,7 +156,7 @@ describe('config module', () => {
             const { getAppConfig } = await import('@/lib/config');
             const config = getAppConfig();
 
-            expect(config.openai?.instances?.[0]?.model).toBe('gpt-4o');
+            expect(config.openai?.instances?.[0]?.model).toBe('gpt-6.1-sol');
             expect(config.gemini?.model).toBe('gemini-2.5-flash');
         });
     });

@@ -317,7 +317,7 @@ The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebo
 | `GEMINI_MODEL` | Gemini model | `gemini-2.5-flash` | `gemini-3.8-flash` recommended |
 | `OPENAI_API_KEY` | OpenAI API key | None | From [OpenAI Platform](https://platform.openai.com/api-keys) |
 | `OPENAI_BASE_URL` | OpenAI API URL | `https://api.openai.com/v1` | Set to the provider's URL for compatible services |
-| `OPENAI_MODEL` | OpenAI model | `gpt-4o` | `gpt-6.1-sol` recommended |
+| `OPENAI_MODEL` | OpenAI model | `gpt-6.1-sol` | For compatible services, use the platform's model ID |
 | `AZURE_OPENAI_API_KEY` | Azure API key | None | From the Azure portal |
 | `AZURE_OPENAI_ENDPOINT` | Azure endpoint | None | e.g. `https://xxx.openai.azure.com` |
 | `AZURE_OPENAI_DEPLOYMENT` | Deployment name | None | The deployment name configured in Azure |

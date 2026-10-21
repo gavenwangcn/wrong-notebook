@@ -120,7 +120,7 @@ export function ModelSelector({ provider, apiKey, baseUrl, currentModel, onModel
                     <Input
                         value={customModel}
                         onChange={(e) => handleCustomModelChange(e.target.value)}
-                        placeholder={provider === 'openai' ? "gpt-4o" : "gemini-1.5-flash"}
+                        placeholder={provider === 'openai' ? "gpt-6.1-sol" : "gemini-1.5-flash"}
                     />
                     {models.length > 0 && (
                         <Button

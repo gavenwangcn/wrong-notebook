@@ -14,6 +14,8 @@ import { normalizeGeneratedQuestion } from './generated-question';
 
 const logger = createLogger('ai:openai');
 
+export const DEFAULT_OPENAI_MODEL = 'gpt-6.1-sol';
+
 type OpenAIUserContent = string | Array<
     { type: "text"; text: string } |
     { type: "image_url"; image_url: { url: string } }
@@ -42,7 +44,7 @@ export class OpenAIProvider implements AIService {
             },
         });
 
-        this.model = config?.model || 'gpt-4o'; // Fallback for safety
+        this.model = config?.model || DEFAULT_OPENAI_MODEL;
         this.baseURL = baseURL || 'https://api.openai.com/v1';
         this.apiKey = apiKey;
         this.isLongCat = this.baseURL.includes('longcat.chat');

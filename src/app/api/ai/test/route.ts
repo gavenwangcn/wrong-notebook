@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { OpenAIProvider } from '@/lib/ai/openai-provider';
+import { OpenAIProvider, DEFAULT_OPENAI_MODEL } from '@/lib/ai/openai-provider';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
 import { AzureOpenAIProvider } from '@/lib/ai/azure-provider';
 import { AnthropicProvider, DEFAULT_ANTHROPIC_MODEL } from '@/lib/ai/anthropic-provider';
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
                     // 视觉成功 → 文本和视觉都支持，一步完成
                     textSupport = true;
                     visionSupport = true;
-                    modelInfo = model || 'gpt-4o';
+                    modelInfo = model || DEFAULT_OPENAI_MODEL;
                 }
             } else if (provider === 'gemini') {
                 const gemini = new GeminiProvider({ apiKey, baseUrl, model });
@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
                     );
                     if (result.questionText) {
                         textSupport = true;
-                        modelInfo = model || 'gpt-4o';
+                        modelInfo = model || DEFAULT_OPENAI_MODEL;
                     }
                 } else if (provider === 'gemini') {
                     const gemini = new GeminiProvider({ apiKey, baseUrl, model });

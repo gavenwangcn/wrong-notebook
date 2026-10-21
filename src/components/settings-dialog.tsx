@@ -540,7 +540,7 @@ export function SettingsDialog() {
             name: `Instance ${instances.length + 1}`,
             apiKey: '',
             baseUrl: 'https://api.openai.com/v1',
-            model: 'gpt-4o',
+            model: 'gpt-6.1-sol',
         };
 
         setConfig(prev => ({

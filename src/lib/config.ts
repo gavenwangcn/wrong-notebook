@@ -87,7 +87,7 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
         name: 'Default',
         apiKey: legacy.apiKey,
         baseUrl: legacy.baseUrl || 'https://api.openai.com/v1',
-        model: legacy.model || 'gpt-4o',
+        model: legacy.model || 'gpt-6.1-sol',
     };
 
     return {
@@ -106,7 +106,7 @@ const DEFAULT_CONFIG: AppConfig = {
             name: 'Default (ENV)',
             apiKey: process.env.OPENAI_API_KEY,
             baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-            model: process.env.OPENAI_MODEL || 'gpt-4o',
+            model: process.env.OPENAI_MODEL || 'gpt-6.1-sol',
         }] : [],
         activeInstanceId: process.env.OPENAI_API_KEY ? 'env-default' : undefined,
     },
