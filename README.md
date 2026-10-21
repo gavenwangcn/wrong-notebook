@@ -8,6 +8,10 @@
 
 🌐 **项目介绍页**：<https://blog.margrop.net/wrong-notebook-github-pages/>
 
+🚀 **在线演示**：<https://wrong-notebook-demo.vercel.app>（账号 `demo@localhost`，密码 `demo123456`）
+
+> 演示站点为共享账号，数据对所有访客可见，请勿录入个人信息；演示环境未配置 AI，题目识别与解析暂不可用。
+
 > 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
 
 ## 🖼️ 功能预览
