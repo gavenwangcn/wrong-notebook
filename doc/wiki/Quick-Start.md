@@ -66,7 +66,7 @@ npm run dev
 3. 上传题目图片或手动输入文字，核对识别结果后保存。
 4. 在题目详情检查答案、解析、知识点和难度，再尝试举一反三。
 
-![拍照上传、文字录入和直接录入入口](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/upload.png)
+![拍照上传、文字录入和直接录入入口](https://raw.githubusercontent.com/margrop/wrong-notebook/70b66950931f6f723083e3726fbc97f2f65d2ea8/doc/screenshots/upload.png)
 
 ## 安装到手机主屏幕
 

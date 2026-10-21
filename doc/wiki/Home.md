@@ -4,7 +4,7 @@ Smart Wrong Notebook（智能错题本）把拍照或文字录入的错题整理
 
 本 Wiki 面向 [margrop/wrong-notebook](https://github.com/margrop/wrong-notebook)，基于公开主线 [`93423c2`](https://github.com/margrop/wrong-notebook/commit/93423c2675b7965e688cb966f4f4cd78e2e636d2) 核对，更新日期为 2026-10-20。项目 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，采用 MIT 许可证。
 
-![错题本的题目卡片、知识点和筛选入口](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/notebook.png)
+![错题本的题目卡片、知识点和筛选入口](https://raw.githubusercontent.com/margrop/wrong-notebook/70b66950931f6f723083e3726fbc97f2f65d2ea8/doc/screenshots/notebook.png)
 
 ## 从这里开始
 

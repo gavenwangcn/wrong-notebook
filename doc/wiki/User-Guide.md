@@ -45,7 +45,7 @@
 
 未评级的题目不会仅凭默认规则自动指定卷别。重新生成完整解答保留知识点和错因信息。
 
-![题干、知识点、难度与试题信息](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/question-detail.png)
+![题干、知识点、难度与试题信息](https://raw.githubusercontent.com/margrop/wrong-notebook/70b66950931f6f723083e3726fbc97f2f65d2ea8/doc/screenshots/question-detail.png)
 
 ## 配图和动态讲解
 

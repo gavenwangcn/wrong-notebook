@@ -17,7 +17,7 @@
 
 掌握概率用于辅助安排复习。它不保证学生已经理解题目，也不等同于考试得分。
 
-![原题下的变式题作答历史和掌握概率](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/mastery-history.png)
+![原题下的变式题作答历史和掌握概率](https://raw.githubusercontent.com/margrop/wrong-notebook/70b66950931f6f723083e3726fbc97f2f65d2ea8/doc/screenshots/mastery-history.png)
 
 ## 生成错题试卷
 
@@ -28,7 +28,7 @@
 
 试卷保留来源题目 ID，可据此回到原题。作答结果支持做对、做错和未作答；同一题可以保留多次结果，关联到原题的复习历史。
 
-![已生成试卷中的来源 ID 与作答结果](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/exam.png)
+![已生成试卷中的来源 ID 与作答结果](https://raw.githubusercontent.com/margrop/wrong-notebook/70b66950931f6f723083e3726fbc97f2f65d2ea8/doc/screenshots/exam.png)
 
 ## 打印与导出
 
