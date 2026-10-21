@@ -52,7 +52,7 @@ jobs:
           set -euo pipefail
           prefix="$(mktemp -d)"
           data="$(mktemp -d)"
-          npm install -g --prefix "$prefix" dist/wrong-notebook-*.tgz
+          npm install -g --prefix "$prefix" ./dist/wrong-notebook-*.tgz
           "$prefix/bin/wrong-notebook" --port 39400 --host 127.0.0.1 --data-dir "$data" > "$data/server.log" 2>&1 &
           for _ in $(seq 1 90); do
             if curl -sf http://127.0.0.1:39400/api/health; then exit 0; fi
@@ -79,7 +79,7 @@ jobs:
           fi
           tag=latest
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; fi
-          npm publish dist/wrong-notebook-*.tgz --access public --provenance --tag "$tag"
+          npm publish ./dist/wrong-notebook-*.tgz --access public --provenance --tag "$tag"
 
   desktop:
     name: Desktop (${{ matrix.name }})
