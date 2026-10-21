@@ -56,6 +56,7 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 - 界面文本放在 `@/lib/translations.ts`，组件中用 `t.section.key`，缺省回退英文。
 - 页面须同时适配 PC 和移动端（移动优先）。
 - 修改 AI 调用时同步更新所有提供商（`gemini-provider.ts`、`openai-provider.ts`、`azure-provider.ts`、`anthropic-provider.ts`），提示词集中在 `prompts.ts`。
+- MiniMax、智谱 GLM、DeepSeek、Kimi 等国产大模型官方渠道复用 `OpenAIProvider`，默认地址和模型集中在 `src/lib/ai/vendor-presets.ts`；新增渠道只需加预设并同步文档与测试。
 
 ## 安全
 
@@ -82,7 +83,13 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 - 向 GitHub 推送前展示 `git status` 与拟推送的 `git diff`，经用户确认后再执行 `git push`（包括分支、标签和历史重写）。本地 `git add` / `git commit` 及推送 Gitea 无需单独确认。
 - 提交信息格式：`<type>: <中文描述>`，type 取 feat / fix / docs / style / refactor / test / chore / ci。
 - 提交信息中不添加 AI 署名。
+- 按功能拆分提交：一次任务包含多个相互独立的需求时，每个需求单独提交；同一需求涉及多个可独立交付的部分（如接入多个提供商）时也逐个提交。每个提交都应能独立通过测试，并包含该功能对应的测试与文档改动；无关的格式化、重构不要混入功能提交。
 - `main` 为公开主线；公开远程名称为 `github`。私有部署分支仅推送到受限远程，禁止将其提交或合并记录带入公开历史。
+
+## 文档同步
+
+- 功能、配置项或默认值变化时，同步更新 `README.md` 与 `README.en.md`，以及受影响的 `doc/`、`doc/wiki/` 页面。
+- 面向用户的功能变化（如新增 AI 提供商、安装方式）同时更新官网项目 `../wrong-notebook-github-pages`（中文 `index.html` 与英文 `en/index.html`），该项目单独提交并推送。
 
 ## 临时文件
 
