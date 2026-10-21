@@ -383,6 +383,12 @@ export const translations = {
             filteringByTag: "Filtering by tag",
             grade: "Grade/Semester",
             paperLevel: "Paper Level",
+            gradeShort: "Grade",
+            chapter: "Chapter",
+            knowledgePoint: "Tag",
+            allGrades: "All grades",
+            allChapters: "All chapters",
+            allKnowledgePoints: "All tags",
         },
         stats: {
             title: "Practice Statistics",
@@ -952,6 +958,8 @@ export const translations = {
         },
         replaceImage: {
             replace: "Replace image",
+            view: "View original image",
+            hide: "Hide original image",
             add: "Upload question image",
             uploading: "Uploading…",
             confirm: "Replace the original question image? The old image will be overwritten and cannot be restored.",
@@ -1399,6 +1407,12 @@ export const translations = {
             filteringByTag: "按标签筛选",
             grade: "年级/学期",
             paperLevel: "所属卷等级",
+            gradeShort: "年级/学期",
+            chapter: "章节",
+            knowledgePoint: "知识点",
+            allGrades: "全部年级",
+            allChapters: "全部章节",
+            allKnowledgePoints: "全部知识点",
         },
         stats: {
             title: "练习统计",
@@ -1967,6 +1981,8 @@ export const translations = {
         },
         replaceImage: {
             replace: "替换原题图片",
+            view: "查看原题图片",
+            hide: "隐藏原题图片",
             add: "上传原题图片",
             uploading: "上传中…",
             confirm: "确定替换原题图片吗？原图片会被覆盖，无法恢复。",

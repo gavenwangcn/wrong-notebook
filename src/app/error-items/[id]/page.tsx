@@ -619,7 +619,7 @@ export default function ErrorDetailPage() {
                             <div className="flex flex-wrap gap-2">
                                 {item.originalImageUrl && (
                                     <Button variant="outline" size="sm" onClick={() => setShowQuestionImage(!showQuestionImage)} className="flex items-center gap-2">
-                                        {showQuestionImage ? <><EyeOff className="h-4 w-4" />隐藏原题图片</> : <><ImageIcon className="h-4 w-4" />查看原题图片</>}
+                                        {showQuestionImage ? <><EyeOff className="h-4 w-4" />{t.replaceImage?.hide || "Hide original image"}</> : <><ImageIcon className="h-4 w-4" />{t.replaceImage?.view || "View original image"}</>}
                                     </Button>
                                 )}
                                 <ReplaceQuestionImageButton
