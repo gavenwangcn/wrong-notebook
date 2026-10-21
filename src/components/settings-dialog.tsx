@@ -77,7 +77,7 @@ export function SettingsDialog() {
     const [loading, setLoading] = useState(false);
     const [version, setVersion] = useState<string>("");
     const [showApiKey, setShowApiKey] = useState(false);
-    const [config, setConfig] = useState<AppConfig>({ aiProvider: 'gemini' });
+    const [config, setConfig] = useState<AppConfig>({ aiProvider: 'minimax' });
     // OpenAI 多实例状态
     const [selectedInstanceId, setSelectedInstanceId] = useState<string | undefined>(undefined);
 
@@ -974,13 +974,13 @@ export function SettingsDialog() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="gemini">Google Gemini</SelectItem>
-                                            <SelectItem value="openai">OpenAI / Compatible</SelectItem>
-                                            <SelectItem value="azure">Azure OpenAI</SelectItem>
-                                            <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
                                             {VENDOR_PROVIDER_IDS.map((id) => (
                                                 <SelectItem key={id} value={id}>{VENDOR_PRESETS[id].name}</SelectItem>
                                             ))}
+                                            <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
+                                            <SelectItem value="azure">Azure OpenAI</SelectItem>
+                                            <SelectItem value="openai">OpenAI / Compatible</SelectItem>
+                                            <SelectItem value="gemini">Google Gemini</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

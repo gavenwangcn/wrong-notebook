@@ -165,17 +165,18 @@ describe('AI Provider 初始化', () => {
             expect(service.constructor.name).toBe('GeminiProvider');
         });
 
-        it('配置未知 provider 时应该默认返回 Gemini Provider', async () => {
+        it('配置未知 provider 时应该回退到默认的 MiniMax 渠道', async () => {
             const { getAIService } = await import('@/lib/ai');
             vi.mocked(getAppConfig).mockReturnValue({
                 aiProvider: 'unknown',
                 gemini: { apiKey: 'test-gemini-key' },
+                minimax: { apiKey: 'test-minimax-key' },
             } as any);
 
             const service = getAIService();
 
             expect(service).toBeDefined();
-            expect(service.constructor.name).toBe('GeminiProvider');
+            expect(service.constructor.name).toBe('OpenAIProvider');
         });
     });
 });

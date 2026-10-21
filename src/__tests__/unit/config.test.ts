@@ -42,7 +42,7 @@ describe('config module', () => {
             const { getAppConfig } = await import('@/lib/config');
             const config = getAppConfig();
 
-            expect(config.aiProvider).toBe('gemini'); // 默认值
+            expect(config.aiProvider).toBe('minimax'); // 默认值
             expect(config.allowRegistration).toBe(true);
             expect(config.timeZone).toBe('Asia/Shanghai');
         });

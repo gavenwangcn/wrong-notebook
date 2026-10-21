@@ -158,7 +158,7 @@
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
 - **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
-- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM / DeepSeek / Kimi
+- **AI**: MiniMax / 智谱 GLM / DeepSeek / Kimi / Anthropic（及兼容接口）/ Azure OpenAI / OpenAI（及兼容接口）/ Google Gemini
 - **认证**: [NextAuth.js v4](https://next-auth.js.org/)
 - **测试**: Vitest（单元、集成）、Playwright（E2E）
 
@@ -309,25 +309,25 @@ wrong-notebook --port 3000
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm`、`deepseek`、`kimi` |
-| `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
-| `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
-| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
-| `OPENAI_API_KEY` | OpenAI API Key | 无 | 从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
-| `OPENAI_BASE_URL` | OpenAI API 地址 | `https://api.openai.com/v1` | 使用兼容服务时填写其地址 |
-| `OPENAI_MODEL` | OpenAI 模型 | `gpt-6.1-sol` | 兼容服务填写对应平台的模型 ID |
+| `AI_PROVIDER` | AI 提供商 | `minimax` | 可选 `minimax`、`glm`、`deepseek`、`kimi`、`anthropic`、`azure`、`openai`、`gemini` |
+| `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
+| `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
+| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | 地址 `https://api.deepseek.com`，模型 `deepseek-flash` | 地址和模型可留空 |
+| `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | 地址 `https://api.moonshot.cn/v1`，模型 `kimi-k3` | 地址和模型可留空 |
+| `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 从 [Claude Console](https://platform.claude.com/) 获取 |
+| `ANTHROPIC_BASE_URL` | API 地址 | `https://api.anthropic.com` | 兼容服务填写不含 `/v1` 的地址 |
+| `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
 | `AZURE_OPENAI_API_KEY` | Azure API Key | 无 | 从 Azure 门户获取 |
 | `AZURE_OPENAI_ENDPOINT` | Azure Endpoint | 无 | 如 `https://xxx.openai.azure.com` |
 | `AZURE_OPENAI_DEPLOYMENT` | 部署名称 | 无 | Azure 中配置的部署名称 |
 | `AZURE_OPENAI_API_VERSION` | API 版本 | `2024-02-15-preview` | |
 | `AZURE_OPENAI_MODEL` | 模型名称 | `gpt-4o` | 仅用于显示 |
-| `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 从 [Claude Console](https://platform.claude.com/) 获取 |
-| `ANTHROPIC_BASE_URL` | API 地址 | `https://api.anthropic.com` | 兼容服务填写不含 `/v1` 的地址 |
-| `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
-| `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
-| `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
-| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | 地址 `https://api.deepseek.com`，模型 `deepseek-flash` | 地址和模型可留空 |
-| `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | 地址 `https://api.moonshot.cn/v1`，模型 `kimi-k3` | 地址和模型可留空 |
+| `OPENAI_API_KEY` | OpenAI API Key | 无 | 从 [OpenAI Platform](https://platform.openai.com/api-keys) 获取 |
+| `OPENAI_BASE_URL` | OpenAI API 地址 | `https://api.openai.com/v1` | 使用兼容服务时填写其地址 |
+| `OPENAI_MODEL` | OpenAI 模型 | `gpt-6.1-sol` | 兼容服务填写对应平台的模型 ID |
+| `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
+| `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
+| `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
 
 **Openclaw 集成**（可选）
 
@@ -346,7 +346,7 @@ wrong-notebook --port 3000
 AI 配置可在网页中动态修改，无需重启服务器。
 
 1. **进入设置**：管理员点击首页右上角的设置图标，打开「AI 设置」。
-2. **选择提供商**：Google Gemini、OpenAI、Azure OpenAI、Anthropic（含兼容接口），或国产大模型官方渠道（MiniMax、智谱 GLM 等），可添加多个配置并切换。
+2. **选择提供商**：默认使用 MiniMax；可选 MiniMax、智谱 GLM、DeepSeek、Kimi 官方渠道，以及 Anthropic、Azure OpenAI、OpenAI（含兼容接口）、Google Gemini，OpenAI 可添加多个配置并切换。
 3. **填写参数**：API Key、Base URL（或 Endpoint）、模型（或部署名称）；可测试连接并从接口获取模型列表。
 4. **保存生效**：配置保存到 `config/app-config.json`，优先级高于 `.env`。
 
@@ -365,46 +365,9 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | **规范的 LaTeX** | 题目、答案、解析 | 公式须能被 KaTeX 显示；出现语法错误时可用详情页的「修复 LaTeX」修正 |
 | **较强的数学推理** | 解答、错因分析、难度星级、掌握概率评估 | 推理（思考）模型可以使用，思考内容会被自动忽略；思考耗时较长时，管理员可在「设置 → 通用」中调大「AI 分析超时时间」 |
 
-推荐使用各提供商当前的多模态旗舰或快速模型，例如 `gemini-3.8-flash`、`gpt-6.1-sol`、`claude-sonnet-5-5`。使用兼容接口的第三方模型时，请先确认它支持图片输入。
+推荐使用各提供商当前的多模态旗舰或快速模型，例如 `MiniMax-M3.1-Flash`、`glm-5.3-flash`、`deepseek-flash`、`kimi-k3`、`claude-sonnet-5-5`、`gpt-6.1-sol`、`gemini-3.8-flash`。使用兼容接口的第三方模型时，请先确认它支持图片输入。
 
 ### 配置样例
-
-#### Google Gemini
-
-| 参数 | 获取方式 |
-| :--- | :--- |
-| API Key | [Google AI Studio](https://aistudio.google.com/apikey) → 创建 API Key |
-| Base URL | 默认 `https://generativelanguage.googleapis.com`，通常无需修改 |
-| 模型 | `gemini-3.8-flash`（推荐）等 |
-
-#### OpenAI
-
-| 参数 | 获取方式 |
-| :--- | :--- |
-| API Key | [OpenAI Platform](https://platform.openai.com/api-keys) → Create new secret key |
-| Base URL | 默认 `https://api.openai.com/v1` |
-| 模型 | `gpt-6.1-sol`（推荐）等 |
-
-> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
-
-#### Azure OpenAI
-
-| 参数 | 获取方式 |
-| :--- | :--- |
-| API Key | Azure 门户 → 你的 OpenAI 资源 → 密钥和终结点 |
-| Endpoint | Azure 门户 → 你的 OpenAI 资源 → 终结点，如 `https://xxx.openai.azure.com` |
-| 部署名称 | Azure 中配置的模型部署名称，如 `gpt-4o` |
-| API 版本 | 默认 `2024-02-15-preview` |
-
-#### Anthropic
-
-| 参数 | 获取方式 |
-| :--- | :--- |
-| API Key | [Claude Console](https://platform.claude.com/) → API Keys |
-| Base URL | 默认 `https://api.anthropic.com`，通常无需修改 |
-| 模型 | `claude-sonnet-5-5`（推荐）、`claude-opus-5-5`、`claude-haiku-5-5` 等 |
-
-> **兼容模式**：Anthropic 提供商同样可以接入兼容 Anthropic Messages API 的第三方服务。Base URL 填写服务商提供的地址（不含 `/v1`，程序会自动拼接 `/v1/messages`），模型名称填写对应平台的模型 ID。推理模型返回的思考内容会被自动忽略。
 
 #### 国产大模型官方渠道
 
@@ -416,6 +379,43 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | 智谱 GLM | [智谱开放平台](https://open.bigmodel.cn) | `https://open.bigmodel.cn/api/paas/v4`（国际站 `https://api.z.ai/api/paas/v4`） | `glm-5.3-flash` |
 | DeepSeek | [DeepSeek 开放平台](https://platform.deepseek.com) | `https://api.deepseek.com` | `deepseek-flash` |
 | Kimi | [Kimi 开放平台](https://platform.kimi.com) | `https://api.moonshot.cn/v1`（国际站 `https://api.moonshot.ai/v1`） | `kimi-k3` |
+
+#### Anthropic
+
+| 参数 | 获取方式 |
+| :--- | :--- |
+| API Key | [Claude Console](https://platform.claude.com/) → API Keys |
+| Base URL | 默认 `https://api.anthropic.com`，通常无需修改 |
+| 模型 | `claude-sonnet-5-5`（推荐）、`claude-opus-5-5`、`claude-haiku-5-5` 等 |
+
+> **兼容模式**：Anthropic 提供商同样可以接入兼容 Anthropic Messages API 的第三方服务。Base URL 填写服务商提供的地址（不含 `/v1`，程序会自动拼接 `/v1/messages`），模型名称填写对应平台的模型 ID。推理模型返回的思考内容会被自动忽略。
+
+#### Azure OpenAI
+
+| 参数 | 获取方式 |
+| :--- | :--- |
+| API Key | Azure 门户 → 你的 OpenAI 资源 → 密钥和终结点 |
+| Endpoint | Azure 门户 → 你的 OpenAI 资源 → 终结点，如 `https://xxx.openai.azure.com` |
+| 部署名称 | Azure 中配置的模型部署名称，如 `gpt-4o` |
+| API 版本 | 默认 `2024-02-15-preview` |
+
+#### OpenAI
+
+| 参数 | 获取方式 |
+| :--- | :--- |
+| API Key | [OpenAI Platform](https://platform.openai.com/api-keys) → Create new secret key |
+| Base URL | 默认 `https://api.openai.com/v1` |
+| 模型 | `gpt-6.1-sol`（推荐）等 |
+
+> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
+
+#### Google Gemini
+
+| 参数 | 获取方式 |
+| :--- | :--- |
+| API Key | [Google AI Studio](https://aistudio.google.com/apikey) → 创建 API Key |
+| Base URL | 默认 `https://generativelanguage.googleapis.com`，通常无需修改 |
+| 模型 | `gemini-3.8-flash`（推荐）等 |
 
 > **权限**：AI 设置、提示词、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。应用时区由管理员设置。
 

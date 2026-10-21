@@ -102,7 +102,7 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
 }
 
 const DEFAULT_CONFIG: AppConfig = {
-    aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'gemini',
+    aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'minimax',
     allowRegistration: true,
     timeZone: DEFAULT_TIME_ZONE,
     openai: {
