@@ -15,9 +15,11 @@ import { RefreshCw, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { AIModel, ModelsResponse } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { isVendorProvider, VENDOR_PRESETS } from "@/lib/ai/vendor-presets";
+import type { VendorProviderId } from "@/lib/ai/vendor-presets";
 
 interface ModelSelectorProps {
-    provider: 'openai' | 'gemini' | 'anthropic';
+    provider: 'openai' | 'gemini' | 'anthropic' | VendorProviderId;
     apiKey?: string;
     baseUrl?: string;
     currentModel?: string;
@@ -120,7 +122,7 @@ export function ModelSelector({ provider, apiKey, baseUrl, currentModel, onModel
                     <Input
                         value={customModel}
                         onChange={(e) => handleCustomModelChange(e.target.value)}
-                        placeholder={provider === 'openai' ? "gpt-6.1-sol" : "gemini-1.5-flash"}
+                        placeholder={isVendorProvider(provider) ? VENDOR_PRESETS[provider].model : provider === 'openai' ? "gpt-6.1-sol" : "gemini-1.5-flash"}
                     />
                     {models.length > 0 && (
                         <Button

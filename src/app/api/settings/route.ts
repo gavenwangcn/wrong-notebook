@@ -7,6 +7,7 @@ import { badRequest, forbidden, internalError, unauthorized } from "@/lib/api-er
 import { createLogger } from "@/lib/logger";
 import type { OpenAIInstance } from "@/types/api";
 import { isValidTimeZone } from "@/lib/date-time";
+import { VENDOR_PROVIDER_IDS } from "@/lib/ai/vendor-presets";
 
 const logger = createLogger('api:settings');
 
@@ -72,6 +73,12 @@ export async function POST(req: Request) {
 
         if (body.anthropic?.apiKey === '********') {
             body.anthropic.apiKey = currentConfig.anthropic?.apiKey;
+        }
+
+        for (const id of VENDOR_PROVIDER_IDS) {
+            if (body[id]?.apiKey === '********') {
+                body[id].apiKey = currentConfig[id]?.apiKey;
+            }
         }
 
         const updatedConfig = updateAppConfig(body);

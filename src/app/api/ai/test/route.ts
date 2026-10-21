@@ -5,6 +5,8 @@ import { OpenAIProvider, DEFAULT_OPENAI_MODEL } from '@/lib/ai/openai-provider';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
 import { AzureOpenAIProvider } from '@/lib/ai/azure-provider';
 import { AnthropicProvider, DEFAULT_ANTHROPIC_MODEL } from '@/lib/ai/anthropic-provider';
+import { isVendorProvider, resolveVendorConfig } from '@/lib/ai/vendor-presets';
+import type { VendorProviderId } from '@/lib/ai/vendor-presets';
 import { requireAdmin } from '@/lib/auth-utils';
 import { createLogger } from '@/lib/logger';
 
@@ -72,7 +74,7 @@ function parseErrorCode(error: unknown): string {
 }
 
 export interface AITestRequest {
-    provider: 'openai' | 'gemini' | 'azure' | 'anthropic';
+    provider: 'openai' | 'gemini' | 'azure' | 'anthropic' | VendorProviderId;
     apiKey: string;
     baseUrl?: string;
     model?: string;
@@ -153,6 +155,14 @@ export async function POST(request: NextRequest) {
                     visionSupport = true;
                     modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
                 }
+            } else if (isVendorProvider(provider)) {
+                const vendorConfig = resolveVendorConfig(provider, { apiKey, baseUrl, model });
+                const result = await new OpenAIProvider(vendorConfig).analyzeImage(TEST_IMAGE_BASE64, TEST_IMAGE_MIME, language);
+                if (result.questionText || result.analysis) {
+                    textSupport = true;
+                    visionSupport = true;
+                    modelInfo = vendorConfig.model;
+                }
             } else if (provider === 'azure') {
                 if (!endpoint || !deploymentName) {
                     return NextResponse.json({ error: 'Azure 需要 endpoint 和 deploymentName' }, { status: 400 });
@@ -221,6 +231,13 @@ export async function POST(request: NextRequest) {
                     if (result.questionText) {
                         textSupport = true;
                         modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
+                    }
+                } else if (isVendorProvider(provider)) {
+                    const vendorConfig = resolveVendorConfig(provider, { apiKey, baseUrl, model });
+                    const result = await new OpenAIProvider(vendorConfig).generateSimilarQuestion('1+1=?', ['基础算术'], language, 'easy');
+                    if (result.questionText) {
+                        textSupport = true;
+                        modelInfo = vendorConfig.model;
                     }
                 } else if (provider === 'azure') {
                     const azure = new AzureOpenAIProvider({

@@ -34,10 +34,12 @@ import { ImportPreferenceSetting } from "@/components/settings/import-preference
 import { GeogebraPreferenceSetting } from "@/components/settings/geogebra-preference-setting";
 import { SvgAnimationPreferenceSetting } from "@/components/settings/svg-animation-preference-setting";
 import { AnthropicSettings } from "@/components/settings/anthropic-settings";
+import { VendorSettings } from "@/components/settings/vendor-settings";
 import { DuplicateThresholdSetting } from "@/components/settings/duplicate-threshold-setting";
 import { TimeZoneSetting } from "@/components/settings/time-zone-setting";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
+import { isVendorProvider, VENDOR_PRESETS, VENDOR_PROVIDER_IDS } from "@/lib/ai/vendor-presets";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
 import { toast, confirmDialog } from "@/lib/feedback";
@@ -644,6 +646,20 @@ export function SettingsDialog() {
                     model: config.anthropic.model,
                     language: language
                 };
+            } else if (isVendorProvider(config.aiProvider)) {
+                const vendorConfig = config[config.aiProvider];
+                if (!vendorConfig?.apiKey) {
+                    setTestResult({ success: false, textSupport: false, visionSupport: false, textError: t.settings?.ai?.validationApiKeyRequired || 'API Key is required' });
+                    setTesting(false);
+                    return;
+                }
+                requestBody = {
+                    provider: config.aiProvider,
+                    apiKey: vendorConfig.apiKey,
+                    baseUrl: vendorConfig.baseUrl,
+                    model: vendorConfig.model,
+                    language: language
+                };
             } else if (config.aiProvider === 'azure') {
                 if (!config.azure?.apiKey || !config.azure?.endpoint || !config.azure?.deploymentName) {
                     setTestResult({ success: false, textSupport: false, visionSupport: false, textError: t.settings?.ai?.validationAzureEndpointRequired || 'Azure config is incomplete' });
@@ -962,6 +978,9 @@ export function SettingsDialog() {
                                             <SelectItem value="openai">OpenAI / Compatible</SelectItem>
                                             <SelectItem value="azure">Azure OpenAI</SelectItem>
                                             <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
+                                            {VENDOR_PROVIDER_IDS.map((id) => (
+                                                <SelectItem key={id} value={id}>{VENDOR_PRESETS[id].name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -1137,6 +1156,15 @@ export function SettingsDialog() {
                                     <AnthropicSettings
                                         value={config.anthropic}
                                         onChange={(anthropic) => setConfig(prev => ({ ...prev, anthropic }))}
+                                    />
+                                )}
+
+                                {isVendorProvider(config.aiProvider) && (
+                                    <VendorSettings
+                                        key={config.aiProvider}
+                                        provider={config.aiProvider}
+                                        value={config[config.aiProvider]}
+                                        onChange={(vendorConfig) => setConfig(prev => ({ ...prev, [prev.aiProvider]: vendorConfig }))}
                                     />
                                 )}
 

@@ -159,6 +159,37 @@ describe('config module', () => {
             expect(config.openai?.instances?.[0]?.model).toBe('gpt-6.1-sol');
             expect(config.gemini?.model).toBe('gemini-2.5-flash');
         });
+
+        it('国产大模型渠道读取 <PREFIX>_API_KEY / _BASE_URL / _MODEL 环境变量', async () => {
+            vi.mocked(fs.existsSync).mockReturnValue(false);
+            const { VENDOR_PROVIDER_IDS, VENDOR_PRESETS } = await import('@/lib/ai/vendor-presets');
+            for (const id of VENDOR_PROVIDER_IDS) {
+                const prefix = VENDOR_PRESETS[id].envPrefix;
+                process.env[`${prefix}_API_KEY`] = `${id}-key`;
+                process.env[`${prefix}_MODEL`] = `${id}-model`;
+            }
+
+            const { getAppConfig } = await import('@/lib/config');
+            const config = getAppConfig();
+
+            for (const id of VENDOR_PROVIDER_IDS) {
+                expect(config[id]).toMatchObject({ apiKey: `${id}-key`, model: `${id}-model` });
+            }
+        });
+
+        it('国产大模型渠道合并文件配置与环境变量', async () => {
+            const { VENDOR_PROVIDER_IDS, VENDOR_PRESETS } = await import('@/lib/ai/vendor-presets');
+            const id = VENDOR_PROVIDER_IDS[0];
+            process.env[`${VENDOR_PRESETS[id].envPrefix}_API_KEY`] = 'env-key';
+            vi.mocked(fs.existsSync).mockReturnValue(true);
+            vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ aiProvider: id, [id]: { model: 'file-model' } }));
+
+            const { getAppConfig } = await import('@/lib/config');
+            const config = getAppConfig();
+
+            expect(config.aiProvider).toBe(id);
+            expect(config[id]).toMatchObject({ apiKey: 'env-key', model: 'file-model' });
+        });
     });
 
     describe('updateAppConfig', () => {

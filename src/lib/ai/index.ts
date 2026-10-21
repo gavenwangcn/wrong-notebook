@@ -3,6 +3,7 @@ import { GeminiProvider } from "./gemini-provider";
 import { OpenAIProvider } from "./openai-provider";
 import { AzureOpenAIProvider } from "./azure-provider";
 import { AnthropicProvider } from "./anthropic-provider";
+import { isVendorProvider, resolveVendorConfig, VENDOR_PRESETS } from "./vendor-presets";
 
 export * from "./types";
 
@@ -26,6 +27,10 @@ export function getAIService(): AIService {
     } else if (provider === "anthropic") {
         logger.info({ model: config.anthropic?.model }, 'Using Anthropic Provider');
         return new AnthropicProvider(config.anthropic);
+    } else if (isVendorProvider(provider)) {
+        const vendorConfig = resolveVendorConfig(provider, config[provider]);
+        logger.info({ vendor: VENDOR_PRESETS[provider].name, model: vendorConfig.model }, 'Using vendor provider (OpenAI compatible)');
+        return new OpenAIProvider(vendorConfig);
     } else {
         logger.info('Using Gemini Provider');
         return new GeminiProvider(config.gemini);

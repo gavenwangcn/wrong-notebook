@@ -264,6 +264,28 @@ describe('/api/settings', () => {
             expect(updateCall.gemini?.apiKey).toBe('AIza-test-key');
         });
 
+        it('国产大模型渠道同样保留掩码 API Key 的原有值', async () => {
+            const { VENDOR_PROVIDER_IDS } = await import('@/lib/ai/vendor-presets');
+            const current = mocks.mockGetAppConfig();
+            mocks.mockGetAppConfig.mockReturnValueOnce({
+                ...current,
+                ...Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => [id, { apiKey: `${id}-saved-key` }])),
+            } as ReturnType<typeof mocks.mockGetAppConfig>);
+            const request = new Request('http://localhost/api/settings', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => [id, { apiKey: '********', model: 'm' }]))),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await POST(request);
+
+            expect(response.status).toBe(200);
+            const updateCall = mocks.mockUpdateAppConfig.mock.calls[0][0];
+            for (const id of VENDOR_PROVIDER_IDS) {
+                expect(updateCall[id]).toEqual({ apiKey: `${id}-saved-key`, model: 'm' });
+            }
+        });
+
         it('应该成功更新自定义提示词', async () => {
             const newConfig = {
                 prompts: {

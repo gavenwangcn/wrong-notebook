@@ -1,4 +1,5 @@
 import { ParsedQuestion } from "@/lib/ai/types";
+import type { VendorConfig, VendorProviderId } from "@/lib/ai/vendor-presets";
 
 // 通用分页响应类型
 export interface PaginatedResponse<T> {
@@ -131,8 +132,11 @@ export interface OpenAIInstance {
     model: string;
 }
 
-export interface AppConfig {
-    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic';
+// MiniMax、GLM 等国产大模型官方渠道，每个渠道一组 { apiKey, baseUrl, model }
+type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
+
+export interface AppConfig extends VendorConfigs {
+    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
     allowRegistration?: boolean;
     timeZone?: string;
     openai?: {

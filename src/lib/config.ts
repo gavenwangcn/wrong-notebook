@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { createLogger } from './logger';
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from './date-time';
+import { VENDOR_PROVIDER_IDS, VENDOR_PRESETS } from './ai/vendor-presets';
+import type { VendorConfig, VendorProviderId } from './ai/vendor-presets';
 
 const logger = createLogger('config');
 
@@ -17,8 +19,11 @@ export interface OpenAIInstance {
     model: string;
 }
 
-export interface AppConfig {
-    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic';
+// MiniMax、GLM 等国产大模型官方渠道（OpenAI 兼容接口），每个渠道一组配置
+type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
+
+export interface AppConfig extends VendorConfigs {
+    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
     allowRegistration?: boolean;
     timeZone?: string;
     openai?: {
@@ -127,6 +132,14 @@ const DEFAULT_CONFIG: AppConfig = {
         baseUrl: process.env.ANTHROPIC_BASE_URL,
         model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
     },
+    ...Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => {
+        const prefix = VENDOR_PRESETS[id].envPrefix;
+        return [id, {
+            apiKey: process.env[`${prefix}_API_KEY`],
+            baseUrl: process.env[`${prefix}_BASE_URL`],
+            model: process.env[`${prefix}_MODEL`],
+        }];
+    })),
     prompts: {
         analyze: '',
         similar: '',
@@ -135,6 +148,11 @@ const DEFAULT_CONFIG: AppConfig = {
         analyze: 180000,
     },
 };
+
+// 合并各国产大模型渠道的配置，保证每个渠道都有对象
+function mergeVendorConfigs(base: Partial<AppConfig>, override: Partial<AppConfig>): VendorConfigs {
+    return Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => [id, { ...base[id], ...override[id] }]));
+}
 
 export function getAppConfig(): AppConfig {
     if (fs.existsSync(CONFIG_FILE_PATH)) {
@@ -168,6 +186,7 @@ export function getAppConfig(): AppConfig {
                 gemini: { ...DEFAULT_CONFIG.gemini, ...userConfig.gemini },
                 azure: { ...DEFAULT_CONFIG.azure, ...userConfig.azure },
                 anthropic: { ...DEFAULT_CONFIG.anthropic, ...userConfig.anthropic },
+                ...mergeVendorConfigs(DEFAULT_CONFIG, userConfig),
                 prompts: { ...DEFAULT_CONFIG.prompts, ...userConfig.prompts },
                 timeouts: { ...DEFAULT_CONFIG.timeouts, ...userConfig.timeouts },
             };
@@ -195,6 +214,7 @@ export function updateAppConfig(newConfig: Partial<AppConfig>) {
         gemini: { ...currentConfig.gemini, ...newConfig.gemini },
         azure: { ...currentConfig.azure, ...newConfig.azure },
         anthropic: { ...currentConfig.anthropic, ...newConfig.anthropic },
+        ...mergeVendorConfigs(currentConfig, newConfig),
         prompts: { ...currentConfig.prompts, ...newConfig.prompts },
         timeouts: { ...currentConfig.timeouts, ...newConfig.timeouts },
     };

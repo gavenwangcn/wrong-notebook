@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { requireAdmin } from '@/lib/auth-utils';
 import { forbidden } from '@/lib/api-errors';
 import { DEFAULT_ANTHROPIC_BASE_URL } from '@/lib/ai/anthropic-provider';
+import { isVendorProvider, VENDOR_PRESETS } from '@/lib/ai/vendor-presets';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('api:ai:models');
@@ -116,6 +117,8 @@ export async function POST(req: NextRequest) {
 
         if (provider === 'anthropic') {
             models = await fetchAnthropicModels(apiKey, baseUrl || DEFAULT_ANTHROPIC_BASE_URL);
+        } else if (isVendorProvider(provider)) {
+            models = await fetchOpenAIModels(apiKey, baseUrl || VENDOR_PRESETS[provider].baseUrl);
         } else if (provider === 'gemini') {
             const effectiveBaseUrl = baseUrl || 'https://generativelanguage.googleapis.com';
             models = await fetchGeminiModels(apiKey, effectiveBaseUrl);

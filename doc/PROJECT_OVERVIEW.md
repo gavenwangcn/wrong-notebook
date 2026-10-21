@@ -14,7 +14,7 @@
 | 数据库 | SQLite (Prisma ORM 5.22) |
 | 样式 | Tailwind CSS v4 + Shadcn UI (Radix primitives) |
 | 认证 | NextAuth.js v4 (credentials provider, bcryptjs) |
-| AI | Google Gemini / OpenAI / Azure OpenAI / Anthropic (动态切换) |
+| AI | Google Gemini / OpenAI / Azure OpenAI / Anthropic / MiniMax (动态切换) |
 | 测试 | Vitest (单元/集成) + Playwright (E2E) |
 | 部署 | Docker (standalone output) + Docker Compose |
 | 包管理 | npm |
@@ -88,6 +88,7 @@ wrongNotebook/
 │   │   │   ├── openai-provider.ts # OpenAI Provider
 │   │   │   ├── azure-provider.ts  # Azure OpenAI Provider
 │   │   │   ├── anthropic-provider.ts  # Anthropic 及兼容接口 Provider
+│   │   │   ├── vendor-presets.ts  # 国产大模型官方渠道预设（复用 OpenAI Provider）
 │   │   │   └── tag-service.ts    # 标签查询服务
 │   │   ├── tag-data/             # 预置知识点标签数据 (按学科)
 │   │   │   ├── index.ts, math.ts, physics.ts, chemistry.ts, biology.ts
@@ -179,7 +180,7 @@ User (id, email, password, name, role, isActive, educationStage, enrollmentYear)
 用户上传图片 → 图片裁剪 → 图片压缩 (base64)
   → POST /api/analyze (AI分析)
     → 获取用户年级/学科 → 注入标签列表到 prompt
-    → AI Provider (Gemini/OpenAI/Azure/Anthropic) 分析
+    → AI Provider (Gemini/OpenAI/Azure/Anthropic/MiniMax 等) 分析
     → Zod 校验返回数据
     → 返回 ParsedQuestion { questionText, answerText, analysis, subject, knowledgePoints, requiresImage }
   → 用户编辑确认 → POST /api/error-items (保存)
