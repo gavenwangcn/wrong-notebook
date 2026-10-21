@@ -1,0 +1,450 @@
+<p align="center">
+  <img src="public/icons/icon.png" width="128" height="128" alt="Smart Wrong Notebook app icon">
+</p>
+
+# Smart Wrong Notebook (智能错题本)
+
+[简体中文](README.md) | **English**
+
+An AI-powered notebook for the questions you got wrong. Snap a photo or type a question, and AI recognizes it, solves it, tags it with knowledge points and rates its difficulty. Manage your notebooks, practice with similar questions, build printable exams and track how well you have mastered each question.
+
+🌐 **Project website**: <https://blog.margrop.net/wrong-notebook-github-pages/en/>
+
+🚀 **Live demo**: <https://wrong-notebook-demo.vercel.app> (account `demo@localhost`, password `demo123456`)
+
+> The demo uses a shared account and its data is visible to every visitor. Do not enter personal information.
+
+📦 **Install anywhere**: Docker image (amd64 / arm64) · npm (`npm i -g wrong-notebook`) · Windows · macOS · Linux · fnOS. Get the installers from [Releases](https://github.com/margrop/wrong-notebook/releases); see [Quick Start](#-quick-start) for instructions.
+
+> This repository is a fork of [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook) with many additional features (listed below).
+
+> The app's built-in knowledge-point library follows the Chinese K-12 curriculum (primary, junior high and senior high school). The interface is available in Simplified Chinese and English.
+
+## 🖼️ Screenshots
+
+The screenshots below were taken from the running app (2026-10-20) and show real questions, explanations and exams. Usernames are masked. Click an image to view it full size.
+
+**Notebook**: see each question's summary, difficulty stars and knowledge points on one page. Filter by grade, term, mastery and A/B paper, open a question by its ID, compare similarity or print in bulk.
+
+![Question cards with difficulty stars, knowledge-point tags and filters](doc/screenshots/notebook.png)
+
+<details>
+<summary><strong>Input and preferences: photo upload, text input, review before import and configurable duplicate detection</strong></summary>
+
+The home page offers photo upload, manual input and direct entry, with drag-and-drop and clipboard paste.
+
+![Photo upload, manual input, direct entry and clipboard paste on the home page](doc/screenshots/upload.png)
+
+General settings control review before import, SVG animated explanations, GeoGebra demos and the similarity threshold for duplicate detection.
+
+![Review before import, animated explanations, GeoGebra and duplicate threshold in General settings](doc/screenshots/preferences.png)
+
+</details>
+
+<details>
+<summary><strong>Question details: formulas, difficulty stars, knowledge points and paper info</strong></summary>
+
+Each question shows its text, knowledge points, grade, term and paper level. You can check the original photo and start practicing similar questions from here.
+
+![Question details with formulas, difficulty stars, knowledge points, grade and term](doc/screenshots/question-detail.png)
+
+</details>
+
+<details>
+<summary><strong>SVG animated explanations: step-by-step animations of the solution</strong></summary>
+
+An animated explanation of a hexagon coloring problem, showing region relationships and the recursive counting. The player supports pause, seeking, replay and full screen.
+
+![SVG animated explanation of a hexagon coloring problem with counting table and player controls](doc/screenshots/svg-animation.png)
+
+</details>
+
+<details>
+<summary><strong>Review feedback: similar questions, answer history and AI mastery estimate</strong></summary>
+
+Results from practice questions and exams are collected under the original question; expand a record to see the variant question and its answer. AI estimates your mastery from the actual answer history to help plan the next review.
+
+![Exam variant questions, wrong-then-right answer history and AI mastery estimate](doc/screenshots/mastery-history.png)
+
+</details>
+
+<details>
+<summary><strong>Exams and printing: generate exams from your mistakes and record results per question</strong></summary>
+
+Generated exams keep each source question's ID and show every attempt, so you can trace the effect back to the original question.
+
+![A generated exam with source IDs and multiple attempt results](doc/screenshots/exam.png)
+
+The print preview can include an answer page; download it as HTML, print it, or save it as PDF from the browser.
+
+![Exam print preview with source IDs, answer page toggle and export options](doc/screenshots/exam-print.png)
+
+</details>
+
+<details>
+<summary><strong>Knowledge library: browse by subject, grade and chapter</strong></summary>
+
+The standard tag library organizes knowledge points by curriculum level, and also offers custom tags and usage statistics.
+
+![Math knowledge points expanded by grade 4, geometry, angles and quadrilaterals](doc/screenshots/knowledge-tags.png)
+
+</details>
+
+<details>
+<summary><strong>Statistics: mistake distribution, mastery rate, practice accuracy and trends</strong></summary>
+
+Mistake statistics show total mistakes, mastered count, mastery rate, subject distribution and monthly trend.
+
+![Mistake count, mastery rate, subject distribution and monthly trend charts](doc/screenshots/error-stats.png)
+
+Practice statistics show total practice, accuracy and active months, with distribution and trends by subject and difficulty.
+
+![Practice count, accuracy, active months and practice trend charts](doc/screenshots/practice-stats.png)
+
+</details>
+
+## ✨ Features
+
+### Input and recognition
+
+- **📷 Many ways to add questions**: upload images, paste from the clipboard (Ctrl/⌘+V), take a screenshot, or type the question (Markdown and LaTeX supported). Crop images, or select several questions on one image to import them in a batch.
+- **🤖 AI recognition and solving**: AI extracts the question text, answer, analysis, the student's wrong answer and the cause of the mistake, identifies the subject and picks tags from the knowledge library. Turn on "Review before importing" in **Settings → General** to check and edit results before saving.
+- **🔁 Duplicate detection**: on import, question text is compared by similarity. Above the threshold (90% by default, adjustable in settings) the question is not imported again; a new wrong attempt is recorded on the original instead.
+- **🆔 Question ID**: every question has a 6-digit ID you can copy or type into the notebook to open it directly. Printed questions and exams show the source ID so you can find the original when entering results.
+
+### Question content
+
+- **∑ LaTeX formulas**: formulas in questions, answers and analyses are rendered with KaTeX, supporting `$…$`, `$$…$$`, `\(…\)` and `\[…\]`; switch between source and preview while editing. When a formula has syntax errors, a **Fix LaTeX** button appears and AI fixes only the formula syntax.
+- **📝 Regenerate the solution**: **Regenerate full solution** on the details page asks AI to rewrite the answer and analysis (with confirmation before overwriting); knowledge points and the cause of the mistake stay unchanged.
+- **🖼️ Question figures**: during recognition AI redraws figures as SVG, which is used on the details page, in printouts and in exams. Check the original photo with "View original image", or replace and add photos.
+- **⭐ Difficulty stars**: on import AI rates difficulty from 1 to 5 stars following the star scale of a well-known Chinese math competition textbook series (1–2 stars: textbook and school extension, 3–4: regular math olympiad, 5: hardest competition problems). You can change it manually; questions with 4 stars or more go to paper B by default.
+- **🏷️ Knowledge-point tags**: each notebook is created for a school stage (primary / junior high / senior high) and a subject (cannot be changed later). AI picks tags from all knowledge points of that stage and subject. Custom tags are supported, and AI can re-tag the knowledge points and difficulty of one question or a whole notebook.
+
+### Explanations and demos
+
+- **🎬 SVG animated explanations**: AI generates step-by-step SVG animations of the solution, with play/pause, seeking, replay and full screen. On by default; turn it off in **Settings → General**.
+- **📐 GeoGebra demos**: for math and physics questions, AI can generate interactive GeoGebra figures. Off by default; turn it on in **Settings → General**.
+- Generated animations and GeoGebra demos can be deleted (with confirmation).
+
+### Review and practice
+
+- **🔄 Practice similar questions**: generate variant questions (fill-in-the-blank or free response) on the same knowledge point, choose the difficulty and record right or wrong.
+- **📈 Mastery probability**: AI estimates how likely you have mastered each question from the answer history of practice and exams; at 80% the question is marked as mastered automatically.
+- **🧾 Mistake exams**: draw questions at random by notebook, knowledge point and mastery, and turn them into a printable exam of similar questions. After finishing, enter results per question; they are added to the original question's answer history.
+- **🖨️ Print mistakes**: print filtered questions with your choice of question text or original image, answer, analysis and knowledge points, adjust image scale, then print or save as PDF.
+
+### Management and statistics
+
+- **🔍 Filters**: filter by mastery, date range, knowledge point, grade and term, paper level and more; supports bulk actions and comparing the similarity of two questions.
+- **📊 Statistics**: mastery rate, monthly trend and subject distribution for both mistakes and practice.
+- **⏳ Background tasks**: the button at the bottom right shows the progress of long-running jobs such as recognition, AI generation, bulk tagging and exam generation. Jobs keep running on the server after you leave the page.
+- **💾 Import and export**: export or import data backups in **Settings**.
+- **🕒 Application time zone**: Beijing time by default and changeable by administrators; dates and statistics follow the application time zone. See [TIME_ZONE.md](doc/TIME_ZONE.md) (Chinese).
+- **🔐 Multiple users and admin console**: sign-up and sign-in, with data isolated per user. Administrators open the admin console from **Settings → User Management** to view usage statistics and enable, disable or delete users.
+- **🔌 Openclaw integration**: an external Openclaw agent can upload question images in bulk via `POST /api/openclaw/batch-upload`; see the environment variables below.
+
+## 📸 Screenshot capture (HTTPS)
+
+Screen capture requires a secure browser context (HTTPS). When running in Docker or on a LAN, follow the **[HTTPS setup guide](doc/HTTPS_SETUP.md)** (Chinese) to enable the built-in HTTPS support.
+
+## 📱 PWA (add to home screen)
+
+The app is a PWA: add it to your phone's home screen to run it full screen and open it with one tap.
+
+- **iPhone / iPad (Safari)**: tap **Share** at the bottom → **Add to Home Screen**.
+- **Android (Chrome)**: tap the **menu** at the top right → **Add to Home screen** or **Install app**.
+
+## 🛠️ Tech stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router) + [React 19](https://react.dev/) + TypeScript
+- **Database**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) (shadcn/ui-style components)
+- **Formulas**: [KaTeX](https://katex.org/) (react-markdown + remark-math)
+- **AI**: Google Gemini / OpenAI (and compatible APIs) / Azure OpenAI / Anthropic (and compatible APIs)
+- **Auth**: [NextAuth.js v4](https://next-auth.js.org/)
+- **Testing**: Vitest (unit, integration), Playwright (E2E)
+
+## 🚀 Quick Start
+
+### Option 1: Run from source
+
+1. **Requirements**: Node.js 22 or later and npm.
+
+2. **Clone and install dependencies**:
+
+   ```bash
+   git clone https://github.com/margrop/wrong-notebook.git
+   cd wrong-notebook
+   npm ci
+   ```
+
+3. **Configure environment variables**: copy `.env.example` to `.env` and fill it in as described in [Environment variables](#-environment-variables).
+
+   ```bash
+   cp .env.example .env
+   ```
+
+4. **Initialize the database**: create the schema and the admin account, then import the system knowledge points (same as the Docker build):
+
+   ```bash
+   npx prisma migrate dev
+   npx prisma db seed
+   npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts
+   ```
+
+5. **Start the dev server**:
+
+   ```bash
+   npm run dev
+   ```
+
+   Open `http://localhost:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. **Change the password right after signing in.**
+
+AI API keys can also be set in the web settings after signing in; see the AI model configuration section below.
+
+### Option 2: Docker image (recommended)
+
+Every release publishes an image to GitHub Container Registry, `ghcr.io/margrop/wrong-notebook`, for `linux/amd64` and `linux/arm64`. Pull it directly; no source code needed.
+
+| Image tag | Description |
+| --- | --- |
+| Exact versions such as `2026.10.20` | Recommended; upgrade when you choose |
+| `2026.10` | Latest release of the month |
+| `latest` | Latest stable release |
+
+See [Releases](https://github.com/margrop/wrong-notebook/releases) for available versions.
+
+1. **Prepare directories and a secret**:
+
+   ```bash
+   mkdir -p wrong-notebook/data wrong-notebook/config
+   cd wrong-notebook
+   openssl rand -base64 32   # use the output as NEXTAUTH_SECRET
+   ```
+
+2. **Start the container** (either way):
+
+   With `docker run`:
+
+   ```bash
+   docker run -d --name wrong-notebook \
+     --restart always \
+     -e NEXTAUTH_SECRET="secret-from-previous-step" \
+     -e NEXTAUTH_URL="http://your-ip-or-domain:3000" \
+     -p 3000:3000 \
+     -v "$(pwd)/data:/app/data" \
+     -v "$(pwd)/config:/app/config" \
+     ghcr.io/margrop/wrong-notebook:latest
+   ```
+
+   With Docker Compose: download [`docker-compose.yml`](docker-compose.yml) into the current directory, set `NEXTAUTH_SECRET` (and `NEXTAUTH_URL`), then run:
+
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Sign in**: open `http://your-ip-or-domain:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. **Change the password right after signing in**, then enter your AI API key in the web settings.
+
+4. **Upgrade**: pull the new image and recreate the container. Data stays in the mounted directories; on startup only database migrations run.
+
+   ```bash
+   docker compose pull && docker compose up -d
+   # With docker run: docker pull the new image, docker rm -f wrong-notebook, then run the docker run command above again
+   ```
+
+   Back up the `data/` directory before upgrading.
+
+Data lives in the mounted `data/` (SQLite database) and `config/` (AI settings saved from the web UI, etc.) directories. **Settings → About** and `/api/health` show the running version. For HTTPS, see the [HTTPS setup guide](doc/HTTPS_SETUP.md) and `docker-compose.https.yml`.
+
+> The upstream image `ghcr.io/wttwins/wrong-notebook` **does not include** the features added in this repository. Use `ghcr.io/margrop/wrong-notebook`.
+
+### Option 3: Build the image from source
+
+Build it yourself if you change the code or need unreleased changes. The build runs all tests inside the image and produces a production build:
+
+```bash
+docker build -t wrong-notebook:local .
+
+docker run -d --name wrong-notebook \
+  -e NEXTAUTH_SECRET="your_secret_key" \
+  -p 3000:3000 \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/config:/app/config" \
+  wrong-notebook:local
+```
+
+With `docker-compose.yml`, change `image` to `wrong-notebook:local`.
+
+### Option 4: Installers (npm / Windows / macOS / Linux / fnOS)
+
+If you prefer not to use Docker, download the desktop app or the fnOS package from [Releases](https://github.com/margrop/wrong-notebook/releases), or install with npm:
+
+```bash
+npm install -g wrong-notebook
+wrong-notebook --port 3000
+```
+
+| Platform | Package |
+| :--- | :--- |
+| Windows | `WrongNotebook-Win-Setup-<version>-x64.exe` (installer), `WrongNotebook-Win-Portable-<version>-x64.exe` (portable) |
+| macOS | `WrongNotebook-Mac-<version>-arm64.dmg` (Apple silicon), `WrongNotebook-Mac-<version>-x64.dmg` (Intel) |
+| Linux | `WrongNotebook-Linux-<version>-<arch>.AppImage`, `.deb` |
+| fnOS | `WrongNotebook-FnOS-<version>-x86.fpk`, `WrongNotebook-FnOS-<version>-arm.fpk` |
+
+The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. Data directories, default accounts and local builds are described in [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) (Chinese).
+
+## 🔧 Environment variables
+
+**Basics**
+
+| Variable | Description | Default | Notes |
+| :--- | :--- | :--- | :--- |
+| `DATABASE_URL` | Database URL | Source: `file:./dev.db`; Docker: `file:/app/data/dev.db` | SQLite database path |
+| `NEXTAUTH_SECRET` | Auth secret | None | Encrypts sessions; required in production. Generate with `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | Public URL | None | The URL users visit, e.g. `http://your-domain:3000` |
+| `AUTH_TRUST_HOST` | Trust host header | `true` in the Docker image | When `true`, the URL is inferred from the request; suits Docker and reverse proxies |
+| `LOG_LEVEL` | Log level | `debug` in development / `info` in production | `trace`, `debug`, `info`, `warn`, `error` or `fatal`; see [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) (Chinese) |
+| `DEBUG_DB` | SQL logs | `false` | When `true`, logs database queries |
+| `HTTP_PROXY` / `HTTPS_PROXY` | Proxy | None | Proxy for requests to AI services |
+
+**AI** (settings saved in the web UI take precedence over environment variables)
+
+| Variable | Description | Default | Notes |
+| :--- | :--- | :--- | :--- |
+| `AI_PROVIDER` | AI provider | `gemini` | `gemini`, `openai`, `azure` or `anthropic` |
+| `GOOGLE_API_KEY` | Gemini API key | None | From [Google AI Studio](https://aistudio.google.com/apikey) |
+| `GEMINI_BASE_URL` | Gemini API URL | Official URL | Usually unchanged |
+| `GEMINI_MODEL` | Gemini model | `gemini-2.5-flash` | `gemini-3.8-flash` recommended |
+| `OPENAI_API_KEY` | OpenAI API key | None | From [OpenAI Platform](https://platform.openai.com/api-keys) |
+| `OPENAI_BASE_URL` | OpenAI API URL | `https://api.openai.com/v1` | Set to the provider's URL for compatible services |
+| `OPENAI_MODEL` | OpenAI model | `gpt-4o` | `gpt-6.1-sol` recommended |
+| `AZURE_OPENAI_API_KEY` | Azure API key | None | From the Azure portal |
+| `AZURE_OPENAI_ENDPOINT` | Azure endpoint | None | e.g. `https://xxx.openai.azure.com` |
+| `AZURE_OPENAI_DEPLOYMENT` | Deployment name | None | The deployment name configured in Azure |
+| `AZURE_OPENAI_API_VERSION` | API version | `2024-02-15-preview` | |
+| `AZURE_OPENAI_MODEL` | Model name | `gpt-4o` | Display only |
+| `ANTHROPIC_API_KEY` | Anthropic API key | None | From the [Claude Console](https://platform.claude.com/) |
+| `ANTHROPIC_BASE_URL` | API URL | `https://api.anthropic.com` | For compatible services, use the URL without `/v1` |
+| `ANTHROPIC_MODEL` | Model | `claude-sonnet-5-5` | e.g. `claude-opus-5-5`, `claude-haiku-5-5` |
+
+**Openclaw integration** (optional)
+
+| Variable | Description | Default | Notes |
+| :--- | :--- | :--- | :--- |
+| `OPENCLAW_API_URL` | Openclaw agent URL | None | URL of your local Openclaw agent |
+| `OPENCLAW_API_KEY` | Openclaw API key | None | Used when calling the Openclaw agent |
+| `OPENCLAW_TIMEOUT` | Timeout (ms) | `30000` | |
+| `OPENCLAW_AUTH_MODE` | Auth mode | `credentials` | `credentials` (username and password) or `apikey` |
+| `OPENCLAW_INTEGRATION_API_KEY` | This app's API key | None | Only for `apikey` mode, used by Openclaw to call this app. Generate with `openssl rand -hex 32` |
+
+When adding environment variables, update `.env.example` as well.
+
+## ⚙️ AI model configuration
+
+AI settings can be changed in the web UI without restarting the server.
+
+1. **Open settings**: as an administrator, click the settings icon at the top right of the home page and open **AI Provider**.
+2. **Choose a provider**: Google Gemini, OpenAI, Azure OpenAI or Anthropic (including compatible APIs). You can add several configurations and switch between them.
+3. **Fill in the parameters**: API key, base URL (or endpoint) and model (or deployment name). Test the connection and fetch the model list from the API.
+4. **Save**: settings are stored in `config/app-config.json` and take precedence over `.env`.
+
+The **Prompts** tab lets you customize the prompt templates for recognition and similar-question generation.
+
+### Model requirements
+
+The selected model must meet these requirements, or some features will fail or work poorly:
+
+| Requirement | Used by | Notes |
+| :--- | :--- | :--- |
+| **Image input (multimodal)** | Recognizing photos and screenshots, AI redrawing figures, regenerating solutions when an original image exists | Text-only models can only be used with text input; image recognition will fail |
+| **Accurate SVG code** | Question figures, figures in similar questions and exams, SVG animated explanations | These "images" are SVG code written by the model. **No image-generation model is called** and the model does not need to output images; its geometry and SVG animation (SMIL) skills determine the quality of figures and animations |
+| **Long single outputs** | SVG animated explanations (16384-token limit), question recognition with figures (8192-token limit) | A truncated output is retried once with 32768 tokens. With a maximum output below 16K, animated explanations often fail |
+| **Strict output format** | All AI features | Results are parsed from tags such as `<answer_text>` and `<svg_animation>` or from JSON; a mismatch shows an error saying the AI response format is invalid and the model may be incompatible |
+| **Valid LaTeX** | Questions, answers, analyses | Formulas must render in KaTeX; use **Fix LaTeX** on the details page if there are syntax errors |
+| **Strong math reasoning** | Solutions, mistake analysis, difficulty stars, mastery estimates | Reasoning (thinking) models work; their thinking output is ignored. If thinking takes long, administrators can raise **AI Analysis Timeout** in **Settings → General** |
+
+Use each provider's current multimodal flagship or fast model, such as `gemini-3.8-flash`, `gpt-6.1-sol` or `claude-sonnet-5-5`. For third-party models behind compatible APIs, make sure they support image input first.
+
+### Configuration examples
+
+#### Google Gemini
+
+| Parameter | Where to get it |
+| :--- | :--- |
+| API key | [Google AI Studio](https://aistudio.google.com/apikey) → Create API key |
+| Base URL | Default `https://generativelanguage.googleapis.com`; usually unchanged |
+| Model | `gemini-3.8-flash` (recommended), etc. |
+
+#### OpenAI
+
+| Parameter | Where to get it |
+| :--- | :--- |
+| API key | [OpenAI Platform](https://platform.openai.com/api-keys) → Create new secret key |
+| Base URL | Default `https://api.openai.com/v1` |
+| Model | `gpt-6.1-sol` (recommended), etc. |
+
+> **Compatible services**: the OpenAI provider works with any third-party service that implements the OpenAI API format. Set the base URL to the service's address to use models from platforms such as SiliconFlow, Zhipu GLM, Moonshot Kimi or Alibaba DashScope, and enter the platform's full model ID.
+
+#### Azure OpenAI
+
+| Parameter | Where to get it |
+| :--- | :--- |
+| API key | Azure portal → your OpenAI resource → Keys and Endpoint |
+| Endpoint | Azure portal → your OpenAI resource → Endpoint, e.g. `https://xxx.openai.azure.com` |
+| Deployment name | The model deployment name configured in Azure, e.g. `gpt-4o` |
+| API version | Default `2024-02-15-preview` |
+
+#### Anthropic
+
+| Parameter | Where to get it |
+| :--- | :--- |
+| API key | [Claude Console](https://platform.claude.com/) → API Keys |
+| Base URL | Default `https://api.anthropic.com`; usually unchanged |
+| Model | `claude-sonnet-5-5` (recommended), `claude-opus-5-5`, `claude-haiku-5-5`, etc. |
+
+> **Compatible services**: the Anthropic provider also works with third-party services that implement the Anthropic Messages API. Enter the base URL from the provider without `/v1` (the app appends `/v1/messages`) and the platform's model ID. Thinking output from reasoning models is ignored.
+
+> **Permissions**: AI settings, prompts, connection tests and model lists are admin-only. Regular users can only change their own preferences in **Settings → General** (review before importing, SVG animated explanations, GeoGebra demos, duplicate threshold). The application time zone is set by administrators.
+
+## 🧪 Development and testing
+
+```bash
+npm run lint                # ESLint
+npm run test:unit           # Unit tests
+npm run test:integration    # Integration tests
+npm test                    # All Vitest tests
+npm run test:e2e            # Playwright E2E
+bash scripts/ci.sh          # Full CI (Node.js 22+, Python 3, includes production build)
+```
+
+After changing `prisma/schema.prisma`, create a migration with `npx prisma migrate dev --name <name>` and commit it; migrations must be compatible with existing data. See [AGENTS.md](AGENTS.md) for more development conventions.
+
+## 📚 Documentation
+
+Most documents are written in Simplified Chinese.
+
+| Document | Content |
+| :--- | :--- |
+| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm, desktop and fnOS packages and builds |
+| [HTTPS_SETUP.md](doc/HTTPS_SETUP.md) | HTTPS setup (needed for screen capture) |
+| [TIME_ZONE.md](doc/TIME_ZONE.md) | Application time zone |
+| [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) | Logging |
+| [MARKDOWN_GUIDE.md](doc/MARKDOWN_GUIDE.md) | Markdown and formulas |
+| [TABLE_RECOGNITION.md](doc/TABLE_RECOGNITION.md) | Table recognition |
+| [PROJECT_OVERVIEW.md](doc/PROJECT_OVERVIEW.md), [operational_flow.md](doc/operational_flow.md) | Project structure and workflows (partly predates features added in this repository) |
+| [release-guide.md](doc/release-guide.md) | Releasing |
+| [BRANCH_WORKFLOW.md](doc/BRANCH_WORKFLOW.md) | Public mainline and pre-push checks |
+| [setup-wsl-network.md](doc/setup-wsl-network.md) | WSL networking |
+
+## 🛠️ Utility scripts
+
+The `scripts/` directory contains maintenance and debugging scripts, for example:
+
+- **Reset a password**: `node scripts/reset-password.js <email> <new-password>`
+- **Recreate the admin**: `node scripts/seed-admin.js` (default `admin@localhost` / `123456`)
+- **Rebuild system knowledge points**: `npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts` (keeps custom tags and question links; back up before running in production)
+- **Inspect the database**: `node scripts/check-db-users.js`, `node scripts/check-db-data.js`
+
+## 📄 License
+
+MIT License

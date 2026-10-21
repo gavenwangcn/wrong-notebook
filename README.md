@@ -4,6 +4,8 @@
 
 # Smart Wrong Notebook (智能错题本)
 
+**简体中文** | [English](README.en.md)
+
 一个基于 AI 的智能错题管理系统：拍照或输入题目后，由 AI 识别、解答、打知识点标签并评定难度，支持错题本管理、举一反三练习、组卷打印和掌握程度跟踪。
 
 🌐 **项目介绍页**：<https://blog.margrop.net/wrong-notebook-github-pages/>
