@@ -1,0 +1,78 @@
+# 快速开始
+
+普通部署推荐使用 [Docker 镜像](Deployment)。需要调试或修改源码时，按本页准备本地环境。
+
+## 环境要求
+
+- Node.js 22 或更新版本，以及 npm。
+- Git；运行完整 CI 时还需要 Python 3。
+- 可访问所选 AI 服务的网络，以及相应的 API 凭据。
+
+数据库默认使用 SQLite，不需要额外部署数据库服务。
+
+## 获取代码与安装依赖
+
+```bash
+git clone https://github.com/margrop/wrong-notebook.git
+cd wrong-notebook
+npm ci
+cp .env.example .env
+```
+
+编辑 `.env`，至少确认数据库路径和会话密钥：
+
+```dotenv
+DATABASE_URL="file:./dev.db"
+NEXTAUTH_SECRET="替换为随机生成的密钥"
+NEXTAUTH_URL="http://localhost:3000"
+```
+
+运行 `openssl rand -base64 32` 生成 `NEXTAUTH_SECRET`。`file:./dev.db` 相对于 `prisma/schema.prisma`，对应 `prisma/dev.db`。
+
+AI 凭据可以稍后登录网页，在管理员设置中填写；详见 [AI 模型配置](AI-Configuration)。
+
+## 初始化新数据库
+
+以下步骤适用于首次创建的开发数据库：
+
+```bash
+npx prisma generate
+npx prisma migrate dev
+npx prisma db seed
+npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts
+```
+
+迁移创建表结构；种子脚本创建管理员；最后一步建立系统知识点库。已有生产数据库的升级请使用[部署与升级](Deployment)中的流程，先备份，再运行正式迁移。
+
+## 启动与首次登录
+
+```bash
+npm run dev
+```
+
+访问 <http://localhost:3000>，默认管理员为：
+
+| 项目 | 初始值 |
+| --- | --- |
+| 邮箱 | `admin@localhost` |
+| 密码 | `123456` |
+
+首次登录后立即修改密码，再配置 AI 服务。默认密码仅用于全新安装；升级已有实例应保留原有账户与密码。
+
+## 完成第一道错题
+
+1. 在管理员的 AI 设置中选择服务商、填写参数并测试连接。
+2. 创建错题本，选择学段和学科；二者创建后不可修改。
+3. 上传题目图片或手动输入文字，核对识别结果后保存。
+4. 在题目详情检查答案、解析、知识点和难度，再尝试举一反三。
+
+![拍照上传、文字录入和直接录入入口](https://raw.githubusercontent.com/margrop/wrong-notebook/93423c2675b7965e688cb966f4f4cd78e2e636d2/doc/screenshots/upload.png)
+
+## 安装到手机主屏幕
+
+- iPhone / iPad：在 Safari 中打开应用，选择“分享 → 添加到主屏幕”。
+- Android：在 Chrome 菜单中选择“添加到主屏幕”或“安装应用”。
+
+PWA 提供主屏幕入口；AI 识别等功能仍需要服务端和 AI 服务可用。截图还取决于浏览器是否支持屏幕共享，并要求安全上下文，详见[常见问题](FAQ)。
+
+完整环境变量示例见 [`.env.example`](https://github.com/margrop/wrong-notebook/blob/main/.env.example)。
