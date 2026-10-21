@@ -1,0 +1,3 @@
+#!/bin/bash
+# 安装后置：数据库在首次启动时由 launcher.js 初始化
+exit 0

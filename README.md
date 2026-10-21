@@ -269,6 +269,24 @@ docker run -d --name wrong-notebook \
 
 使用 `docker-compose.yml` 时，把其中的 `image` 改为 `wrong-notebook:local` 即可。
 
+### 方式四：安装包（npm / Windows / macOS / Linux / 飞牛OS）
+
+不想使用 Docker 时，可以从 [Releases](https://github.com/margrop/wrong-notebook/releases) 下载桌面版或飞牛OS 安装包，也可以通过 npm 安装：
+
+```bash
+npm install -g wrong-notebook
+wrong-notebook --port 3000
+```
+
+| 平台 | 安装包 |
+| :--- | :--- |
+| Windows | `WrongNotebook-Win-Setup-<版本>-x64.exe`（安装版）、`WrongNotebook-Win-Portable-<版本>-x64.exe`（免安装） |
+| macOS | `WrongNotebook-Mac-<版本>-arm64.dmg`（Apple 芯片）、`WrongNotebook-Mac-<版本>-x64.dmg`（Intel） |
+| Linux | `WrongNotebook-Linux-<版本>-<架构>.AppImage`、`.deb` |
+| 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk`、`WrongNotebook-FnOS-<版本>-arm.fpk` |
+
+数据目录、默认账号、本地构建方法见 [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md)。
+
 ## 🔧 环境变量
 
 **基础配置**
@@ -399,6 +417,7 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 
 | 文档 | 内容 |
 | :--- | :--- |
+| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm、桌面版、飞牛OS 安装包与构建 |
 | [HTTPS_SETUP.md](doc/HTTPS_SETUP.md) | HTTPS 配置（屏幕截图需要） |
 | [TIME_ZONE.md](doc/TIME_ZONE.md) | 应用时区 |
 | [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) | 日志 |

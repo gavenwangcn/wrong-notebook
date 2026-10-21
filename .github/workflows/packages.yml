@@ -1,0 +1,230 @@
+name: Packages
+
+# 全平台安装包：npm、Windows、macOS、Linux、飞牛OS
+# Prisma 引擎与构建机平台绑定，因此每个平台在对应架构的 Runner 上分别构建
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  npm:
+    name: npm
+    runs-on: ubuntu-24.04
+    # 只在 GitHub 上运行；Gitea 读取 main 时会回退到本目录，需跳过
+    if: github.server_url == 'https://github.com'
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "PACKAGE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          fi
+
+      - run: npm ci
+
+      - name: Build bundle and npm package
+        run: |
+          node scripts/package/build.mjs bundle
+          node scripts/package/build.mjs npm
+
+      - name: Smoke test npm package
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="$(mktemp -d)"
+          data="$(mktemp -d)"
+          npm install -g --prefix "$prefix" dist/wrong-notebook-*.tgz
+          "$prefix/bin/wrong-notebook" --port 39400 --host 127.0.0.1 --data-dir "$data" > "$data/server.log" 2>&1 &
+          for _ in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:39400/api/health; then exit 0; fi
+            sleep 1
+          done
+          cat "$data/server.log"
+          exit 1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-npm
+          path: dist/wrong-notebook-*.tgz
+          if-no-files-found: error
+
+      - name: Publish to npm
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "未配置 NPM_TOKEN，跳过 npm 发布"
+            exit 0
+          fi
+          tag=latest
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; fi
+          npm publish dist/wrong-notebook-*.tgz --access public --provenance --tag "$tag"
+
+  desktop:
+    name: Desktop (${{ matrix.name }})
+    if: github.server_url == 'https://github.com'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            args: --win --x64
+          - name: macos-arm64
+            os: macos-latest
+            args: --mac --arm64
+          - name: macos-x64
+            os: macos-15-intel
+            args: --mac --x64
+          - name: linux-x64
+            os: ubuntu-24.04
+            args: --linux --x64
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            args: --linux --arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "PACKAGE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          fi
+
+      # electron-builder 自带的 fpm 只有 x86_64 版本，arm64 上改用系统 fpm 生成 deb
+      - name: Install fpm (linux arm64)
+        if: matrix.name == 'linux-arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+          echo "USE_SYSTEM_FPM=true" >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - name: Build bundle
+        run: node scripts/package/build.mjs bundle
+
+      - name: Build desktop installers (unsigned)
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: node scripts/package/build.mjs desktop ${{ matrix.args }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-desktop-${{ matrix.name }}
+          path: |
+            dist/desktop/release/WrongNotebook-*.exe
+            dist/desktop/release/WrongNotebook-*.dmg
+            dist/desktop/release/WrongNotebook-*.zip
+            dist/desktop/release/WrongNotebook-*.AppImage
+            dist/desktop/release/WrongNotebook-*.deb
+          if-no-files-found: error
+
+  fnos:
+    name: fnOS (${{ matrix.arch }})
+    if: github.server_url == 'https://github.com'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            os: ubuntu-24.04
+            fnpack: fnpack-1.2.1-linux-amd64
+            sha256: 72d2a4095da676b64510b023731a227b369d80f8079bc45ff8a2f802ec0480c1
+          - arch: arm
+            os: ubuntu-24.04-arm
+            fnpack: fnpack-1.2.1-linux-arm64
+            sha256: aad9e16b101267d30017f39ab969e3c085fbce209716f8bd3b1e167eaf15e0cf
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "PACKAGE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install fnpack
+        run: |
+          curl -fsSL -o /usr/local/bin/fnpack "https://static2.fnnas.com/fnpack/${{ matrix.fnpack }}"
+          echo "${{ matrix.sha256 }}  /usr/local/bin/fnpack" | sha256sum -c -
+          chmod +x /usr/local/bin/fnpack
+
+      - run: npm ci
+
+      - name: Build fpk
+        run: |
+          node scripts/package/build.mjs bundle
+          node scripts/package/build.mjs fnos --arch ${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-fnos-${{ matrix.arch }}
+          path: dist/WrongNotebook-FnOS-*.fpk
+          if-no-files-found: error
+
+  release:
+    name: Upload to Release
+    needs: [npm, desktop, fnos]
+    if: github.server_url == 'https://github.com' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          pattern: package-*
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd assets
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Release 通常已由 release.yml 创建；不存在时先创建
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes ""
+          gh release upload "$GITHUB_REF_NAME" assets/* --clobber --repo "$GITHUB_REPOSITORY"

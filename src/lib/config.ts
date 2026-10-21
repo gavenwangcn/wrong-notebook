@@ -5,7 +5,8 @@ import { DEFAULT_TIME_ZONE, isValidTimeZone } from './date-time';
 
 const logger = createLogger('config');
 
-const CONFIG_FILE_PATH = path.join(process.cwd(), 'config', 'app-config.json');
+// 安装包（npm、桌面端、飞牛OS）通过 CONFIG_DIR 把配置放到用户数据目录，默认仍为 ./config
+const CONFIG_FILE_PATH = path.join(process.env.CONFIG_DIR || path.join(process.cwd(), 'config'), 'app-config.json');
 
 // OpenAI 实例配置
 export interface OpenAIInstance {
