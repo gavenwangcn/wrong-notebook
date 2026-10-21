@@ -80,6 +80,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
 
       - uses: actions/download-artifact@v4
         with:
@@ -92,7 +93,10 @@ jobs:
           npm --version
           tag=latest
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; fi
-          npm publish ./dist/wrong-notebook-*.tgz --access public --tag "$tag"
+          # OIDC 换取令牌失败时 npm 只在 verbose 日志中说明原因，这里筛出认证相关的行
+          npm publish ./dist/wrong-notebook-*.tgz --access public --provenance --tag "$tag" --loglevel verbose 2>&1 \
+            | grep -viE '^npm (notice|verbose) +[0-9.]+[kMB]* ' \
+            | grep -iE 'oidc|trust|token|auth|provenance|publish|error|^\+ '
 
   desktop:
     name: Desktop (${{ matrix.name }})
