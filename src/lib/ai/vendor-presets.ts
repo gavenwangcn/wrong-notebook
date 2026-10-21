@@ -19,6 +19,13 @@ export const VENDOR_PRESETS = {
         envPrefix: 'MINIMAX',
         consoleUrl: 'https://platform.minimax.cn',
     },
+    glm: {
+        name: '智谱 GLM',
+        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        model: 'glm-5.3-flash',
+        envPrefix: 'GLM',
+        consoleUrl: 'https://open.bigmodel.cn',
+    },
 } as const satisfies Record<string, VendorPreset>;
 
 export type VendorProviderId = keyof typeof VENDOR_PRESETS;

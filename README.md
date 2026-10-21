@@ -158,7 +158,7 @@
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
 - **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
-- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax
+- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM
 - **认证**: [NextAuth.js v4](https://next-auth.js.org/)
 - **测试**: Vitest（单元、集成）、Playwright（E2E）
 
@@ -309,7 +309,7 @@ wrong-notebook --port 3000
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax` |
+| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm` |
 | `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
 | `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
 | `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
@@ -325,6 +325,7 @@ wrong-notebook --port 3000
 | `ANTHROPIC_BASE_URL` | API 地址 | `https://api.anthropic.com` | 兼容服务填写不含 `/v1` 的地址 |
 | `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
+| `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
 
 **Openclaw 集成**（可选）
 
@@ -343,7 +344,7 @@ wrong-notebook --port 3000
 AI 配置可在网页中动态修改，无需重启服务器。
 
 1. **进入设置**：管理员点击首页右上角的设置图标，打开「AI 设置」。
-2. **选择提供商**：Google Gemini、OpenAI、Azure OpenAI、Anthropic（含兼容接口），或 MiniMax 官方渠道，可添加多个配置并切换。
+2. **选择提供商**：Google Gemini、OpenAI、Azure OpenAI、Anthropic（含兼容接口），或国产大模型官方渠道（MiniMax、智谱 GLM 等），可添加多个配置并切换。
 3. **填写参数**：API Key、Base URL（或 Endpoint）、模型（或部署名称）；可测试连接并从接口获取模型列表。
 4. **保存生效**：配置保存到 `config/app-config.json`，优先级高于 `.env`。
 
@@ -382,7 +383,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | Base URL | 默认 `https://api.openai.com/v1` |
 | 模型 | `gpt-6.1-sol`（推荐）等 |
 
-> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、智谱 GLM、月之暗面 Kimi、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
+> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、月之暗面 Kimi、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
 
 #### Azure OpenAI
 
@@ -410,6 +411,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | 渠道 | API Key 获取 | 默认 Base URL | 默认模型 |
 | :--- | :--- | :--- | :--- |
 | MiniMax | [MiniMax 开放平台](https://platform.minimax.cn) | `https://api.minimax.cn/v1`（国际站 `https://api.minimax.io/v1`） | `MiniMax-M3.1-Flash` |
+| 智谱 GLM | [智谱开放平台](https://open.bigmodel.cn) | `https://open.bigmodel.cn/api/paas/v4`（国际站 `https://api.z.ai/api/paas/v4`） | `glm-5.3-flash` |
 
 > **权限**：AI 设置、提示词、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。应用时区由管理员设置。
 

@@ -160,7 +160,7 @@ The app is a PWA: add it to your phone's home screen to run it full screen and o
 - **Database**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) (shadcn/ui-style components)
 - **Formulas**: [KaTeX](https://katex.org/) (react-markdown + remark-math)
-- **AI**: Google Gemini / OpenAI (and compatible APIs) / Azure OpenAI / Anthropic (and compatible APIs) / MiniMax
+- **AI**: Google Gemini / OpenAI (and compatible APIs) / Azure OpenAI / Anthropic (and compatible APIs) / MiniMax / Zhipu GLM
 - **Auth**: [NextAuth.js v4](https://next-auth.js.org/)
 - **Testing**: Vitest (unit, integration), Playwright (E2E)
 
@@ -311,7 +311,7 @@ The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebo
 
 | Variable | Description | Default | Notes |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI provider | `gemini` | `gemini`, `openai`, `azure`, `anthropic` or `minimax` |
+| `AI_PROVIDER` | AI provider | `gemini` | `gemini`, `openai`, `azure`, `anthropic`, `minimax` or `glm` |
 | `GOOGLE_API_KEY` | Gemini API key | None | From [Google AI Studio](https://aistudio.google.com/apikey) |
 | `GEMINI_BASE_URL` | Gemini API URL | Official URL | Usually unchanged |
 | `GEMINI_MODEL` | Gemini model | `gemini-2.5-flash` | `gemini-3.8-flash` recommended |
@@ -327,6 +327,7 @@ The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebo
 | `ANTHROPIC_BASE_URL` | API URL | `https://api.anthropic.com` | For compatible services, use the URL without `/v1` |
 | `ANTHROPIC_MODEL` | Model | `claude-sonnet-5-5` | e.g. `claude-opus-5-5`, `claude-haiku-5-5` |
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | URL `https://api.minimax.cn/v1`, model `MiniMax-M3.1-Flash` | URL and model are optional |
+| `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | Zhipu GLM | URL `https://open.bigmodel.cn/api/paas/v4`, model `glm-5.3-flash` | URL and model are optional |
 
 **Openclaw integration** (optional)
 
@@ -345,7 +346,7 @@ When adding environment variables, update `.env.example` as well.
 AI settings can be changed in the web UI without restarting the server.
 
 1. **Open settings**: as an administrator, click the settings icon at the top right of the home page and open **AI Provider**.
-2. **Choose a provider**: Google Gemini, OpenAI, Azure OpenAI, Anthropic (including compatible APIs), or the official MiniMax channel. You can add several configurations and switch between them.
+2. **Choose a provider**: Google Gemini, OpenAI, Azure OpenAI, Anthropic (including compatible APIs), or the official Chinese model channels (MiniMax, Zhipu GLM and more). You can add several configurations and switch between them.
 3. **Fill in the parameters**: API key, base URL (or endpoint) and model (or deployment name). Test the connection and fetch the model list from the API.
 4. **Save**: settings are stored in `config/app-config.json` and take precedence over `.env`.
 
@@ -384,7 +385,7 @@ Use each provider's current multimodal flagship or fast model, such as `gemini-3
 | Base URL | Default `https://api.openai.com/v1` |
 | Model | `gpt-6.1-sol` (recommended), etc. |
 
-> **Compatible services**: the OpenAI provider works with any third-party service that implements the OpenAI API format. Set the base URL to the service's address to use models from platforms such as SiliconFlow, Zhipu GLM, Moonshot Kimi or Alibaba DashScope, and enter the platform's full model ID.
+> **Compatible services**: the OpenAI provider works with any third-party service that implements the OpenAI API format. Set the base URL to the service's address to use models from platforms such as SiliconFlow, Moonshot Kimi or Alibaba DashScope, and enter the platform's full model ID.
 
 #### Azure OpenAI
 
@@ -412,6 +413,7 @@ These channels call each vendor's official OpenAI-compatible API, so only an API
 | Channel | API key | Default base URL | Default model |
 | :--- | :--- | :--- | :--- |
 | MiniMax | [MiniMax platform](https://platform.minimax.io) | `https://api.minimax.cn/v1` (international `https://api.minimax.io/v1`) | `MiniMax-M3.1-Flash` |
+| Zhipu GLM | [Z.ai platform](https://z.ai) | `https://open.bigmodel.cn/api/paas/v4` (international `https://api.z.ai/api/paas/v4`) | `glm-5.3-flash` |
 
 > **Permissions**: AI settings, prompts, connection tests and model lists are admin-only. Regular users can only change their own preferences in **Settings → General** (review before importing, SVG animated explanations, GeoGebra demos, duplicate threshold). The application time zone is set by administrators.
 

@@ -20,6 +20,7 @@ AI 设置、连接测试、模型列表与提示词设置只向管理员开放�
 | Azure OpenAI | API Key、Endpoint、部署名称 | API 版本默认 `2024-02-15-preview`；模型字段用于显示 |
 | Anthropic 或兼容接口 | API Key、模型 | 默认 `https://api.anthropic.com`；代码默认 `claude-sonnet-5-5` |
 | MiniMax | API Key | 默认 `https://api.minimax.cn/v1`；代码默认 `MiniMax-M3.1-Flash` |
+| 智谱 GLM | API Key | 默认 `https://open.bigmodel.cn/api/paas/v4`；代码默认 `glm-5.3-flash` |
 
 默认名称来自当前代码，不代表你的账户已开通这些模型。模型可用性、计费和能力以服务商为准。
 
@@ -27,7 +28,7 @@ OpenAI 兼容服务的 Base URL 应包含其要求的 API 路径；Anthropic 兼
 
 ## 环境变量
 
-基础选择使用 `AI_PROVIDER`，可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`。
+基础选择使用 `AI_PROVIDER`，可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm`。
 
 | 提供商 | 配置项 |
 | --- | --- |
@@ -36,6 +37,7 @@ OpenAI 兼容服务的 Base URL 应包含其要求的 API 路径；Anthropic 兼
 | Azure | `AZURE_OPENAI_API_KEY`、`AZURE_OPENAI_ENDPOINT`、`AZURE_OPENAI_DEPLOYMENT`、`AZURE_OPENAI_API_VERSION`、`AZURE_OPENAI_MODEL` |
 | Anthropic | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` |
 | MiniMax | `MINIMAX_API_KEY`、`MINIMAX_BASE_URL`、`MINIMAX_MODEL` |
+| 智谱 GLM | `GLM_API_KEY`、`GLM_BASE_URL`、`GLM_MODEL` |
 
 如果网页里已经保存配置，仅修改环境变量可能不会改变实际生效值；先检查网页中所选提供商和激活实例。全局 AI 分析超时可在管理员“设置 → 通用”中调整，代码默认 180 秒。
 
