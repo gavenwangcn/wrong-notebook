@@ -158,7 +158,7 @@
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
 - **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
-- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM
+- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM / DeepSeek
 - **认证**: [NextAuth.js v4](https://next-auth.js.org/)
 - **测试**: Vitest（单元、集成）、Playwright（E2E）
 
@@ -309,7 +309,7 @@ wrong-notebook --port 3000
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm` |
+| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm`、`deepseek` |
 | `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
 | `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
 | `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
@@ -326,6 +326,7 @@ wrong-notebook --port 3000
 | `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
 | `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
+| `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | 地址 `https://api.deepseek.com`，模型 `deepseek-flash` | 地址和模型可留空 |
 
 **Openclaw 集成**（可选）
 
@@ -412,6 +413,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | :--- | :--- | :--- | :--- |
 | MiniMax | [MiniMax 开放平台](https://platform.minimax.cn) | `https://api.minimax.cn/v1`（国际站 `https://api.minimax.io/v1`） | `MiniMax-M3.1-Flash` |
 | 智谱 GLM | [智谱开放平台](https://open.bigmodel.cn) | `https://open.bigmodel.cn/api/paas/v4`（国际站 `https://api.z.ai/api/paas/v4`） | `glm-5.3-flash` |
+| DeepSeek | [DeepSeek 开放平台](https://platform.deepseek.com) | `https://api.deepseek.com` | `deepseek-flash` |
 
 > **权限**：AI 设置、提示词、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。应用时区由管理员设置。
 

@@ -26,6 +26,13 @@ export const VENDOR_PRESETS = {
         envPrefix: 'GLM',
         consoleUrl: 'https://open.bigmodel.cn',
     },
+    deepseek: {
+        name: 'DeepSeek',
+        baseUrl: 'https://api.deepseek.com',
+        model: 'deepseek-flash',
+        envPrefix: 'DEEPSEEK',
+        consoleUrl: 'https://platform.deepseek.com',
+    },
 } as const satisfies Record<string, VendorPreset>;
 
 export type VendorProviderId = keyof typeof VENDOR_PRESETS;

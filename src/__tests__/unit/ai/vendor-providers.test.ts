@@ -38,6 +38,7 @@ import { POST as testConnection } from '@/app/api/ai/test/route';
 const EXPECTED: Record<VendorProviderId, { baseUrl: string; model: string }> = {
     minimax: { baseUrl: 'https://api.minimax.cn/v1', model: 'MiniMax-M3.1-Flash' },
     glm: { baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-5.3-flash' },
+    deepseek: { baseUrl: 'https://api.deepseek.com', model: 'deepseek-flash' },
 };
 
 const adminSession = { user: { id: 'admin-1', role: 'admin' }, expires: '2099-01-01' };
