@@ -4,10 +4,17 @@
 
 ## 版本标签策略
 
-项目以发布日期作为版本号，格式：`v年.月.日`，例如 `v2026.10.19`。
+项目以发布日期作为版本号，分为两类：
+
+| 类型 | 格式 | 示例 | 何时使用 |
+| --- | --- | --- | --- |
+| 预览版（默认） | `v年.月.日-n` | `v2026.10.19-1` | 日常发布；`n` 为当天第几次发布，从 1 开始 |
+| 正式版 | `v年.月.日` | `v2026.10.19` | **须经维护者确认后才能打**，AI 代理不得自行创建或推送 |
+
+- 预览版不会更新 Docker `latest`，npm 发布到 `next` 标签，GitHub Release 标记为预发布。
+- 正式版会更新 Docker `latest` 和 npm `latest`，发布前确认对应提交的 CI（含 E2E）已通过。
 
 - 月、日不补零：2026 年 1 月 5 日写作 `v2026.1.5`，不能写成 `v2026.01.05`（npm 版本号不允许前导零）。
-- 同一天需要再次发布时，可追加预发布后缀，如 `v2026.10.19-1`（带 `-` 的标签不会更新 `latest`）。
 - 版本号在构建镜像时由 Git 标签自动得出（环境变量 `APP_VERSION`），发版无需修改代码。设置页「关于」和 `/api/health` 显示该版本号（不含 `v`）。
   - 推送标签触发的构建使用标签本身的版本，如 `2026.10.19`。
   - 其他构建（`scripts/build-image.sh`、手动镜像构建）使用 `git describe` 的结果；标签之后还有提交时形如 `2026.10.19-3-gabc1234`。
@@ -27,7 +34,10 @@ git push github main
 ### 2. 创建版本标签
 
 ```bash
-# 创建标签（使用当天日期）
+# 默认创建预览版标签（当天日期 + 序号）
+git tag v2026.10.19-1
+
+# 正式版标签须经维护者确认后再创建
 git tag v2026.10.19
 
 # 或指定提交创建标签
@@ -37,8 +47,9 @@ git tag v2026.10.19 <commit-sha>
 ### 3. 推送标签触发构建
 
 ```bash
-python3 scripts/check-public-history.py v2026.10.19
-git push github v2026.10.19
+python3 scripts/check-public-history.py v2026.10.19-1
+git push github v2026.10.19-1
+git push origin v2026.10.19-1
 ```
 
 首次发布后，GHCR 镜像默认为私有，需在 GitHub 的 Packages → wrong-notebook → Package settings 中改为 Public。
