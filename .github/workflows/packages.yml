@@ -66,6 +66,7 @@ jobs:
           if-no-files-found: error
 
   # 发布单独成一个 Job：npm 发布失败不影响安装包上传到 Release
+  # 使用 npm Trusted Publishing（OIDC），无需 NPM_TOKEN；需在 npmjs.com 包设置中登记本仓库的 packages.yml
   npm-publish:
     name: Publish to npm
     needs: npm
@@ -75,10 +76,10 @@ jobs:
       contents: read
       id-token: write
     steps:
+      # Trusted Publishing 需要 npm 11.5.1 及以上，Node.js 24 自带
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '24'
 
       - uses: actions/download-artifact@v4
         with:
@@ -87,16 +88,11 @@ jobs:
 
       - name: Publish
         shell: bash
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "未配置 NPM_TOKEN，跳过 npm 发布"
-            exit 0
-          fi
+          npm --version
           tag=latest
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then tag=next; fi
-          npm publish ./dist/wrong-notebook-*.tgz --access public --provenance --tag "$tag"
+          npm publish ./dist/wrong-notebook-*.tgz --access public --tag "$tag"
 
   desktop:
     name: Desktop (${{ matrix.name }})

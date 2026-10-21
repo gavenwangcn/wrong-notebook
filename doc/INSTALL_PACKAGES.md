@@ -69,7 +69,7 @@ node scripts/package/build.mjs fnos --arch x86        # 需要 PATH 中有 fnpac
 
 推送 `v*` 标签后，`.github/workflows/packages.yml` 在各平台 Runner 上构建全部安装包并上传到对应的 GitHub Release；也可以在 Actions 页面手动运行，只生成构建产物。
 
-npm 发布需要在仓库 Secrets 中配置 `NPM_TOKEN`，未配置时跳过发布；带 `-` 的预发布标签发布到 npm 的 `next` 标签。
+npm 使用 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（OIDC）发布，不需要 `NPM_TOKEN`。npmjs.com 上 `wrong-notebook` 包的 Settings → Trusted Publisher 已登记 GitHub Actions：`margrop/wrong-notebook`、工作流 `packages.yml`；重命名该工作流文件时需同步修改登记。带 `-` 的预发布标签发布到 npm 的 `next` 标签。npm 发布在独立的 Job 中，失败不影响安装包上传到 Release。
 
 ## 目录结构
 
