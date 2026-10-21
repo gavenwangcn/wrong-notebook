@@ -160,7 +160,7 @@ The app is a PWA: add it to your phone's home screen to run it full screen and o
 - **Database**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) (shadcn/ui-style components)
 - **Formulas**: [KaTeX](https://katex.org/) (react-markdown + remark-math)
-- **AI**: Google Gemini / OpenAI (and compatible APIs) / Azure OpenAI / Anthropic (and compatible APIs) / MiniMax / Zhipu GLM / DeepSeek
+- **AI**: Google Gemini / OpenAI (and compatible APIs) / Azure OpenAI / Anthropic (and compatible APIs) / MiniMax / Zhipu GLM / DeepSeek / Kimi
 - **Auth**: [NextAuth.js v4](https://next-auth.js.org/)
 - **Testing**: Vitest (unit, integration), Playwright (E2E)
 
@@ -311,7 +311,7 @@ The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebo
 
 | Variable | Description | Default | Notes |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI provider | `gemini` | `gemini`, `openai`, `azure`, `anthropic`, `minimax`, `glm` or `deepseek` |
+| `AI_PROVIDER` | AI provider | `gemini` | `gemini`, `openai`, `azure`, `anthropic`, `minimax`, `glm`, `deepseek` or `kimi` |
 | `GOOGLE_API_KEY` | Gemini API key | None | From [Google AI Studio](https://aistudio.google.com/apikey) |
 | `GEMINI_BASE_URL` | Gemini API URL | Official URL | Usually unchanged |
 | `GEMINI_MODEL` | Gemini model | `gemini-2.5-flash` | `gemini-3.8-flash` recommended |
@@ -329,6 +329,7 @@ The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebo
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | URL `https://api.minimax.cn/v1`, model `MiniMax-M3.1-Flash` | URL and model are optional |
 | `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | Zhipu GLM | URL `https://open.bigmodel.cn/api/paas/v4`, model `glm-5.3-flash` | URL and model are optional |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | URL `https://api.deepseek.com`, model `deepseek-flash` | URL and model are optional |
+| `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | URL `https://api.moonshot.cn/v1`, model `kimi-k3` | URL and model are optional |
 
 **Openclaw integration** (optional)
 
@@ -386,7 +387,7 @@ Use each provider's current multimodal flagship or fast model, such as `gemini-3
 | Base URL | Default `https://api.openai.com/v1` |
 | Model | `gpt-6.1-sol` (recommended), etc. |
 
-> **Compatible services**: the OpenAI provider works with any third-party service that implements the OpenAI API format. Set the base URL to the service's address to use models from platforms such as SiliconFlow, Moonshot Kimi or Alibaba DashScope, and enter the platform's full model ID.
+> **Compatible services**: the OpenAI provider works with any third-party service that implements the OpenAI API format. Set the base URL to the service's address to use models from platforms such as SiliconFlow or Alibaba DashScope, and enter the platform's full model ID.
 
 #### Azure OpenAI
 
@@ -416,6 +417,7 @@ These channels call each vendor's official OpenAI-compatible API, so only an API
 | MiniMax | [MiniMax platform](https://platform.minimax.io) | `https://api.minimax.cn/v1` (international `https://api.minimax.io/v1`) | `MiniMax-M3.1-Flash` |
 | Zhipu GLM | [Z.ai platform](https://z.ai) | `https://open.bigmodel.cn/api/paas/v4` (international `https://api.z.ai/api/paas/v4`) | `glm-5.3-flash` |
 | DeepSeek | [DeepSeek platform](https://platform.deepseek.com) | `https://api.deepseek.com` | `deepseek-flash` |
+| Kimi | [Kimi platform](https://platform.kimi.com) | `https://api.moonshot.cn/v1` (international `https://api.moonshot.ai/v1`) | `kimi-k3` |
 
 > **Permissions**: AI settings, prompts, connection tests and model lists are admin-only. Regular users can only change their own preferences in **Settings → General** (review before importing, SVG animated explanations, GeoGebra demos, duplicate threshold). The application time zone is set by administrators.
 

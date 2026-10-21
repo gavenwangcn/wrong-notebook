@@ -158,7 +158,7 @@
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
 - **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
-- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM / DeepSeek
+- **AI**: Google Gemini / OpenAI（及兼容接口）/ Azure OpenAI / Anthropic（及兼容接口）/ MiniMax / 智谱 GLM / DeepSeek / Kimi
 - **认证**: [NextAuth.js v4](https://next-auth.js.org/)
 - **测试**: Vitest（单元、集成）、Playwright（E2E）
 
@@ -309,7 +309,7 @@ wrong-notebook --port 3000
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm`、`deepseek` |
+| `AI_PROVIDER` | AI 提供商 | `gemini` | 可选 `gemini`、`openai`、`azure`、`anthropic`、`minimax`、`glm`、`deepseek`、`kimi` |
 | `GOOGLE_API_KEY` | Gemini API Key | 无 | 从 [Google AI Studio](https://aistudio.google.com/apikey) 获取 |
 | `GEMINI_BASE_URL` | Gemini API 地址 | 官方地址 | 通常无需修改 |
 | `GEMINI_MODEL` | Gemini 模型 | `gemini-2.5-flash` | 推荐 `gemini-3.8-flash` |
@@ -327,6 +327,7 @@ wrong-notebook --port 3000
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
 | `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | 地址 `https://api.deepseek.com`，模型 `deepseek-flash` | 地址和模型可留空 |
+| `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | 地址 `https://api.moonshot.cn/v1`，模型 `kimi-k3` | 地址和模型可留空 |
 
 **Openclaw 集成**（可选）
 
@@ -384,7 +385,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | Base URL | 默认 `https://api.openai.com/v1` |
 | 模型 | `gpt-6.1-sol`（推荐）等 |
 
-> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、月之暗面 Kimi、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
+> **兼容模式**：OpenAI 提供商兼容所有支持 OpenAI API 格式的第三方服务。将 Base URL 改为对应服务地址，即可使用硅基流动、通义千问 DashScope 等平台的模型，模型名称填写对应平台的完整模型 ID。
 
 #### Azure OpenAI
 
@@ -414,6 +415,7 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | MiniMax | [MiniMax 开放平台](https://platform.minimax.cn) | `https://api.minimax.cn/v1`（国际站 `https://api.minimax.io/v1`） | `MiniMax-M3.1-Flash` |
 | 智谱 GLM | [智谱开放平台](https://open.bigmodel.cn) | `https://open.bigmodel.cn/api/paas/v4`（国际站 `https://api.z.ai/api/paas/v4`） | `glm-5.3-flash` |
 | DeepSeek | [DeepSeek 开放平台](https://platform.deepseek.com) | `https://api.deepseek.com` | `deepseek-flash` |
+| Kimi | [Kimi 开放平台](https://platform.kimi.com) | `https://api.moonshot.cn/v1`（国际站 `https://api.moonshot.ai/v1`） | `kimi-k3` |
 
 > **权限**：AI 设置、提示词、连接测试和模型列表只对管理员开放；普通用户在「设置 → 通用」中只能修改自己的偏好（导入前人工确认、SVG 动画讲解、GeoGebra 动态演示、判重阈值）。应用时区由管理员设置。
 

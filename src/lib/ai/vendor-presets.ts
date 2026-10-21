@@ -33,6 +33,13 @@ export const VENDOR_PRESETS = {
         envPrefix: 'DEEPSEEK',
         consoleUrl: 'https://platform.deepseek.com',
     },
+    kimi: {
+        name: 'Kimi',
+        baseUrl: 'https://api.moonshot.cn/v1',
+        model: 'kimi-k3',
+        envPrefix: 'KIMI',
+        consoleUrl: 'https://platform.kimi.com',
+    },
 } as const satisfies Record<string, VendorPreset>;
 
 export type VendorProviderId = keyof typeof VENDOR_PRESETS;
