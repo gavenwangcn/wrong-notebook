@@ -49,8 +49,8 @@ test('Admin can configure OpenAI settings with multi-instance support', async ({
     await page.locator('input[placeholder="https://api.openai.com/v1"]').fill(baseURL);
 
     // Model Name Input
-    // Placeholder for OpenAI custom model input is "gpt-4o"
-    await page.locator('input[placeholder="gpt-4o"]').fill(modelName);
+    // Placeholder for OpenAI custom model input is "gpt-6.1-sol"
+    await page.locator('input[placeholder="gpt-6.1-sol"]').fill(modelName);
 
     // 7. Save Settings
     page.once('dialog', async dialog => {
@@ -84,5 +84,5 @@ test('Admin can configure OpenAI settings with multi-instance support', async ({
     await expect(page.locator('button[role="combobox"]').first()).toHaveText('OpenAI / Compatible');
     await expect(page.locator('input[placeholder="sk-..."]')).toHaveValue(apiKey);
     await expect(page.locator('input[placeholder="https://api.openai.com/v1"]')).toHaveValue(baseURL);
-    await expect(page.locator('input[placeholder="gpt-4o"]')).toHaveValue(modelName);
+    await expect(page.locator('input[placeholder="gpt-6.1-sol"]')).toHaveValue(modelName);
 });
