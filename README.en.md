@@ -26,18 +26,18 @@ The screenshots below were taken from the running app (2026-10-20) and show real
 
 **Notebook**: see each question's summary, difficulty stars and knowledge points on one page. Filter by grade, term, mastery and A/B paper, open a question by its ID, compare similarity or print in bulk.
 
-![Question cards with difficulty stars, knowledge-point tags and filters](doc/screenshots/notebook.png)
+![Question cards with difficulty stars, knowledge-point tags and filters](doc/screenshots/en/notebook.png)
 
 <details>
 <summary><strong>Input and preferences: photo upload, text input, review before import and configurable duplicate detection</strong></summary>
 
 The home page offers photo upload, manual input and direct entry, with drag-and-drop and clipboard paste.
 
-![Photo upload, manual input, direct entry and clipboard paste on the home page](doc/screenshots/upload.png)
+![Photo upload, manual input, direct entry, clipboard paste and screenshot on the home page](doc/screenshots/en/upload.png)
 
 General settings control review before import, SVG animated explanations, GeoGebra demos and the similarity threshold for duplicate detection.
 
-![Review before import, animated explanations, GeoGebra and duplicate threshold in General settings](doc/screenshots/preferences.png)
+![Review before import, animated explanations, GeoGebra and duplicate threshold in General settings](doc/screenshots/en/preferences.png)
 
 </details>
 
@@ -46,7 +46,7 @@ General settings control review before import, SVG animated explanations, GeoGeb
 
 Each question shows its text, knowledge points, grade, term and paper level. You can check the original photo and start practicing similar questions from here.
 
-![Question details with formulas, difficulty stars, knowledge points, grade and term](doc/screenshots/question-detail.png)
+![Question details with formulas, difficulty stars, knowledge points, grade and term](doc/screenshots/en/question-detail.png)
 
 </details>
 
@@ -55,7 +55,7 @@ Each question shows its text, knowledge points, grade, term and paper level. You
 
 An animated explanation of a hexagon coloring problem, showing region relationships and the recursive counting. The player supports pause, seeking, replay and full screen.
 
-![SVG animated explanation of a hexagon coloring problem with counting table and player controls](doc/screenshots/svg-animation.png)
+![SVG animated explanation of a hexagon coloring problem with counting table and player controls](doc/screenshots/en/svg-animation.png)
 
 </details>
 
@@ -64,7 +64,7 @@ An animated explanation of a hexagon coloring problem, showing region relationsh
 
 Results from practice questions and exams are collected under the original question; expand a record to see the variant question and its answer. AI estimates your mastery from the actual answer history to help plan the next review.
 
-![Exam variant questions, wrong-then-right answer history and AI mastery estimate](doc/screenshots/mastery-history.png)
+![Exam variant questions, wrong-then-right answer history and AI mastery estimate](doc/screenshots/en/mastery-history.png)
 
 </details>
 
@@ -73,11 +73,11 @@ Results from practice questions and exams are collected under the original quest
 
 Generated exams keep each source question's ID and show every attempt, so you can trace the effect back to the original question.
 
-![A generated exam with source IDs and multiple attempt results](doc/screenshots/exam.png)
+![A generated exam with source IDs and multiple attempt results](doc/screenshots/en/exam.png)
 
 The print preview can include an answer page; download it as HTML, print it, or save it as PDF from the browser.
 
-![Exam print preview with source IDs, answer page toggle and export options](doc/screenshots/exam-print.png)
+![Exam print preview with source IDs, answer page toggle and export options](doc/screenshots/en/exam-print.png)
 
 </details>
 
@@ -86,7 +86,7 @@ The print preview can include an answer page; download it as HTML, print it, or 
 
 The standard tag library organizes knowledge points by curriculum level, and also offers custom tags and usage statistics.
 
-![Math knowledge points expanded by grade 4, geometry, angles and quadrilaterals](doc/screenshots/knowledge-tags.png)
+![Math knowledge points expanded by grade 4, geometry, angles and quadrilaterals](doc/screenshots/en/knowledge-tags.png)
 
 </details>
 
@@ -95,11 +95,11 @@ The standard tag library organizes knowledge points by curriculum level, and als
 
 Mistake statistics show total mistakes, mastered count, mastery rate, subject distribution and monthly trend.
 
-![Mistake count, mastery rate, subject distribution and monthly trend charts](doc/screenshots/error-stats.png)
+![Mistake count, mastery rate, subject distribution and monthly trend charts](doc/screenshots/en/error-stats.png)
 
 Practice statistics show total practice, accuracy and active months, with distribution and trends by subject and difficulty.
 
-![Practice count, accuracy, active months and practice trend charts](doc/screenshots/practice-stats.png)
+![Practice count, accuracy, active months and practice trend charts](doc/screenshots/en/practice-stats.png)
 
 </details>
 
