@@ -115,6 +115,20 @@ function installExternalAliasResolver() {
     });
 }
 
+/**
+ * 安装包只保留 .prisma/client 里的一份查询引擎，让 Prisma CLI 也使用它，避免运行迁移时联网下载
+ */
+function useBundledQueryEngine(env) {
+    if (env.PRISMA_QUERY_ENGINE_LIBRARY) return;
+    try {
+        const clientDir = path.dirname(require.resolve('.prisma/client/index.js', { paths: [APP_DIR] }));
+        const engine = fs.readdirSync(clientDir).find((name) => /^(lib)?query_engine-.*\.node$/.test(name));
+        if (engine) env.PRISMA_QUERY_ENGINE_LIBRARY = path.join(clientDir, engine);
+    } catch {
+        // npm 安装且尚未生成 Prisma Client 时交给 Prisma 自行查找
+    }
+}
+
 function prepare(options = {}) {
     const dataDir = path.resolve(options.dataDir || defaultDataDir());
     const configDir = path.join(dataDir, 'config');
@@ -131,11 +145,13 @@ function prepare(options = {}) {
         NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || ensureSecret(dataDir),
         AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'true',
         PRESERVE_EXISTING_DATA: 'true',
+        PRISMA_HIDE_UPDATE_MESSAGE: 'true',
         APP_VERSION: process.env.APP_VERSION || version,
         WRONG_NOTEBOOK_HOME: dataDir,
     };
 
     ensurePrismaClient(env);
+    useBundledQueryEngine(env);
 
     if (!fs.existsSync(dbFile) || fs.statSync(dbFile).size === 0) {
         const seed = path.join(APP_DIR, 'prisma', 'seed.db');

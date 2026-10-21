@@ -127,6 +127,47 @@ function collectRuntimeDependencies(nodeModules) {
     return deps;
 }
 
+/**
+ * 精简 Prisma 相关文件，缩小桌面版和飞牛OS 安装包：
+ *   - 查询引擎只保留本平台的一份（.prisma/client 内），删除其他平台和重复的副本
+ *   - 删除 Prisma Client 中只用于 Edge / WebAssembly / React Native 的运行时
+ * 迁移只需 schema 引擎；Prisma CLI 用到查询引擎时由 launcher.js 通过 PRISMA_QUERY_ENGINE_LIBRARY 指向保留的那一份
+ */
+function pruneBundle() {
+    const nodeModules = path.join(BUNDLE, 'node_modules');
+    const isQueryEngine = (name) => /^(lib)?query_engine[-_.]/.test(name);
+    const native = fs.readdirSync(path.join(ROOT, 'node_modules', '@prisma', 'engines')).find(isQueryEngine);
+    if (!native) throw new Error('未找到本平台的 Prisma 查询引擎');
+    const before = dirSize(nodeModules);
+
+    const clientDir = path.join(nodeModules, '.prisma', 'client');
+    for (const name of fs.readdirSync(clientDir)) {
+        if ((isQueryEngine(name) && name !== native) || name.startsWith('query_engine_bg.')) rm(path.join(clientDir, name));
+    }
+    for (const dir of [path.join(nodeModules, 'prisma'), path.join(nodeModules, '@prisma', 'engines')]) {
+        for (const name of fs.readdirSync(dir)) if (isQueryEngine(name)) rm(path.join(dir, name));
+    }
+    const runtimeDir = path.join(nodeModules, '@prisma', 'client', 'runtime');
+    for (const name of fs.readdirSync(runtimeDir)) {
+        if (/\.wasm$|^(edge|edge-esm|wasm|react-native)\.(js|d\.ts)$/.test(name)) rm(path.join(runtimeDir, name));
+    }
+    for (const pkg of ['adapter-libsql', 'driver-adapter-utils']) rm(path.join(nodeModules, '@prisma', pkg));
+
+    if (!fs.existsSync(path.join(clientDir, native))) throw new Error(`.prisma/client 中缺少本平台查询引擎 ${native}`);
+    const mb = (bytes) => `${(bytes / 1048576).toFixed(0)}MB`;
+    log(`精简 node_modules：${mb(before)} → ${mb(dirSize(nodeModules))}`);
+}
+
+function dirSize(dir) {
+    let total = 0;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) total += dirSize(full);
+        else if (entry.isFile()) total += fs.statSync(full).size;
+    }
+    return total;
+}
+
 function buildBundle() {
     rm(WORK);
     fs.mkdirSync(WORK, { recursive: true });
@@ -168,6 +209,7 @@ function buildBundle() {
     for (const dir of ['.prisma', 'prisma', '@prisma']) {
         copy(path.join(ROOT, 'node_modules', dir), path.join(BUNDLE, 'node_modules', dir));
     }
+    pruneBundle();
     fs.copyFileSync(path.join(PACKAGING, 'runtime', 'launcher.js'), path.join(BUNDLE, 'launcher.js'));
 
     const pkg = readJson(path.join(BUNDLE, 'package.json'));
