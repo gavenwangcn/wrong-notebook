@@ -16,23 +16,6 @@ const DANGEROUS_OPEN_TAGS = /<\/?(script|foreignObject|iframe|object|embed|audio
 
 const MAX_SANITIZE_PASSES = 10;
 
-function sanitizeOnce(svg: string): string {
-    return svg
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/<!DOCTYPE[^>]*>/gi, '')
-        .replace(/<\?[\s\S]*?\?>/g, '')
-        .replace(DANGEROUS_ELEMENTS, '')
-        .replace(DANGEROUS_OPEN_TAGS, '')
-        // 事件属性（onload 等）
-        .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-        // 只允许指向本文档内部的链接（#id），去掉外部和 javascript: 链接
-        .replace(/\s+(?:xlink:)?href\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>"']+)/gi, '')
-        // 样式中的外部资源与脚本
-        .replace(/@import[^;]*;?/gi, '')
-        .replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none')
-        .replace(/(?:javascript|vbscript|data)\s*:/gi, '');
-}
-
 /**
  * 从 AI 回复中取出 <svg>…</svg> 并净化；没有有效 SVG、超长或净化后为空时返回 null
  */
@@ -46,12 +29,26 @@ export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_S
     if (svg.length > maxLength) return null;
 
     // 删除一处可能拼出新的危险片段（如 <scr<script>ipt>），反复净化直到结果不再变化
-    for (let pass = 0; ; pass++) {
-        const next = sanitizeOnce(svg);
-        if (next === svg) break;
-        if (pass >= MAX_SANITIZE_PASSES) return null;
-        svg = next;
-    }
+    let previous: string;
+    let pass = 0;
+    do {
+        if (pass++ > MAX_SANITIZE_PASSES) return null;
+        previous = svg;
+        svg = svg
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/<!DOCTYPE[^>]*>/gi, '')
+            .replace(/<\?[\s\S]*?\?>/g, '')
+            .replace(DANGEROUS_ELEMENTS, '')
+            .replace(DANGEROUS_OPEN_TAGS, '')
+            // 事件属性（onload 等）
+            .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+            // 只允许指向本文档内部的链接（#id），去掉外部和 javascript: 链接
+            .replace(/\s+(?:xlink:)?href\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>"']+)/gi, '')
+            // 样式中的外部资源与脚本
+            .replace(/@import[^;]*;?/gi, '')
+            .replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none')
+            .replace(/(?:javascript|vbscript|data)\s*:/gi, '');
+    } while (svg !== previous);
 
     if (!/<svg[^>]*\sxmlns\s*=/i.test(svg)) {
         svg = svg.replace(/<svg/i, `<svg xmlns="${SVG_NS}"`);

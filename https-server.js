@@ -73,7 +73,7 @@ const httpsServer = https.createServer(options, (req, res) => {
     // 代理错误处理
     proxyReq.on('error', (err) => {
         // 错误信息可能包含请求内容，去掉换行防止伪造日志行
-        console.error('[HTTPS] 代理错误:', String(err.message).replace(/[\r\n]+/g, ' '));
+        console.error('[HTTPS] 代理错误:', String(err.message).replace(/\n|\r/g, ''));
         if (!res.headersSent) {
             res.writeHead(502);
             res.end('Bad Gateway');
