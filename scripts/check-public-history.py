@@ -19,6 +19,11 @@ EXAMPLE_ADDRESSES = {
     ".".join(("10", "0", "0", "1")): {"src/__tests__/unit/ai/ai-test-route.test.ts", "src/__tests__/unit/ai/models-route.test.ts"},
     ".".join(("172", "30", "108", "211")): {"doc/setup-wsl-network.md"},
     ".".join(("192", "168", "1", "100")): {"doc/HTTPS_SETUP.md", "doc/setup-wsl-network.md", "docker-compose.https.yml"},
+    ".".join(("192", "168", "1", "10")): {
+        "README.md", "README.en.md", "doc/INSTALL_PACKAGES.md", "src/__tests__/unit/android-app.test.tsx",
+        "packaging/android/app/src/main/res/values/strings.xml",
+        "packaging/android/app/src/main/res/values-zh/strings.xml",
+    },
 }
 IPV4 = re.compile(rb"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])")
 PRIVATE_MARKERS = (
