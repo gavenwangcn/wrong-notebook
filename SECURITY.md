@@ -17,6 +17,12 @@
 
 收到报告后会尽快确认，并在修复发布后公开说明。感谢你帮助项目更安全。
 
+## 自动检查
+
+- [CodeQL](.github/workflows/codeql.yml) 代码扫描：每次推送、PR 和每周定时运行。
+- Dependabot：依赖漏洞告警与自动安全更新，配置见 [.github/dependabot.yml](.github/dependabot.yml)。
+- 密钥扫描与推送保护：阻止 API Key 等凭据进入仓库。
+
 ## 部署建议
 
 - 生产环境务必设置随机的 `NEXTAUTH_SECRET`，并修改默认管理员密码。

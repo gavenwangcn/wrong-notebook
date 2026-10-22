@@ -46,9 +46,9 @@ npm run dev                 # http://localhost:3000，默认管理员 admin@loca
    涉及页面流程的改动请运行 `npm run test:e2e`，完整检查可运行 `bash scripts/ci.sh`。
 6. 发起 Pull Request，说明改动内容、原因和测试方式；界面改动请附截图。PR 须通过 CI（含 E2E）后才能合并。
 
-## 依赖更新
+## 依赖与安全检查
 
-依赖由 [Dependabot](.github/dependabot.yml) 每周检查：次要版本和补丁版本合并成一个 PR，主版本升级单独提 PR；安全更新随时提交。Prisma 主版本升级会影响数据库迁移和安卓单机版的引擎编译，需要人工评估。
+[CodeQL](.github/workflows/codeql.yml) 在每次推送、PR 和每周定时扫描 TypeScript、安卓 Java 代码与 CI 工作流，结果见仓库的 Security 页面。依赖由 [Dependabot](.github/dependabot.yml) 每周检查：次要版本和补丁版本合并成一个 PR，主版本升级单独提 PR；安全更新随时提交。Prisma 主版本升级会影响数据库迁移和安卓单机版的引擎编译，需要人工评估。
 
 ## 许可
 
