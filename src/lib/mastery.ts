@@ -1,12 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { getAIService } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { MASTERY_THRESHOLD, masteryLevelOf, masteryStatusWhere } from "@/lib/mastery-status";
+import type { MasteryStatus } from "@/lib/mastery-status";
+import type { Prisma } from "@prisma/client";
 import type { MasteryHistoryEntry, PracticeResult } from "@/lib/ai/types";
 
 const logger = createLogger('mastery');
 
-/** 掌握概率达到该阈值时自动标记为已掌握 */
-export const MASTERY_THRESHOLD = 0.8;
+export { MASTERY_THRESHOLD };
 
 export const PRACTICE_RESULTS: readonly PracticeResult[] = ['correct', 'wrong', 'not_attempted'];
 
@@ -43,8 +45,9 @@ export function computeRuleMastery(history: Pick<MasteryHistoryEntry, 'result' |
     return Math.round((weightedSum / weightTotal) * 100) / 100;
 }
 
+/** 有举一反三记录时的 masteryLevel：1 复习中，2 已掌握 */
 export function masteryLevelFor(probability: number): number {
-    return probability >= MASTERY_THRESHOLD ? 1 : 0;
+    return masteryLevelOf(probability >= MASTERY_THRESHOLD ? 'mastered' : 'reviewing');
 }
 
 /**
@@ -82,7 +85,7 @@ export async function evaluateErrorItemMastery(errorItemId: string): Promise<voi
     if (ruleProbability === null) {
         await prisma.errorItem.update({
             where: { id: item.id },
-            data: { masteryProbability: null, masteryReason: null, masterySource: null, masteryEvaluatedAt: null },
+            data: { masteryProbability: null, masteryReason: null, masterySource: null, masteryEvaluatedAt: null, masteryLevel: masteryLevelOf('new') },
         });
         return;
     }
@@ -118,6 +121,15 @@ export async function evaluateErrorItemMastery(errorItemId: string): Promise<voi
         },
     });
     logger.info({ errorItemId, probability, source }, 'Mastery evaluated');
+}
+
+/** 按复习状态统计错题数量 */
+export async function countByMasteryStatus(where: Prisma.ErrorItemWhereInput = {}): Promise<Record<MasteryStatus, number>> {
+    const [newCount, reviewing, mastered] = await Promise.all(
+        (['new', 'reviewing', 'mastered'] as const).map((status) =>
+            prisma.errorItem.count({ where: { AND: [where, masteryStatusWhere(status)] } })),
+    );
+    return { new: newCount, reviewing, mastered };
 }
 
 // 后台评估队列：串行执行，同一题重复入队时只评估一次

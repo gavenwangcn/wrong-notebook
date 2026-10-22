@@ -102,7 +102,7 @@ describe('/api/exams', () => {
 
             expect(response.status).toBe(201);
             const where = mocks.errorItem.findMany.mock.calls[0][0].where;
-            expect(where).toMatchObject({ userId: 'user-1', subjectId: { in: ['s1'] }, masteryLevel: 0 });
+            expect(where).toMatchObject({ userId: 'user-1', subjectId: { in: ['s1'] }, NOT: { masteryProbability: { gte: 0.5 } } });
             const created = mocks.examPaper.create.mock.calls[0][0].data;
             expect(created.questions.create).toHaveLength(2);
             for (const question of created.questions.create) {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, forbidden, notFound, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { masteryStatusOf } from "@/lib/mastery-status";
 
 const logger = createLogger('api:error-items:practice-records');
 
@@ -63,6 +64,7 @@ export async function GET(
         const { userId: _userId, practiceRecords, ...mastery } = item;
         return NextResponse.json({
             ...mastery,
+            masteryStatus: masteryStatusOf(practiceRecords.length, mastery.masteryProbability),
             records: practiceRecords.map(({ examQuestion, ...record }) => ({
                 ...record,
                 exam: examQuestion

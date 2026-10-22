@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { getAIService } from "@/lib/ai";
 import type { DifficultyLevel } from "@/lib/ai/types";
 import { createLogger } from "@/lib/logger";
+import { masteryStatusWhere } from "@/lib/mastery-status";
 import { startBackgroundTask, trackBackgroundTask } from "@/lib/background-tasks";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
 import type { BackgroundTaskHandle } from "@/lib/background-tasks";
@@ -36,10 +37,11 @@ export function buildSourceWhere(userId: string, selection: ExamSelection): Pris
         subjectId: { in: selection.subjectIds },
         shortId: { not: null },
     };
+    // 未掌握包括待复习和复习中
     if (selection.scope === 'unmastered') {
-        where.masteryLevel = 0;
+        where.NOT = masteryStatusWhere('mastered');
     } else if (selection.scope === 'mastered') {
-        where.masteryLevel = { gt: 0 };
+        where.AND = [masteryStatusWhere('mastered')];
     }
     if (selection.tagNames && selection.tagNames.length > 0) {
         where.tags = { some: { name: { in: selection.tagNames } } };

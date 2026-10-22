@@ -131,7 +131,7 @@ Practice statistics show total practice, accuracy and active months, with distri
 ### Review and practice
 
 - **🔄 Practice similar questions**: generate variant questions (fill-in-the-blank or free response) on the same knowledge point, choose the difficulty and record right or wrong.
-- **📈 Mastery probability**: AI estimates how likely you have mastered each question from the answer history of practice and exams; at 80% the question is marked as mastered automatically.
+- **📈 Mastery probability**: AI estimates how likely you have mastered each question from the answer history of practice and exams. Questions fall into three states: **To Review** (no practice records yet), **Reviewing** (has records, probability below 50%) and **Mastered** (has records, probability 50% or above).
 - **🧾 Mistake exams**: draw questions at random by notebook, knowledge point and mastery, and turn them into a printable exam of similar questions. After finishing, enter results per question; they are added to the original question's answer history.
 - **🖨️ Print mistakes**: print filtered questions with your choice of question text or original image, answer, analysis and knowledge points, adjust image scale, then print or save as PDF.
 

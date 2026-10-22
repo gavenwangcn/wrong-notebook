@@ -72,7 +72,6 @@ import { POST } from '@/app/api/error-items/route';
 import { GET as GET_ITEM, PUT } from '@/app/api/error-items/[id]/route';
 import { GET as GET_LIST } from '@/app/api/error-items/list/route';
 import { PATCH as PATCH_NOTES } from '@/app/api/error-items/[id]/notes/route';
-import { PATCH as PATCH_MASTERY } from '@/app/api/error-items/[id]/mastery/route';
 import { DELETE as DELETE_ITEM } from '@/app/api/error-items/[id]/delete/route';
 import { getServerSession } from 'next-auth';
 
@@ -658,8 +657,8 @@ describe('/api/error-items', () => {
     describe('GET /api/error-items/list (获取错题列表)', () => {
         it('应该返回用户的错题（分页响应）', async () => {
             const errorItems = [
-                { id: '1', questionText: '题目1', userId: 'user-123' },
-                { id: '2', questionText: '题目2', userId: 'user-123' },
+                { id: '1', questionText: '题目1', userId: 'user-123', _count: { practiceRecords: 0 } },
+                { id: '2', questionText: '题目2', userId: 'user-123', _count: { practiceRecords: 0 } },
             ];
             mocks.mockPrismaErrorItem.count.mockResolvedValue(2);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue(errorItems);
@@ -679,7 +678,7 @@ describe('/api/error-items', () => {
         it('应该支持按科目筛选', async () => {
             mocks.mockPrismaErrorItem.count.mockResolvedValue(1);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([
-                { id: '1', questionText: '数学题', subjectId: 'math-id' },
+                { id: '1', questionText: '数学题', subjectId: 'math-id', _count: { practiceRecords: 0 } },
             ]);
 
             const request = new Request('http://localhost/api/error-items/list?subjectId=math-id');
@@ -718,21 +717,41 @@ describe('/api/error-items', () => {
             );
         });
 
-        it('应该支持按掌握程度筛选', async () => {
+        it.each([
+            ['new', { practiceRecords: { none: { result: { not: null } } } }],
+            ['reviewing', {
+                practiceRecords: { some: { result: { not: null } } },
+                OR: [{ masteryProbability: null }, { masteryProbability: { lt: 0.5 } }],
+            }],
+            ['mastered', { practiceRecords: { some: { result: { not: null } } }, masteryProbability: { gte: 0.5 } }],
+        ])('应该支持按复习状态 %s 筛选', async (status, condition) => {
             mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
 
-            const request = new Request('http://localhost/api/error-items/list?mastery=1');
+            const request = new Request(`http://localhost/api/error-items/list?mastery=${status}`);
             const response = await GET_LIST(request);
 
             expect(response.status).toBe(200);
             expect(mocks.mockPrismaErrorItem.findMany).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.objectContaining({
-                        masteryLevel: { gt: 0 },
-                    }),
+                    where: expect.objectContaining({ AND: [condition] }),
                 })
             );
+        });
+
+        it('列表应返回每道题的复习状态', async () => {
+            mocks.mockPrismaErrorItem.count.mockResolvedValue(3);
+            mocks.mockPrismaErrorItem.findMany.mockResolvedValue([
+                { id: 'a', masteryProbability: null, _count: { practiceRecords: 0 } },
+                { id: 'b', masteryProbability: 0.49, _count: { practiceRecords: 2 } },
+                { id: 'c', masteryProbability: 0.5, _count: { practiceRecords: 1 } },
+            ]);
+
+            const response = await GET_LIST(new Request('http://localhost/api/error-items/list'));
+            const data = await response.json();
+
+            expect(data.items.map((item: { masteryStatus: string }) => item.masteryStatus)).toEqual(['new', 'reviewing', 'mastered']);
+            expect(data.items[0]).not.toHaveProperty('_count');
         });
 
         it('应该支持按知识点标签筛选', async () => {
@@ -921,121 +940,6 @@ describe('/api/error-items', () => {
 
             expect(response.status).toBe(500);
             expect(data.message).toBe('Failed to update notes');
-        });
-    });
-
-    describe('PATCH /api/error-items/[id]/mastery (更新掌握程度)', () => {
-        it('应该成功更新掌握程度为已掌握', async () => {
-            // Mock ownership check (findUnique)
-            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({
-                id: 'error-item-1',
-                userId: 'user-123',
-            });
-            mocks.mockPrismaErrorItem.update.mockResolvedValue({
-                id: 'error-item-1',
-                userId: 'user-123',
-                masteryLevel: 1,
-            });
-
-            const request = new Request('http://localhost/api/error-items/error-item-1/mastery', {
-                method: 'PATCH',
-                body: JSON.stringify({ masteryLevel: 1 }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            const response = await PATCH_MASTERY(request, { params: Promise.resolve({ id: 'error-item-1' }) });
-            const data = await response.json();
-
-            expect(response.status).toBe(200);
-            expect(data.masteryLevel).toBe(1);
-        });
-
-        it('应该成功更新掌握程度为未掌握', async () => {
-            // Mock ownership check (findUnique)
-            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({
-                id: 'error-item-1',
-                userId: 'user-123',
-            });
-            mocks.mockPrismaErrorItem.update.mockResolvedValue({
-                id: 'error-item-1',
-                userId: 'user-123',
-                masteryLevel: 0,
-            });
-
-            const request = new Request('http://localhost/api/error-items/error-item-1/mastery', {
-                method: 'PATCH',
-                body: JSON.stringify({ masteryLevel: 0 }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            const response = await PATCH_MASTERY(request, { params: Promise.resolve({ id: 'error-item-1' }) });
-            const data = await response.json();
-
-            expect(response.status).toBe(200);
-            expect(data.masteryLevel).toBe(0);
-        });
-
-        it('应该支持不同级别的掌握程度', async () => {
-            const levels = [0, 1, 2, 3];
-
-            for (const level of levels) {
-                // Mock ownership check (findUnique)
-                mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({
-                    id: 'error-item-1',
-                    userId: 'user-123',
-                });
-                mocks.mockPrismaErrorItem.update.mockResolvedValue({
-                    id: 'error-item-1',
-                    userId: 'user-123',
-                    masteryLevel: level,
-                });
-
-                const request = new Request('http://localhost/api/error-items/error-item-1/mastery', {
-                    method: 'PATCH',
-                    body: JSON.stringify({ masteryLevel: level }),
-                    headers: { 'Content-Type': 'application/json' },
-                });
-
-                const response = await PATCH_MASTERY(request, { params: Promise.resolve({ id: 'error-item-1' }) });
-                expect(response.status).toBe(200);
-            }
-        });
-
-        it('应该拒绝未登录用户', async () => {
-            mocks.mockPrismaUser.findUnique.mockResolvedValue(null);
-
-            const request = new Request('http://localhost/api/error-items/error-item-1/mastery', {
-                method: 'PATCH',
-                body: JSON.stringify({ masteryLevel: 1 }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            const response = await PATCH_MASTERY(request, { params: Promise.resolve({ id: 'error-item-1' }) });
-            const data = await response.json();
-
-            expect(response.status).toBe(401);
-            expect(data.message).toBeDefined();
-        });
-
-        it('应该处理数据库错误', async () => {
-            // Mock ownership check succeeds, but update fails
-            mocks.mockPrismaErrorItem.findUnique.mockResolvedValue({
-                id: 'error-item-1',
-                userId: 'user-123',
-            });
-            mocks.mockPrismaErrorItem.update.mockRejectedValue(new Error('Database error'));
-
-            const request = new Request('http://localhost/api/error-items/error-item-1/mastery', {
-                method: 'PATCH',
-                body: JSON.stringify({ masteryLevel: 1 }),
-                headers: { 'Content-Type': 'application/json' },
-            });
-
-            const response = await PATCH_MASTERY(request, { params: Promise.resolve({ id: 'error-item-1' }) });
-            const data = await response.json();
-
-            expect(response.status).toBe(500);
-            expect(data.message).toBe('Failed to update error item');
         });
     });
 

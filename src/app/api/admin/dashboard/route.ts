@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/auth-utils"
 import { forbidden, internalError } from "@/lib/api-errors"
+import { countByMasteryStatus } from "@/lib/mastery"
 import { createLogger } from "@/lib/logger"
 import { getAppTimeZone } from "@/lib/config"
 import { formatDateTime, getDayRange } from "@/lib/date-time"
@@ -102,17 +103,7 @@ export async function GET() {
         }
 
         // 掌握度统计 (全局)
-        const masteryStats = await prisma.errorItem.groupBy({
-            by: ['masteryLevel'],
-            _count: {
-                id: true
-            }
-        })
-        const masteryDistribution = {
-            new: masteryStats.find(m => m.masteryLevel === 0)?._count.id || 0,
-            reviewing: masteryStats.find(m => m.masteryLevel === 1)?._count.id || 0,
-            mastered: masteryStats.find(m => m.masteryLevel === 2)?._count.id || 0,
-        }
+        const masteryDistribution = await countByMasteryStatus()
 
         return NextResponse.json({
             overview: {

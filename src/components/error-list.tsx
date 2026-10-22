@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Search, Filter, CheckCircle, Clock, ChevronDown, Printer, ListChecks, GitCompareArrows, Inbox } from "lucide-react";
+import { Search, Filter, ChevronDown, Printer, ListChecks, GitCompareArrows, Inbox } from "lucide-react";
 import Link from "next/link";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
@@ -24,6 +24,7 @@ import {
 import { ErrorListSelectionBar } from "@/components/error-list-selection-bar";
 import { DifficultyStars } from "@/components/difficulty-stars";
 import { KnowledgeFilter } from "@/components/knowledge-filter";
+import { MASTERY_STATUS_BORDER, MasteryStatusBadge } from "@/components/mastery-status-badge";
 import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
 import { cleanMarkdown } from "@/lib/markdown-utils";
@@ -33,6 +34,7 @@ import { getMistakeStatusLabel } from "@/lib/mistake-status";
 import { isShortId } from "@/lib/short-id-format";
 import { locateByShortId } from "@/lib/short-id-client";
 import { toast, confirmDialog } from "@/lib/feedback";
+import type { MasteryStatus } from "@/lib/mastery-status";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -50,7 +52,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
     const [items, setItems] = useState<ErrorItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
-    const [masteryFilter, setMasteryFilter] = useState<"all" | "mastered" | "unmastered">("all");
+    const [masteryFilter, setMasteryFilter] = useState<"all" | MasteryStatus>("all");
     const [timeFilter, setTimeFilter] = useState<"all" | "week" | "month">("all");
     const [gradeFilter, setGradeFilter] = useState("");
     const [chapterFilter, setChapterFilter] = useState("");
@@ -74,7 +76,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         if (subjectId) params.append("subjectId", subjectId);
         if (search) params.append("query", search);
         if (masteryFilter !== "all") {
-            params.append("mastery", masteryFilter === "mastered" ? "1" : "0");
+            params.append("mastery", masteryFilter);
         }
         if (timeFilter !== "all") {
             params.append("timeRange", timeFilter);
@@ -210,7 +212,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             if (subjectId) params.append("subjectId", subjectId);
             if (search) params.append("query", search);
             if (masteryFilter !== "all") {
-                params.append("mastery", masteryFilter === "mastered" ? "1" : "0");
+                params.append("mastery", masteryFilter);
             }
             if (timeFilter !== "all") {
                 params.append("timeRange", timeFilter);
@@ -270,8 +272,11 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                         <DropdownMenuItem onClick={() => setMasteryFilter("all")}>
                             {masteryFilter === "all" && "✓ "}{t.filter.all || "All"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMasteryFilter("unmastered")}>
-                            {masteryFilter === "unmastered" && "✓ "}{t.filter.review || "To Review"}
+                        <DropdownMenuItem onClick={() => setMasteryFilter("new")}>
+                            {masteryFilter === "new" && "✓ "}{t.filter.review || "To Review"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setMasteryFilter("reviewing")}>
+                            {masteryFilter === "reviewing" && "✓ "}{t.filter.reviewing || "Reviewing"}
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setMasteryFilter("mastered")}>
                             {masteryFilter === "mastered" && "✓ "}{t.filter.mastered || "Mastered"}
@@ -412,23 +417,10 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                                 </div>
                             )}
                             <Link href={isSelectMode ? "#" : `/error-items/${item.id}`} onClick={(e) => isSelectMode && e.preventDefault()}>
-                                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${item.masteryLevel > 0 ? "border-l-success/70" : "border-l-warning/70"} ${isSelectMode && selectedIds.has(item.id) ? "ring-2 ring-primary" : "hover:border-primary/40"}`}>
+                                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${MASTERY_STATUS_BORDER[item.masteryStatus ?? "new"]} ${isSelectMode && selectedIds.has(item.id) ? "ring-2 ring-primary" : "hover:border-primary/40"}`}>
                                     <CardHeader className="pb-0">
                                         <div className={`flex justify-between items-start ${isSelectMode ? "pl-7" : ""}`}>
-                                            <Badge
-                                                variant="secondary"
-                                                className={item.masteryLevel > 0 ? "bg-success/15 text-success" : "bg-warning/15 text-amber-700 dark:text-warning"}
-                                            >
-                                                {item.masteryLevel > 0 ? (
-                                                    <span className="flex items-center gap-1">
-                                                        <CheckCircle className="h-3 w-3" /> {t.notebook.mastered}
-                                                    </span>
-                                                ) : (
-                                                    <span className="flex items-center gap-1">
-                                                        <Clock className="h-3 w-3" /> {t.notebook.review}
-                                                    </span>
-                                                )}
-                                            </Badge>
+                                            <MasteryStatusBadge status={item.masteryStatus ?? "new"} />
                                             <span className="flex items-center gap-2 text-xs text-muted-foreground">
                                                 {typeof item.masteryProbability === "number" && (
                                                     <span title={t.mastery.probability}>{Math.round(item.masteryProbability * 100)}%</span>

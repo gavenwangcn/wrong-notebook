@@ -151,7 +151,7 @@ function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: an
 function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: any }) {
     const total = data.masteryDistribution.new + data.masteryDistribution.reviewing + data.masteryDistribution.mastered
     const items = [
-        { key: "new", label: t.admin?.dashboard?.masteryNew || "未掌握", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
+        { key: "new", label: t.admin?.dashboard?.masteryNew || "待复习", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
         { key: "reviewing", label: t.admin?.dashboard?.masteryReviewing || "复习中", count: data.masteryDistribution.reviewing, icon: Clock, color: "text-yellow-500", bg: "bg-yellow-500" },
         { key: "mastered", label: t.admin?.dashboard?.masteryMastered || "已掌握", count: data.masteryDistribution.mastered, icon: CheckCircle, color: "text-green-500", bg: "bg-green-500" },
     ]

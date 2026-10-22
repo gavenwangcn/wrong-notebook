@@ -1,5 +1,6 @@
 import { ParsedQuestion } from "@/lib/ai/types";
 import type { VendorConfig, VendorProviderId } from "@/lib/ai/vendor-presets";
+import type { MasteryStatus } from "@/lib/mastery-status";
 
 // 通用分页响应类型
 export interface PaginatedResponse<T> {
@@ -70,6 +71,8 @@ export interface ErrorItem {
     tags?: Tag[];
 
     masteryLevel: number;
+    /** 列表接口根据举一反三记录与掌握概率推导的复习状态 */
+    masteryStatus?: MasteryStatus;
     masteryProbability?: number | null;
     masteryReason?: string | null;
     masterySource?: 'ai' | 'rule' | string | null;
@@ -263,7 +266,7 @@ export interface AdminUserDetail {
         id: string;
         questionText: string | null;
         ocrText: string | null;
-        masteryLevel: number;
+        masteryStatus: MasteryStatus;
         createdAt: string;
         subject: { name: string } | null;
     }[];
@@ -299,6 +302,7 @@ export interface PracticeHistoryRecord {
 
 export interface PracticeHistoryResponse {
     masteryLevel: number;
+    masteryStatus: MasteryStatus;
     masteryProbability: number | null;
     masteryReason: string | null;
     masterySource: string | null;

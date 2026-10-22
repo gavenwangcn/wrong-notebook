@@ -38,8 +38,14 @@ describe('computeRuleMastery', () => {
         expect(computeRuleMastery(history)!).toBeGreaterThanOrEqual(MASTERY_THRESHOLD);
     });
 
-    it('只做对一次时较为保守', () => {
-        expect(computeRuleMastery([{ result: 'correct', difficulty: 'medium' }])!).toBeLessThan(MASTERY_THRESHOLD);
+    it('只做对一次时低于连续做对', () => {
+        const once = computeRuleMastery([{ result: 'correct', difficulty: 'medium' }])!;
+        const thrice = computeRuleMastery([1, 2, 3].map(() => ({ result: 'correct' as const, difficulty: 'medium' })))!;
+        expect(once).toBeLessThan(thrice);
+    });
+
+    it('只做错一次时低于掌握阈值', () => {
+        expect(computeRuleMastery([{ result: 'wrong', difficulty: 'medium' }])!).toBeLessThan(MASTERY_THRESHOLD);
     });
 
     it('近期结果权重更高', () => {
@@ -68,9 +74,10 @@ describe('computeRuleMastery', () => {
 });
 
 describe('辅助函数', () => {
-    it('masteryLevelFor 按 80% 阈值判断', () => {
-        expect(masteryLevelFor(0.8)).toBe(1);
-        expect(masteryLevelFor(0.79)).toBe(0);
+    it('masteryLevelFor 按 50% 阈值区分复习中和已掌握', () => {
+        expect(MASTERY_THRESHOLD).toBe(0.5);
+        expect(masteryLevelFor(0.5)).toBe(2);
+        expect(masteryLevelFor(0.49)).toBe(1);
     });
 
     it('isPracticeResult 只接受三种结果', () => {
@@ -102,7 +109,7 @@ describe('evaluateErrorItemMastery', () => {
         expect(input.history).toHaveLength(2);
         expect(mocks.update).toHaveBeenCalledWith({
             where: { id: 'item-1' },
-            data: expect.objectContaining({ masteryProbability: 0.86, masterySource: 'ai', masteryLevel: 1, masteryReason: '连续做对困难题' }),
+            data: expect.objectContaining({ masteryProbability: 0.86, masterySource: 'ai', masteryLevel: 2, masteryReason: '连续做对困难题' }),
         });
     });
 
@@ -120,11 +127,11 @@ describe('evaluateErrorItemMastery', () => {
 
         const data = mocks.update.mock.calls[0][0].data;
         expect(data.masterySource).toBe('rule');
-        expect(data.masteryLevel).toBe(0);
+        expect(data.masteryLevel).toBe(1);
         expect(data.masteryProbability).toBe(computeRuleMastery([{ result: 'wrong', difficulty: 'medium' }]));
     });
 
-    it('记录全部删除后清空掌握概率，不改动掌握状态', async () => {
+    it('记录全部删除后清空掌握概率，恢复为待复习', async () => {
         mocks.findUnique.mockResolvedValue({ id: 'item-1', questionText: '', mistakeStatus: null, tags: [], practiceRecords: [] });
 
         await evaluateErrorItemMastery('item-1');
@@ -132,6 +139,6 @@ describe('evaluateErrorItemMastery', () => {
         expect(mocks.evaluateMastery).not.toHaveBeenCalled();
         const data = mocks.update.mock.calls[0][0].data;
         expect(data.masteryProbability).toBeNull();
-        expect(data).not.toHaveProperty('masteryLevel');
+        expect(data.masteryLevel).toBe(0);
     });
 });

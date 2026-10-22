@@ -13,13 +13,15 @@ import { PracticeRecordForm } from "@/components/practice-record-form";
 import { QuestionFigure } from "@/components/question-figure";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
-import type { PracticeHistoryResponse } from "@/types/api";
 import { toast, confirmDialog } from "@/lib/feedback";
+import { MASTERY_THRESHOLD } from "@/lib/mastery-status";
+import type { MasteryStatus } from "@/lib/mastery-status";
+import type { PracticeHistoryResponse } from "@/types/api";
 
 interface MasteryPanelProps {
     errorItemId: string;
-    /** 掌握状态被后台评估更新后回调，用于同步页面上的掌握开关 */
-    onMasteryLevelChange?: (level: number) => void;
+    /** 复习状态加载或被后台评估更新后回调，用于同步页面上的状态标签 */
+    onMasteryStatusChange?: (status: MasteryStatus) => void;
 }
 
 const POLL_INTERVAL_MS = 4000;
@@ -31,7 +33,7 @@ export const RESULT_BADGE_CLASS: Record<string, string> = {
     not_attempted: "bg-amber-100 text-amber-700 border-amber-200",
 };
 
-export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanelProps) {
+export function MasteryPanel({ errorItemId, onMasteryStatusChange }: MasteryPanelProps) {
     const { timeZone } = useTimeZone();
     const { t } = useLanguage();
     const [data, setData] = useState<PracticeHistoryResponse | null>(null);
@@ -43,11 +45,11 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
         apiClient.get<PracticeHistoryResponse>(`/api/error-items/${errorItemId}/practice-records`)
             .then((result) => {
                 setData(result);
-                onMasteryLevelChange?.(result.masteryLevel);
+                onMasteryStatusChange?.(result.masteryStatus);
             })
             // 记录加载失败不影响详情页其他内容
             .catch(() => undefined);
-    }, [errorItemId, onMasteryLevelChange]);
+    }, [errorItemId, onMasteryStatusChange]);
 
     useEffect(load, [load]);
 
@@ -84,7 +86,7 @@ export function MasteryPanel({ errorItemId, onMasteryLevelChange }: MasteryPanel
 
     const probability = data.masteryProbability;
     const percent = probability === null ? null : Math.round(probability * 100);
-    const barColor = percent === null ? "" : percent >= 80 ? "bg-green-500" : percent >= 50 ? "bg-amber-500" : "bg-red-500";
+    const barColor = percent === null ? "" : probability !== null && probability >= MASTERY_THRESHOLD ? "bg-green-500" : percent >= 30 ? "bg-amber-500" : "bg-red-500";
     const difficultyLabels = t.practice.difficulty as Record<string, string>;
 
     return (

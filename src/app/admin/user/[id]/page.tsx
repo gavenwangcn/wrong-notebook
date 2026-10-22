@@ -65,7 +65,7 @@ export default function AdminUserDetailPage() {
     }
 
     const masteryItems = [
-        { key: "new", label: t.admin?.dashboard?.masteryNew || "未掌握", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500" },
+        { key: "new", label: t.admin?.dashboard?.masteryNew || "待复习", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500" },
         { key: "reviewing", label: t.admin?.dashboard?.masteryReviewing || "复习中", count: data.masteryDistribution.reviewing, icon: Clock, color: "text-yellow-500" },
         { key: "mastered", label: t.admin?.dashboard?.masteryMastered || "已掌握", count: data.masteryDistribution.mastered, icon: CheckCircle, color: "text-green-500" },
     ]
@@ -244,14 +244,14 @@ export default function AdminUserDetailPage() {
                                             {item.subject && (
                                                 <Badge variant="outline" className="text-xs">{item.subject.name}</Badge>
                                             )}
-                                            {item.masteryLevel === 2 && (
+                                            {item.masteryStatus === "mastered" && (
                                                 <Badge variant="default" className="text-xs">{t.admin?.dashboard?.masteryMastered || "已掌握"}</Badge>
                                             )}
-                                            {item.masteryLevel === 1 && (
+                                            {item.masteryStatus === "reviewing" && (
                                                 <Badge variant="secondary" className="text-xs">{t.admin?.dashboard?.masteryReviewing || "复习中"}</Badge>
                                             )}
-                                            {item.masteryLevel === 0 && (
-                                                <Badge variant="outline" className="text-xs">{t.admin?.dashboard?.masteryNew || "未掌握"}</Badge>
+                                            {item.masteryStatus === "new" && (
+                                                <Badge variant="outline" className="text-xs">{t.admin?.dashboard?.masteryNew || "待复习"}</Badge>
                                             )}
                                         </div>
                                     </div>

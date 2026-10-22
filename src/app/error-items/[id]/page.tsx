@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoading } from "@/components/ui/page-loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle, XCircle, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, Eye, EyeOff, ImageIcon, FileQuestion } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, Eye, EyeOff, ImageIcon, FileQuestion } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,12 +30,14 @@ import { QuestionFigure } from "@/components/question-figure";
 import { RegenerateFigureButton } from "@/components/regenerate-figure-button";
 import { ReplaceQuestionImageButton } from "@/components/replace-question-image-button";
 import { MasteryPanel } from "@/components/mastery-panel";
+import { MasteryStatusBadge } from "@/components/mastery-status-badge";
 import { RetagItemButton } from "@/components/retag-item-button";
 import { RegenerateAnswerButton } from "@/components/regenerate-answer-button";
 import { FixLatexButton } from "@/components/fix-latex-button";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { toast, confirmDialog } from "@/lib/feedback";
+import type { MasteryStatus } from "@/lib/mastery-status";
 
 interface KnowledgeTag {
     id: string;
@@ -121,10 +123,8 @@ export default function ErrorDetailPage() {
         }
     }, [params.id]);
 
-    // 后台评估可能自动切换掌握状态，同步到页面
-    const handleMasteryLevelChange = useCallback((level: number) => {
-        setItem(prev => (prev && prev.masteryLevel !== level ? { ...prev, masteryLevel: level } : prev));
-    }, []);
+    // 复习状态由举一反三记录和掌握概率决定，随掌握面板的数据更新
+    const [masteryStatus, setMasteryStatus] = useState<MasteryStatus | null>(null);
 
     const fetchItem = async (id: string) => {
         try {
@@ -213,21 +213,6 @@ export default function ErrorDetailPage() {
     const handleSvgAnimationChange = useCallback((animationLanguage: 'zh' | 'en', svgAnimation: string | null) => {
         setItem((current) => current && { ...current, [animationLanguage === 'en' ? 'svgAnimationEn' : 'svgAnimation']: svgAnimation });
     }, []);
-
-    const toggleMastery = async () => {
-        if (!item) return;
-
-        const newLevel = item.masteryLevel > 0 ? 0 : 1;
-
-        try {
-            await apiClient.patch(`/api/error-items/${item.id}/mastery`, { masteryLevel: newLevel });
-            setItem({ ...item, masteryLevel: newLevel });
-            toast.success(newLevel > 0 ? (t.common?.messages?.markMastered || 'Marked as mastered') : (t.common?.messages?.unmarkMastered || 'Unmarked'));
-        } catch (error) {
-            console.error(error);
-            toast.error(t.common?.messages?.updateFailed || 'Update failed');
-        }
-    };
 
     const deleteItem = async () => {
         if (!item) return;
@@ -548,24 +533,7 @@ export default function ErrorDetailPage() {
                                 {t.detail.practice}
                             </Button>
                         </Link>
-                        <Button
-                            size="sm"
-                            variant={item.masteryLevel > 0 ? "default" : "default"}
-                            className={item.masteryLevel > 0 ? "bg-success text-white hover:bg-success/90" : ""}
-                            onClick={toggleMastery}
-                        >
-                            {item.masteryLevel > 0 ? (
-                                <>
-                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                    {t.detail.mastered}
-                                </>
-                            ) : (
-                                <>
-                                    <XCircle className="mr-2 h-4 w-4" />
-                                    {t.detail.markMastered}
-                                </>
-                            )}
-                        </Button>
+                        {masteryStatus && <MasteryStatusBadge status={masteryStatus} className="h-8 self-center px-3" />}
                         <Button
                             variant="ghost"
                             size="sm"
@@ -636,7 +604,7 @@ export default function ErrorDetailPage() {
                     </CardContent>
                 </Card>
 
-                <MasteryPanel errorItemId={item.id} onMasteryLevelChange={handleMasteryLevelChange} />
+                <MasteryPanel errorItemId={item.id} onMasteryStatusChange={setMasteryStatus} />
 
                 <div className="grid gap-6 lg:grid-cols-2">
                     <Card className="border-primary/20">

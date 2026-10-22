@@ -9,6 +9,7 @@ import { getAppTimeZone } from "@/lib/config";
 import { shiftCalendarDate } from "@/lib/date-time";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE } from "@/lib/constants/pagination";
 import { isShortId } from "@/lib/short-id";
+import { PRACTICE_RECORD_COUNT, isMasteryStatus, masteryStatusOf, masteryStatusWhere } from "@/lib/mastery-status";
 
 const logger = createLogger('api:error-items:list');
 
@@ -64,9 +65,9 @@ export async function GET(req: Request) {
             });
         }
 
-        // Mastery filter
-        if (mastery !== null) {
-            whereClause.masteryLevel = mastery === "1" ? { gt: 0 } : 0;
+        // 复习状态筛选：new 待复习 / reviewing 复习中 / mastered 已掌握
+        if (isMasteryStatus(mastery)) {
+            andConditions.push(masteryStatusWhere(mastery));
         }
 
         // Time range filter
@@ -155,6 +156,7 @@ export async function GET(req: Request) {
             include: {
                 subject: true,
                 tags: true,
+                _count: PRACTICE_RECORD_COUNT,
             },
             skip: (page - 1) * pageSize,
             take: pageSize,
@@ -163,7 +165,10 @@ export async function GET(req: Request) {
         const totalPages = Math.ceil(total / pageSize);
 
         return NextResponse.json({
-            items: errorItems,
+            items: errorItems.map(({ _count, ...item }) => ({
+                ...item,
+                masteryStatus: masteryStatusOf(_count.practiceRecords, item.masteryProbability),
+            })),
             total,
             page,
             pageSize,

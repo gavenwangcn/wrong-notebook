@@ -11,20 +11,23 @@ import { buildExamHtmlDocument, examFileName, KATEX_CSS_URL } from '@/lib/exam-p
 import { regionFromPoints } from '@/lib/image-crop';
 
 describe('buildSourceWhere', () => {
-    it('未掌握范围只选 masteryLevel 为 0 的题', () => {
+    const MASTERED = { practiceRecords: { some: { result: { not: null } } }, masteryProbability: { gte: 0.5 } };
+
+    it('未掌握范围选待复习和复习中的题', () => {
         const where = buildSourceWhere('u1', { subjectIds: ['s1'], scope: 'unmastered', count: 5 });
-        expect(where).toMatchObject({ userId: 'u1', subjectId: { in: ['s1'] }, masteryLevel: 0, shortId: { not: null } });
+        expect(where).toMatchObject({ userId: 'u1', subjectId: { in: ['s1'] }, NOT: MASTERED, shortId: { not: null } });
     });
 
-    it('已掌握范围选 masteryLevel 大于 0 的题，并可按知识点过滤', () => {
+    it('已掌握范围选已掌握的题，并可按知识点过滤', () => {
         const where = buildSourceWhere('u1', { subjectIds: ['s1', 's2'], scope: 'mastered', count: 5, tagNames: ['函数'] });
-        expect(where.masteryLevel).toEqual({ gt: 0 });
+        expect(where.AND).toEqual([MASTERED]);
         expect(where.tags).toEqual({ some: { name: { in: ['函数'] } } });
     });
 
     it('全部范围不限制掌握状态', () => {
         const where = buildSourceWhere('u1', { subjectIds: ['s1'], scope: 'all', count: 5 });
-        expect(where).not.toHaveProperty('masteryLevel');
+        expect(where).not.toHaveProperty('NOT');
+        expect(where).not.toHaveProperty('AND');
         expect(where).not.toHaveProperty('tags');
     });
 });
