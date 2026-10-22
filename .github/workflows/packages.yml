@@ -274,11 +274,18 @@ jobs:
       - name: Verify signatures
         shell: bash
         run: |
-          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
-          for apk in dist/WrongNotebook-Android-*.apk; do
-            "$apksigner" verify --print-certs "$apk" | grep -E 'Signer #1 certificate (DN|SHA-256)'
-          done
           rm -f "$RUNNER_TEMP/release.jks"
+          # 与 app/build.gradle 的 buildToolsVersion 一致，构建时已由 Android Gradle 插件安装
+          apksigner="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          for apk in dist/WrongNotebook-Android-*.apk; do
+            echo "== $apk"
+            certs="$("$apksigner" verify --print-certs "$apk")"
+            echo "$certs"
+            if [[ "$GITHUB_REF" == refs/tags/v* ]] && grep -q 'CN=Android Debug' <<< "$certs"; then
+              echo "::error::$apk 使用了调试签名"
+              exit 1
+            fi
+          done
 
       - uses: actions/upload-artifact@v4
         with:
