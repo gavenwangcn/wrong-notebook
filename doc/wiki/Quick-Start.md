@@ -73,6 +73,6 @@ npm run dev
 - iPhone / iPad：在 Safari 中打开应用，选择“分享 → 添加到主屏幕”。
 - Android：在 Chrome 菜单中选择“添加到主屏幕”或“安装应用”。
 
-PWA 提供主屏幕入口；AI 识别等功能仍需要服务端和 AI 服务可用。截图还取决于浏览器是否支持屏幕共享，并要求安全上下文，详见[常见问题](FAQ)。
+PWA 提供主屏幕入口，平板可横屏使用；通过 HTTPS 访问时会缓存页面脚本和图标，断网时显示离线提示页，数据不做离线缓存。AI 识别等功能仍需要服务端和 AI 服务可用。截图还取决于浏览器是否支持屏幕共享，并要求安全上下文，详见[常见问题](FAQ)。
 
 完整环境变量示例见 [`.env.example`](https://github.com/margrop/wrong-notebook/blob/main/.env.example)。

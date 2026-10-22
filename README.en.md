@@ -151,10 +151,12 @@ Screen capture requires a secure browser context (HTTPS). When running in Docker
 
 ## 📱 PWA (add to home screen)
 
-The app is a PWA: add it to your phone's home screen to run it full screen and open it with one tap.
+The app is a PWA: add it to your phone's or tablet's home screen to run it full screen and open it with one tap. Tablets can use it in landscape.
 
 - **iPhone / iPad (Safari)**: tap **Share** at the bottom → **Add to Home Screen**.
 - **Android (Chrome)**: tap the **menu** at the top right → **Add to Home screen** or **Install app**.
+
+When served over HTTPS (or `localhost`), a service worker caches scripts, styles and icons so the app opens faster, and shows an offline page when the network is down. Questions, statistics and other data always come from the server and are not cached offline.
 
 ## 🛠️ Tech stack
 
