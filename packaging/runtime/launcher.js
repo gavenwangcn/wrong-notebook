@@ -49,13 +49,29 @@ function appVersion() {
 /** NextAuth 会话密钥：首次运行随机生成并保存，之后保持不变，避免重启后登录失效 */
 function ensureSecret(dataDir) {
     const file = path.join(dataDir, '.nextauth_secret');
-    if (fs.existsSync(file)) {
-        const saved = fs.readFileSync(file, 'utf8').trim();
-        if (saved) return saved;
-    }
+    const saved = readTextIfExists(file).trim();
+    if (saved) return saved;
     const secret = crypto.randomBytes(32).toString('base64');
-    fs.writeFileSync(file, secret, { mode: 0o600 });
+    try {
+        // wx：文件已存在时失败，不覆盖同时启动的另一个进程刚生成的密钥
+        fs.writeFileSync(file, secret, { mode: 0o600, flag: 'wx' });
+    } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
+        const other = readTextIfExists(file).trim();
+        if (other) return other;
+        // 已有的是空文件，直接覆盖
+        fs.writeFileSync(file, secret, { mode: 0o600 });
+    }
     return secret;
+}
+
+function readTextIfExists(file) {
+    try {
+        return fs.readFileSync(file, 'utf8');
+    } catch (error) {
+        if (error.code === 'ENOENT') return '';
+        throw error;
+    }
 }
 
 /** Prisma 的 SQLite 地址统一使用正斜杠，Windows 盘符路径也可用 */
@@ -181,7 +197,7 @@ function start(options = {}) {
     require(path.join(APP_DIR, 'server.js'));
 }
 
-module.exports = { prepare, start, parseArgs, defaultDataDir, sqliteUrl };
+module.exports = { prepare, start, parseArgs, defaultDataDir, sqliteUrl, ensureSecret };
 
 if (require.main === module) {
     try {

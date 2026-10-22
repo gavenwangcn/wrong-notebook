@@ -1,7 +1,9 @@
 /**
  * 安装包启动器单元测试
- * 覆盖命令行参数解析和 SQLite 地址转换
+ * 覆盖命令行参数解析、SQLite 地址转换和会话密钥生成
  */
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { createRequire } from 'module';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +12,7 @@ const require = createRequire(import.meta.url);
 const launcher = require('../../../packaging/runtime/launcher.js') as {
     parseArgs: (argv: string[]) => { port?: string; host?: string; dataDir?: string };
     sqliteUrl: (file: string) => string;
+    ensureSecret: (dataDir: string) => string;
 };
 
 describe('package launcher', () => {
@@ -29,5 +32,21 @@ describe('package launcher', () => {
     it('SQLite 地址使用正斜杠', () => {
         const file = ['data', 'wrong-notebook.db'].join(path.sep);
         expect(launcher.sqliteUrl(file)).toBe('file:data/wrong-notebook.db');
+    });
+
+    it('会话密钥首次生成后保持不变，空文件会被重新生成', () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'launcher-secret-'));
+        try {
+            const first = launcher.ensureSecret(dir);
+            expect(first).toMatch(/^[A-Za-z0-9+/]{43}=$/);
+            expect(launcher.ensureSecret(dir)).toBe(first);
+
+            fs.writeFileSync(path.join(dir, '.nextauth_secret'), '');
+            const regenerated = launcher.ensureSecret(dir);
+            expect(regenerated).not.toBe('');
+            expect(fs.readFileSync(path.join(dir, '.nextauth_secret'), 'utf8')).toBe(regenerated);
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     });
 });

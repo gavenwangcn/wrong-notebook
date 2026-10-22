@@ -154,10 +154,33 @@ function mergeVendorConfigs(base: Partial<AppConfig>, override: Partial<AppConfi
     return Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => [id, { ...base[id], ...override[id] }]));
 }
 
+/** 读取配置文件；文件不存在时返回 null（直接读取并处理 ENOENT，避免先判断再读取之间文件被改动） */
+function readConfigFile(): string | null {
+    try {
+        return fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return null;
+        throw error;
+    }
+}
+
+/** 先写临时文件再改名替换，避免其他请求读到写了一半的配置 */
+function writeConfigFile(config: unknown): void {
+    const tmp = `${CONFIG_FILE_PATH}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
+    fs.renameSync(tmp, CONFIG_FILE_PATH);
+}
+
 export function getAppConfig(): AppConfig {
-    if (fs.existsSync(CONFIG_FILE_PATH)) {
+    let fileContent: string | null;
+    try {
+        fileContent = readConfigFile();
+    } catch (error) {
+        logger.error({ error }, 'Failed to read config file');
+        return DEFAULT_CONFIG;
+    }
+    if (fileContent !== null) {
         try {
-            const fileContent = fs.readFileSync(CONFIG_FILE_PATH, 'utf-8');
             const userConfig = JSON.parse(fileContent);
 
             // 检测并迁移旧版 OpenAI 配置
@@ -170,7 +193,7 @@ export function getAppConfig(): AppConfig {
                     ...userConfig,
                     openai: openaiConfig,
                 };
-                fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(migratedConfig, null, 2));
+                writeConfigFile(migratedConfig);
                 logger.info('Legacy OpenAI config migrated successfully');
             }
 
@@ -220,7 +243,7 @@ export function updateAppConfig(newConfig: Partial<AppConfig>) {
     };
 
     try {
-        fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(updatedConfig, null, 2));
+        writeConfigFile(updatedConfig);
         return updatedConfig;
     } catch (error) {
         logger.error({ error }, 'Failed to write config file');
