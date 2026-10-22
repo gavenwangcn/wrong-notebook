@@ -42,61 +42,12 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          # 找到上一个 tag
-          PREV_TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -2 | tail -1)
-
-          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "${{ steps.version.outputs.tag }}" ]; then
-            RANGE="HEAD"
-            echo "首次发版，列出所有 commit"
-          else
-            RANGE="${{ steps.version.outputs.tag }}..${PREV_TAG}"
-            echo "范围: $RANGE"
-          fi
-
-          # 分类提取 commit（feat/fix 前缀 + 其他重要 commit）
-          FEATS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -iE '^feat[:(]' | sed 's/^feat: //; s/^feat([^)]*): //' || true)
-          FIXES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -iE '^fix[:(]' | sed 's/^fix: //; s/^fix([^)]*): //' || true)
-          # 捕获不符合 conventional commit 格式的重要 commit（排除纯 chore/ci）
-          OTHERS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -viE '^(feat|fix|chore|ci|docs|style|refactor|perf|test|build)[:(]|^[Mm]erge |bump version|\[skip ci\]' || true)
-
-          # 组装 changelog
-          CHANGELOG=""
-          if [ -n "$FEATS" ]; then
-            CHANGELOG="### ✨ 新功能"$'\n'
-            while IFS= read -r line; do
-              CHANGELOG+="- ${line}"$'\n'
-            done <<< "$FEATS"
-          fi
-
-          if [ -n "$FIXES" ]; then
-            [ -n "$CHANGELOG" ] && CHANGELOG+=$'\n'
-            CHANGELOG+="### 🛠 修复"$'\n'
-            while IFS= read -r line; do
-              CHANGELOG+="- ${line}"$'\n'
-            done <<< "$FIXES"
-          fi
-
-          if [ -n "$OTHERS" ]; then
-            [ -n "$CHANGELOG" ] && CHANGELOG+=$'\n'
-            CHANGELOG+="### 📦 其他变更"$'\n'
-            while IFS= read -r line; do
-              CHANGELOG+="- ${line}"$'\n'
-            done <<< "$OTHERS"
-          fi
-
-          if [ -z "$CHANGELOG" ]; then
-            CHANGELOG="- 无重大变更"
-          fi
-
-          # 写入输出
+          # 预览版与上一个任意版本比较，正式版与上一个正式版比较，见 scripts/release-notes.sh
           {
             echo "changelog<<EOF"
-            echo "$CHANGELOG"
+            bash scripts/release-notes.sh "${{ steps.version.outputs.tag }}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
-
-          echo "Changelog:"
-          echo "$CHANGELOG"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
