@@ -6,6 +6,7 @@ import { forbidden } from '@/lib/api-errors';
 import { DEFAULT_ANTHROPIC_BASE_URL } from '@/lib/ai/anthropic-provider';
 import { isVendorProvider, VENDOR_PRESETS } from '@/lib/ai/vendor-presets';
 import { createLogger } from '@/lib/logger';
+import { normalizeHttpBaseUrl } from '@/lib/utils';
 
 const logger = createLogger('api:ai:models');
 
@@ -22,7 +23,7 @@ function extractModelName(modelId: string): string {
 }
 
 async function fetchGeminiModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
-    const url = `${baseUrl}/v1beta/models?key=${apiKey}`;
+    const url = `${baseUrl}/v1beta/models?key=${encodeURIComponent(apiKey)}`;
 
     const response = await fetch(url, {
         headers: { 'Content-Type': 'application/json' },
@@ -34,9 +35,9 @@ async function fetchGeminiModels(apiKey: string, baseUrl: string): Promise<Model
         throw new Error(`Gemini API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { models?: { name: string }[] };
     return (data.models || [])
-        .map((m: any) => {
+        .map((m) => {
             const id = extractModelName(m.name);
             return {
                 id,
@@ -61,10 +62,10 @@ async function fetchOpenAIModels(apiKey: string, baseUrl: string): Promise<Model
         throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as { data?: { id: string; owned_by?: string }[] };
 
     return (data.data || [])
-        .map((model: any) => ({
+        .map((model) => ({
             id: model.id,
             name: model.id,
             owned_by: model.owned_by,
@@ -72,7 +73,7 @@ async function fetchOpenAIModels(apiKey: string, baseUrl: string): Promise<Model
 }
 
 async function fetchAnthropicModels(apiKey: string, baseUrl: string): Promise<ModelInfo[]> {
-    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/v1/models?limit=100`, {
+    const response = await fetch(`${baseUrl}/v1/models?limit=100`, {
         headers: {
             'x-api-key': apiKey,
             'anthropic-version': '2023-06-01',
@@ -114,26 +115,26 @@ export async function POST(req: NextRequest) {
         }
 
         let models: ModelInfo[] = [];
+        // 管理员可填写自建或第三方兼容地址，这里只允许 http/https
+        const target = (fallback: string) => normalizeHttpBaseUrl(baseUrl || fallback);
 
         if (provider === 'anthropic') {
-            models = await fetchAnthropicModels(apiKey, baseUrl || DEFAULT_ANTHROPIC_BASE_URL);
+            models = await fetchAnthropicModels(apiKey, target(DEFAULT_ANTHROPIC_BASE_URL));
         } else if (isVendorProvider(provider)) {
-            models = await fetchOpenAIModels(apiKey, baseUrl || VENDOR_PRESETS[provider].baseUrl);
+            models = await fetchOpenAIModels(apiKey, target(VENDOR_PRESETS[provider].baseUrl));
         } else if (provider === 'gemini') {
-            const effectiveBaseUrl = baseUrl || 'https://generativelanguage.googleapis.com';
-            models = await fetchGeminiModels(apiKey, effectiveBaseUrl);
+            models = await fetchGeminiModels(apiKey, target('https://generativelanguage.googleapis.com'));
         } else {
             // OpenAI-compatible
-            const effectiveBaseUrl = baseUrl || 'https://api.openai.com/v1';
-            models = await fetchOpenAIModels(apiKey, effectiveBaseUrl);
+            models = await fetchOpenAIModels(apiKey, target('https://api.openai.com/v1'));
         }
 
         return NextResponse.json({ models });
 
-    } catch (error: any) {
+    } catch (error) {
         logger.error({ error }, 'Error fetching models');
         return NextResponse.json(
-            { error: error.message || 'Internal server error', models: [] },
+            { error: (error instanceof Error && error.message) || 'Internal server error', models: [] },
             { status: 200 } // Return 200 with empty models to allow manual input
         );
     }

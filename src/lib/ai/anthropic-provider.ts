@@ -8,6 +8,7 @@ import { getAppConfig } from '../config';
 import { safeParseParsedQuestion, parseMasteryEvaluation, normalizeSubject, parseTagSuggestion, extractJsonObject, parseDifficultyStars, parseFigure } from './schema';
 import { prefetchSubjectTags } from './tag-service';
 import { createLogger } from '../logger';
+import { trimTrailingSlashes } from '../utils';
 import { AI_OUTPUT_TRUNCATED, withTruncationRetry } from './truncation';
 import { normalizeMistakeStatusForSave } from '../mistake-status';
 import { normalizeGeneratedQuestion } from './generated-question';
@@ -116,7 +117,7 @@ export class AnthropicProvider implements AIService {
         }
 
         // SDK 会自动拼接 /v1/messages，这里去掉用户可能多填的 /v1 和末尾斜杠
-        this.baseURL = (config?.baseUrl || DEFAULT_ANTHROPIC_BASE_URL).replace(/\/+$/, '').replace(/\/v1$/, '');
+        this.baseURL = trimTrailingSlashes(config?.baseUrl || DEFAULT_ANTHROPIC_BASE_URL).replace(/\/v1$/, '');
         this.model = config?.model || DEFAULT_ANTHROPIC_MODEL;
         this.client = new Anthropic({ apiKey, baseURL: this.baseURL, timeout: REQUEST_TIMEOUT_MS });
 

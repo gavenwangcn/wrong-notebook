@@ -61,6 +61,30 @@ describe('POST /api/ai/models - 权限', () => {
     });
 });
 
+describe('POST /api/ai/models - 地址校验', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGetServerSession.mockResolvedValue(adminSession);
+    });
+
+    it.each(['file:///etc/passwd', 'ftp://example.com', 'not a url'])('拒绝非 http/https 地址 %s，且不发起请求', async (baseUrl) => {
+        const res = await POST(makeRequest({ provider: 'openai', apiKey: 'k', baseUrl }));
+        const body = await res.json();
+
+        expect(mockFetch).not.toHaveBeenCalled();
+        expect(body.models).toEqual([]);
+        expect(body.error).toMatch(/base URL/i);
+    });
+
+    it('Gemini 的 API Key 在查询参数中编码', async () => {
+        mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ models: [] }) });
+
+        await POST(makeRequest({ provider: 'gemini', apiKey: 'a&b=c' }));
+
+        expect(mockFetch.mock.calls[0][0]).toBe('https://generativelanguage.googleapis.com/v1beta/models?key=a%26b%3Dc');
+    });
+});
+
 describe('POST /api/ai/models - Anthropic provider', () => {
     beforeEach(() => {
         vi.clearAllMocks();
