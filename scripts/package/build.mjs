@@ -7,8 +7,9 @@
  *   node scripts/package/build.mjs desktop [electron-builder 参数...]
  *                                                          打包 Windows / macOS / Linux 桌面安装包
  *   node scripts/package/build.mjs fnos --arch x86|arm     打包飞牛OS fpk（需要 fnpack）
- *   node scripts/package/build.mjs android [--flavor phone|tablet]
- *                                                          打包安卓手机版、平板版 APK（需要 Android SDK 和 Gradle）
+ *   node scripts/package/build.mjs android [--mode standalone|client] [--flavor phone|tablet]
+ *                                                          打包安卓 APK（需要 Android SDK 和 Gradle）：单机版内置服务端，
+ *                                                          需先构建 dist/bundle 和安卓 Prisma 引擎；客户端版连接已部署的服务器
  *
  * 版本号依次取 --version、环境变量 PACKAGE_VERSION、package.json。
  * Prisma 引擎与当前构建机平台一致，因此桌面端和飞牛OS 需在目标平台上构建（见 .github/workflows/packages.yml）。
@@ -17,6 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { buildAndroidRuntime } from './android-runtime.mjs';
 import { androidVersionCode } from './android-version.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -33,7 +35,7 @@ const version = String(flags.version || process.env.PACKAGE_VERSION || rootPkg.v
 function parseFlags(args) {
     const out = { _: [] };
     for (let i = 0; i < args.length; i++) {
-        const m = /^--(version|arch|flavor)(?:=(.*))?$/.exec(args[i]);
+        const m = /^--(version|arch|flavor|mode)(?:=(.*))?$/.exec(args[i]);
         if (m) out[m[1]] = m[2] ?? args[++i];
         else if (args[i] === '--skip-build') out.skipBuild = true;
         else out._.push(args[i]);
@@ -347,32 +349,53 @@ function buildFnos() {
 }
 
 /**
- * 安卓客户端只是连接服务器的 WebView 外壳，不依赖 dist/bundle。
+ * 安卓 APK 有两种模式，各分手机版（竖屏）和平板版（横竖屏）：
+ *   - standalone 单机版：内置 Node.js、Prisma 引擎和 dist/bundle，在手机上运行完整服务端，数据保存在本机
+ *   - client 客户端版：只是连接已部署服务器的 WebView 外壳
+ * 单机版的 Prisma 引擎目录取 ANDROID_PRISMA_ENGINES_DIR，默认 dist/android-prisma-engines
+ * （由 build-android-prisma-engines.sh 生成）；patchelf 可用 PATCHELF 指定路径。
  * 签名密钥通过环境变量 ANDROID_KEYSTORE_FILE 等传入（见 packaging/android/app/build.gradle），未提供时使用调试签名。
  */
-function buildAndroid() {
+async function buildAndroid() {
+    const modes = flags.mode ? [flags.mode] : ['standalone', 'client'];
     const flavors = flags.flavor ? [flags.flavor] : ['phone', 'tablet'];
-    for (const flavor of flavors) {
-        if (!['phone', 'tablet'].includes(flavor)) throw new Error('--flavor 只能是 phone 或 tablet');
-    }
+    if (modes.some((mode) => !['standalone', 'client'].includes(mode))) throw new Error('--mode 只能是 standalone 或 client');
+    if (flavors.some((flavor) => !['phone', 'tablet'].includes(flavor))) throw new Error('--flavor 只能是 phone 或 tablet');
     if (!process.env.ANDROID_HOME && !process.env.ANDROID_SDK_ROOT) {
         throw new Error('未设置 ANDROID_HOME，请安装 Android SDK（compileSdk 35）');
     }
     const project = path.join(PACKAGING, 'android');
+    const runtimeDir = path.join(DIST, 'android-runtime');
+    if (modes.includes('standalone')) {
+        requireBundle();
+        log('组装安卓单机版运行时');
+        await buildAndroidRuntime({
+            bundleDir: BUNDLE,
+            enginesDir: path.resolve(process.env.ANDROID_PRISMA_ENGINES_DIR || path.join(DIST, 'android-prisma-engines')),
+            outDir: runtimeDir,
+            workDir: path.join(WORK, 'android-runtime'),
+            version,
+            log,
+        });
+    }
+
     const versionCode = androidVersionCode(version);
     const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
-    log(`构建安卓 APK（${flavors.join('、')}，v${version}，versionCode ${versionCode}）`);
+    const variants = modes.flatMap((mode) => flavors.map((flavor) => ({ mode, flavor, name: `${mode}${capitalize(flavor)}` })));
+    log(`构建安卓 APK（${variants.map((v) => v.name).join('、')}，v${version}，versionCode ${versionCode}）`);
     run(process.env.GRADLE || 'gradle', [
         '-p', project, '--no-daemon',
-        ...flavors.map((flavor) => `:app:assemble${capitalize(flavor)}Release`),
+        ...variants.map((v) => `:app:assemble${capitalize(v.name)}Release`),
         `-PappVersionName=${version}`,
         `-PappVersionCode=${versionCode}`,
+        `-PstandaloneRuntimeDir=${runtimeDir}`,
     ]);
     fs.mkdirSync(DIST, { recursive: true });
-    for (const flavor of flavors) {
-        const apk = path.join(project, 'app', 'build', 'outputs', 'apk', flavor, 'release', `app-${flavor}-release.apk`);
+    for (const { mode, flavor, name } of variants) {
+        const apk = path.join(project, 'app', 'build', 'outputs', 'apk', name, 'release', `app-${mode}-${flavor}-release.apk`);
         if (!fs.existsSync(apk)) throw new Error(`未找到 ${path.relative(ROOT, apk)}`);
-        const out = path.join(DIST, `WrongNotebook-Android-Client-${capitalize(flavor)}-${version}.apk`);
+        const prefix = mode === 'client' ? 'WrongNotebook-Android-Client' : 'WrongNotebook-Android';
+        const out = path.join(DIST, `${prefix}-${capitalize(flavor)}-${version}.apk`);
         fs.copyFileSync(apk, out);
         log(`安卓安装包已生成：${path.relative(ROOT, out)}`);
     }
@@ -384,7 +407,7 @@ if (!commands[command]) {
     process.exit(1);
 }
 try {
-    commands[command]();
+    await commands[command]();
 } catch (error) {
     console.error(`\n[package] ${error.message}`);
     process.exit(1);

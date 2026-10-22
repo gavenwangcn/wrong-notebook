@@ -47,7 +47,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** 用 WebView 打开用户配置的错题本服务器，并补齐拍照上传、文件下载、打印等原生能力 */
+/**
+ * 用 WebView 打开错题本，并补齐拍照上传、文件下载、打印等原生能力。
+ * 单机版打开本机内置的服务端（见 LocalServer），客户端版打开用户配置的服务器。
+ */
 public class MainActivity extends Activity {
     private static final int REQUEST_FILE_CHOOSER = 1;
     private static final int REQUEST_SAVE_FILE = 2;
@@ -62,7 +65,12 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ProgressBar progress;
     private View errorView;
+    private TextView errorTitle;
     private TextView errorMessage;
+    private View startingView;
+    private TextView startingMessage;
+    /** 单机版内置服务端正在启动 */
+    private boolean starting;
 
     private ValueCallback<Uri[]> fileCallback;
     private File cameraFile;
@@ -72,7 +80,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        serverUrl = ServerConfig.get(this);
+        serverUrl = BuildConfig.STANDALONE ? LocalServer.URL : ServerConfig.get(this);
         if (serverUrl == null) {
             openSetup();
             finish();
@@ -84,19 +92,65 @@ public class MainActivity extends Activity {
         webView = findViewById(R.id.web_view);
         progress = findViewById(R.id.progress);
         errorView = findViewById(R.id.error_view);
+        errorTitle = findViewById(R.id.error_title);
         errorMessage = findViewById(R.id.error_message);
+        startingView = findViewById(R.id.starting_view);
+        startingMessage = findViewById(R.id.starting_message);
         bridgeScript = readAsset("bridge.js");
 
         findViewById(R.id.retry).setOnClickListener(v -> {
             errorView.setVisibility(View.GONE);
-            webView.reload();
+            if (BuildConfig.STANDALONE) {
+                startLocalServer(true);
+            } else {
+                webView.reload();
+            }
         });
-        findViewById(R.id.change_server).setOnClickListener(v -> openSetup());
+        View changeServer = findViewById(R.id.change_server);
+        if (BuildConfig.STANDALONE) {
+            errorTitle.setText(R.string.error_local_title);
+            changeServer.setVisibility(View.GONE);
+        } else {
+            changeServer.setOnClickListener(v -> openSetup());
+        }
 
         configureWebView();
-        if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
+        boolean restored = savedInstanceState != null && webView.restoreState(savedInstanceState) != null;
+        if (BuildConfig.STANDALONE) {
+            startLocalServer(!restored);
+        } else if (!restored) {
             webView.loadUrl(serverUrl);
         }
+    }
+
+    /**
+     * 启动或复用本机服务端，就绪后按需加载页面。
+     * 应用在后台时系统可能结束服务端进程，回到前台时也会经过这里重新拉起。
+     */
+    private void startLocalServer(boolean load) {
+        if (starting) return;
+        starting = true;
+        startingMessage.setText(R.string.starting_server);
+        startingView.setVisibility(View.VISIBLE);
+        executor.execute(() -> {
+            String failure = null;
+            try {
+                LocalServer.ensureRunning(this, messageRes -> runOnUiThread(() -> startingMessage.setText(messageRes)));
+            } catch (IOException e) {
+                failure = e.getMessage();
+            }
+            String error = failure;
+            runOnUiThread(() -> {
+                starting = false;
+                if (isFinishing() || isDestroyed()) return;
+                startingView.setVisibility(View.GONE);
+                if (error != null) {
+                    showError(error);
+                } else if (load) {
+                    webView.loadUrl(serverUrl);
+                }
+            });
+        });
     }
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
@@ -130,7 +184,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (webView != null) webView.onResume();
+        if (webView == null) return;
+        webView.onResume();
+        if (BuildConfig.STANDALONE && !starting) {
+            // 服务端进程被系统回收后重新启动并刷新页面
+            executor.execute(() -> {
+                if (LocalServer.healthyVersion() == null) runOnUiThread(() -> startLocalServer(true));
+            });
+        }
     }
 
     @Override
@@ -171,7 +232,7 @@ public class MainActivity extends Activity {
     }
 
     private void showError(String description) {
-        errorMessage.setText(serverUrl + "\n" + description);
+        errorMessage.setText(BuildConfig.STANDALONE ? description : serverUrl + "\n" + description);
         errorView.setVisibility(View.VISIBLE);
         progress.setVisibility(View.GONE);
     }
@@ -367,7 +428,23 @@ public class MainActivity extends Activity {
 
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-            if (request.isForMainFrame()) showError(String.valueOf(error.getDescription()));
+            if (!request.isForMainFrame()) return;
+            String description = String.valueOf(error.getDescription());
+            if (!BuildConfig.STANDALONE) {
+                showError(description);
+                return;
+            }
+            // 本机服务端不可用（如进程被系统结束）时重新启动；服务正常仍出错则显示错误，避免反复重试
+            executor.execute(() -> {
+                boolean healthy = LocalServer.healthyVersion() != null;
+                runOnUiThread(() -> {
+                    if (healthy) {
+                        showError(description);
+                    } else {
+                        startLocalServer(true);
+                    }
+                });
+            });
         }
 
         @Override
@@ -412,7 +489,7 @@ public class MainActivity extends Activity {
     private final class Bridge {
         @JavascriptInterface
         public void changeServer() {
-            runOnUiThread(MainActivity.this::openSetup);
+            if (!BuildConfig.STANDALONE) runOnUiThread(MainActivity.this::openSetup);
         }
 
         @JavascriptInterface
@@ -433,6 +510,11 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getDeviceType() {
             return BuildConfig.DEVICE_TYPE;
+        }
+
+        @JavascriptInterface
+        public boolean isStandalone() {
+            return BuildConfig.STANDALONE;
         }
     }
 }

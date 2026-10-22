@@ -20,6 +20,36 @@
         android:progressTint="@color/brand"
         android:visibility="gone" />
 
+    <!-- 单机版启动内置服务端时显示 -->
+    <LinearLayout
+        android:id="@+id/starting_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/background"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            style="@android:style/Widget.Material.ProgressBar"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:indeterminateTint="@color/brand" />
+
+        <TextView
+            android:id="@+id/starting_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:text="@string/starting_server"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/error_view"
         android:layout_width="match_parent"
@@ -31,6 +61,7 @@
         android:visibility="gone">
 
         <TextView
+            android:id="@+id/error_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/error_title"

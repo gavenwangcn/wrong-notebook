@@ -1,6 +1,6 @@
 name: Packages
 
-# 全平台安装包：npm、Windows、macOS、Linux、飞牛OS、安卓（手机版、平板版）
+# 全平台安装包：npm、Windows、macOS、Linux、飞牛OS、安卓（单机版、客户端版，各分手机版、平板版）
 # Prisma 引擎与构建机平台绑定，因此每个平台在对应架构的 Runner 上分别构建
 on:
   push:
@@ -223,13 +223,15 @@ jobs:
     name: Android
     if: github.server_url == 'https://github.com'
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    # 未命中缓存时需要交叉编译 Prisma 引擎
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+          cache: 'npm'
 
       # Runner 镜像自带 Android SDK（ANDROID_HOME），缺少的平台和构建工具由 Android Gradle 插件自动下载
       - uses: actions/setup-java@v4
@@ -247,6 +249,33 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             echo "PACKAGE_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
           fi
+
+      - run: npm ci
+
+      # 单机版内置的服务端与其他安装包相同
+      - name: Build bundle
+        run: node scripts/package/build.mjs bundle
+
+      # Prisma 不提供安卓引擎，按引擎提交交叉编译并缓存（Runner 自带 rustup 和 Android NDK）
+      - name: Resolve Prisma engines version
+        shell: bash
+        run: |
+          echo "PRISMA_ENGINES_COMMIT=$(node -p "require('./node_modules/@prisma/engines-version/package.json').prisma.enginesVersion")" >> "$GITHUB_ENV"
+          echo "ANDROID_PRISMA_ENGINES_DIR=$RUNNER_TEMP/android-prisma-engines" >> "$GITHUB_ENV"
+
+      - uses: actions/cache@v4
+        id: engines-cache
+        with:
+          path: ${{ runner.temp }}/android-prisma-engines
+          key: android-prisma-engines-${{ env.PRISMA_ENGINES_COMMIT }}-${{ hashFiles('scripts/package/build-android-prisma-engines.sh') }}
+
+      - name: Build Prisma engines for Android
+        if: steps.engines-cache.outputs.cache-hit != 'true'
+        run: bash scripts/package/build-android-prisma-engines.sh "$ANDROID_PRISMA_ENGINES_DIR"
+
+      # 组装单机版运行时时用 patchelf 改写 Node.js 依赖库的名称
+      - name: Install patchelf
+        run: sudo apt-get update && sudo apt-get install -y patchelf
 
       # 发布版必须使用固定的签名密钥，否则用户无法覆盖安装升级
       - name: Prepare signing key

@@ -432,6 +432,7 @@ export const translations = {
                 copyright: "© 2026 margrop · Based on wttwins/wrong-notebook · MIT License",
                 androidServer: "Server",
                 changeServer: "Change server",
+                androidStandalone: "Running on this device. Data is stored only on this device.",
             },
             account: {
                 changePassword: "Change Password (Leave empty to keep)",
@@ -1459,6 +1460,7 @@ export const translations = {
                 copyright: "© 2026 margrop · 基于 wttwins/wrong-notebook 扩展 · MIT 许可证",
                 androidServer: "服务器",
                 changeServer: "更换服务器",
+                androidStandalone: "在本机运行，数据只保存在这台设备上。",
             },
             account: {
                 changePassword: "修改密码 (留空不修改)",

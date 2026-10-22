@@ -71,7 +71,7 @@ npm run dev
 ## 安装到手机主屏幕
 
 - iPhone / iPad：在 Safari 中打开应用，选择“分享 → 添加到主屏幕”。
-- Android：在 Chrome 菜单中选择“添加到主屏幕”或“安装应用”；也可以从 [Releases](https://github.com/margrop/wrong-notebook/releases) 安装安卓客户端：手机选 `WrongNotebook-Android-Client-Phone-<版本>.apk`，平板选 `WrongNotebook-Android-Client-Tablet-<版本>.apk`，首次打开时填写服务器地址。
+- Android：在 Chrome 菜单中选择“添加到主屏幕”或“安装应用”；也可以从 [Releases](https://github.com/margrop/wrong-notebook/releases) 安装安卓 App：单机版内置服务端，无需部署服务器，手机选 `WrongNotebook-Android-Phone-<版本>.apk`，平板选 `WrongNotebook-Android-Tablet-<版本>.apk`；已有服务器时可安装客户端版 `WrongNotebook-Android-Client-Phone/Tablet-<版本>.apk`，首次打开时填写服务器地址。
 
 PWA 提供主屏幕入口，平板可横屏使用；通过 HTTPS 访问时会缓存页面脚本和图标，断网时显示离线提示页，数据不做离线缓存。AI 识别等功能仍需要服务端和 AI 服务可用。截图还取决于浏览器是否支持屏幕共享，并要求安全上下文，详见[常见问题](FAQ)。
 

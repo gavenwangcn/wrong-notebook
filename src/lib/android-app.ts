@@ -1,5 +1,5 @@
 /**
- * 安卓客户端（packaging/android）向网页注入的接口 window.WrongNotebookAndroid。
+ * 安卓 App（packaging/android）向网页注入的接口 window.WrongNotebookAndroid。
  * 在普通浏览器中不存在，调用前用 getAndroidAppBridge() 判断。
  */
 export interface AndroidAppBridge {
@@ -9,6 +9,8 @@ export interface AndroidAppBridge {
     getServerUrl(): string;
     /** 安装包类型：phone 或 tablet */
     getDeviceType(): string;
+    /** 是否为内置服务端的单机版；早期客户端版没有此方法 */
+    isStandalone?(): boolean;
 }
 
 type WindowWithAndroidBridge = Window & { WrongNotebookAndroid?: AndroidAppBridge };
