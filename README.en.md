@@ -6,6 +6,8 @@
 
 [简体中文](README.md) | **English**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Release](https://img.shields.io/github/v/release/margrop/wrong-notebook?include_prereleases)](https://github.com/margrop/wrong-notebook/releases) [![CI](https://github.com/margrop/wrong-notebook/actions/workflows/ci.yml/badge.svg)](https://github.com/margrop/wrong-notebook/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/wrong-notebook)](https://www.npmjs.com/package/wrong-notebook)
+
 An AI-powered notebook for the questions you got wrong. Snap a photo or type a question, and AI recognizes it, solves it, tags it with knowledge points and rates its difficulty. Manage your notebooks, practice with similar questions, build printable exams and track how well you have mastered each question.
 
 🌐 **Project website**: <https://blog.margrop.net/wrong-notebook-github-pages/en/>
@@ -460,8 +462,12 @@ The `scripts/` directory contains maintenance and debugging scripts, for example
 - **Rebuild system knowledge points**: `npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/rebuild-system-tags.ts` (keeps custom tags and question links; back up before running in production)
 - **Inspect the database**: `node scripts/check-db-users.js`, `node scripts/check-db-data.js`
 
+## 🤝 Contributing
+
+Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md).
+
 ## 📄 License
 
-MIT License
+[MIT License](LICENSE)
 
 © 2026 margrop. This project extends [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook); copyright in the original code remains with its author.
