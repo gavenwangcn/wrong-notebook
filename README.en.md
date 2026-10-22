@@ -24,11 +24,11 @@ An AI-powered notebook for the questions you got wrong. Snap a photo or type a q
 
 ## 🖼️ Screenshots
 
-The screenshots below were taken from the running app (2026-10-20) and show real questions, explanations and exams. Usernames are masked. Click an image to view it full size.
+The screenshots below were captured from the running app on 2026-10-22 using English demo questions, answers, explanations, knowledge points and exams. The Student account and practice records are sample data. Click an image to view it full size.
 
 **Notebook**: see each question's summary, difficulty stars and knowledge points on one page. Filter by grade, term, mastery and A/B paper, open a question by its ID, compare similarity or print in bulk.
 
-![Question cards with difficulty stars, knowledge-point tags and filters](doc/screenshots/en/notebook.png)
+![English math questions with difficulty stars, English knowledge-point tags and filters](doc/screenshots/en/notebook.png)
 
 <details>
 <summary><strong>Input and preferences: photo upload, text input, review before import and configurable duplicate detection</strong></summary>
@@ -48,16 +48,16 @@ General settings control review before import, SVG animated explanations, GeoGeb
 
 Each question shows its text, knowledge points, grade, term and paper level. You can check the original photo and start practicing similar questions from here.
 
-![Question details with formulas, difficulty stars, knowledge points, grade and term](doc/screenshots/en/question-detail.png)
+![An English linear-equation question with formulas, difficulty stars, knowledge points, grade and term](doc/screenshots/en/question-detail.png)
 
 </details>
 
 <details>
 <summary><strong>SVG animated explanations: step-by-step animations of the solution</strong></summary>
 
-An animated explanation of a hexagon coloring problem, showing region relationships and the recursive counting. The player supports pause, seeking, replay and full screen.
+An English animated explanation of a hexagon coloring problem, showing region relationships and the recursive counting. The player supports pause, seeking, replay and full screen.
 
-![SVG animated explanation of a hexagon coloring problem with counting table and player controls](doc/screenshots/en/svg-animation.png)
+![English SVG explanation of a hexagon coloring problem with an English counting table and player controls](doc/screenshots/en/svg-animation.png)
 
 </details>
 
@@ -66,7 +66,7 @@ An animated explanation of a hexagon coloring problem, showing region relationsh
 
 Results from practice questions and exams are collected under the original question; expand a record to see the variant question and its answer. AI estimates your mastery from the actual answer history to help plan the next review.
 
-![Exam variant questions, wrong-then-right answer history and AI mastery estimate](doc/screenshots/en/mastery-history.png)
+![An English exam variant, sample wrong-then-right answer history and a mastery estimate](doc/screenshots/en/mastery-history.png)
 
 </details>
 
@@ -75,20 +75,20 @@ Results from practice questions and exams are collected under the original quest
 
 Generated exams keep each source question's ID and show every attempt, so you can trace the effect back to the original question.
 
-![A generated exam with source IDs and multiple attempt results](doc/screenshots/en/exam.png)
+![An English demo exam with source IDs and sample results from multiple attempts](doc/screenshots/en/exam.png)
 
 The print preview can include an answer page; download it as HTML, print it, or save it as PDF from the browser.
 
-![Exam print preview with source IDs, answer page toggle and export options](doc/screenshots/en/exam-print.png)
+![An English exam print preview with source IDs, answer page toggle and export options](doc/screenshots/en/exam-print.png)
 
 </details>
 
 <details>
 <summary><strong>Knowledge library: browse by subject, grade and chapter</strong></summary>
 
-The standard tag library organizes knowledge points by curriculum level, and also offers custom tags and usage statistics.
+The tag library organizes knowledge points by curriculum level, and also offers custom tags and usage statistics. This demo uses English sample tags for algebra and geometry.
 
-![Math knowledge points expanded by grade 4, geometry, angles and quadrilaterals](doc/screenshots/en/knowledge-tags.png)
+![English grade 4 tags expanded to show linear equations, adding fractions, angles, and area and perimeter](doc/screenshots/en/knowledge-tags.png)
 
 </details>
 
