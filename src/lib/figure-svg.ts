@@ -34,20 +34,19 @@ export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_S
     do {
         if (pass++ > MAX_SANITIZE_PASSES) return null;
         previous = svg;
-        svg = svg
-            .replace(/<!--[\s\S]*?-->/g, '')
-            .replace(/<!DOCTYPE[^>]*>/gi, '')
-            .replace(/<\?[\s\S]*?\?>/g, '')
-            .replace(DANGEROUS_ELEMENTS, '')
-            .replace(DANGEROUS_OPEN_TAGS, '')
-            // 事件属性（onload 等）
-            .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-            // 只允许指向本文档内部的链接（#id），去掉外部和 javascript: 链接
-            .replace(/\s+(?:xlink:)?href\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>"']+)/gi, '')
-            // 样式中的外部资源与脚本
-            .replace(/@import[^;]*;?/gi, '')
-            .replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none')
-            .replace(/(?:javascript|vbscript|data)\s*:/gi, '');
+        svg = svg.replace(/<!--[\s\S]*?-->/g, '');
+        svg = svg.replace(/<!DOCTYPE[^>]*>/gi, '');
+        svg = svg.replace(/<\?[\s\S]*?\?>/g, '');
+        svg = svg.replace(DANGEROUS_ELEMENTS, '');
+        svg = svg.replace(DANGEROUS_OPEN_TAGS, '');
+        // 事件属性（onload 等）
+        svg = svg.replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+        // 只允许指向本文档内部的链接（#id），去掉外部和 javascript: 链接
+        svg = svg.replace(/\s+(?:xlink:)?href\s*=\s*("(?!#)[^"]*"|'(?!#)[^']*'|(?!["'#])[^\s>"']+)/gi, '');
+        // 样式中的外部资源与脚本
+        svg = svg.replace(/@import[^;]*;?/gi, '');
+        svg = svg.replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none');
+        svg = svg.replace(/(?:javascript|vbscript|data)\s*:/gi, '');
     } while (svg !== previous);
 
     if (!/<svg[^>]*\sxmlns\s*=/i.test(svg)) {
