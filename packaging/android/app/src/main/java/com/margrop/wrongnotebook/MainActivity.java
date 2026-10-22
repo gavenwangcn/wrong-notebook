@@ -486,20 +486,33 @@ public class MainActivity extends Activity {
     }
 
     /** 暴露给网页的接口，网页通过 window.WrongNotebookAndroid 调用 */
+    /** 当前页面是否来自错题本服务器；Bridge 只为它执行操作，避免其他来源的页面调用 */
+    private boolean isTrustedPage() {
+        String url = webView == null ? null : webView.getUrl();
+        return url != null && ServerConfig.isSameOrigin(Uri.parse(url), serverUrl);
+    }
+
+    /** 在主线程上、确认页面来源后执行 Bridge 请求 */
+    private void runForTrustedPage(Runnable action) {
+        runOnUiThread(() -> {
+            if (isTrustedPage()) action.run();
+        });
+    }
+
     private final class Bridge {
         @JavascriptInterface
         public void changeServer() {
-            if (!BuildConfig.STANDALONE) runOnUiThread(MainActivity.this::openSetup);
+            if (!BuildConfig.STANDALONE) runForTrustedPage(MainActivity.this::openSetup);
         }
 
         @JavascriptInterface
         public void print() {
-            runOnUiThread(MainActivity.this::printPage);
+            runForTrustedPage(MainActivity.this::printPage);
         }
 
         @JavascriptInterface
         public void saveFile(String dataUrl, String fileName, String mimeType) {
-            runOnUiThread(() -> startSave(dataUrl, fileName, mimeType));
+            runForTrustedPage(() -> startSave(dataUrl, fileName, mimeType));
         }
 
         @JavascriptInterface
