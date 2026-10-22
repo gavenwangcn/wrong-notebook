@@ -16,7 +16,7 @@
 
 > 演示站点为共享账号，数据对所有访客可见，请勿录入个人信息。
 
-📦 **多平台安装**：Docker 镜像（amd64 / arm64）· npm（`npm i -g wrong-notebook`）· Windows · macOS · Linux · 飞牛OS，安装包见 [Releases](https://github.com/margrop/wrong-notebook/releases)，安装方式见[快速开始](#-快速开始)。
+📦 **多平台安装**：Docker 镜像（amd64 / arm64）· npm（`npm i -g wrong-notebook`）· Windows · macOS · Linux · 飞牛OS · 安卓手机 / 平板客户端，安装包见 [Releases](https://github.com/margrop/wrong-notebook/releases)，安装方式见[快速开始](#-快速开始)。
 
 > 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
 
@@ -152,7 +152,7 @@
 本项目支持 PWA，可将应用添加到手机或平板主屏幕，全屏运行、点击图标直接打开，平板可横屏使用。
 
 - **iPhone / iPad (Safari)**: 点击底部 **分享** 按钮 -> 选择 **"添加到主屏幕"**。
-- **Android (Chrome)**: 点击右上角 **菜单** -> 选择 **"添加到主屏幕"** 或 **"安装应用"**。
+- **Android (Chrome)**: 点击右上角 **菜单** -> 选择 **"添加到主屏幕"** 或 **"安装应用"**。也可以安装 [Releases](https://github.com/margrop/wrong-notebook/releases) 中的安卓客户端（见下文安装包）。
 
 通过 HTTPS（或 `localhost`）访问时会启用 Service Worker：缓存页面脚本、样式和图标以加快打开速度，断网时显示离线提示页。题目、统计等数据始终从服务器读取，不做离线缓存。
 
@@ -277,7 +277,7 @@ docker run -d --name wrong-notebook \
 
 使用 `docker-compose.yml` 时，把其中的 `image` 改为 `wrong-notebook:local` 即可。
 
-### 方式四：安装包（npm / Windows / macOS / Linux / 飞牛OS）
+### 方式四：安装包（npm / Windows / macOS / Linux / 飞牛OS / 安卓）
 
 不想使用 Docker 时，可以从 [Releases](https://github.com/margrop/wrong-notebook/releases) 下载桌面版或飞牛OS 安装包，也可以通过 npm 安装：
 
@@ -292,6 +292,9 @@ wrong-notebook --port 3000
 | macOS | `WrongNotebook-Mac-<版本>-arm64.dmg`（Apple 芯片）、`WrongNotebook-Mac-<版本>-x64.dmg`（Intel） |
 | Linux | `WrongNotebook-Linux-<版本>-<架构>.AppImage`、`.deb` |
 | 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk`、`WrongNotebook-FnOS-<版本>-arm.fpk` |
+| 安卓手机 / 平板 | `WrongNotebook-Android-Phone-<版本>.apk`（竖屏）、`WrongNotebook-Android-Tablet-<版本>.apk`（横竖屏自动旋转） |
+
+安卓客户端不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），支持拍照上传、导出文件和系统打印，可在「设置 → 关于」中更换服务器。需要 Android 7.0 及以上。
 
 数据目录、默认账号、本地构建方法见 [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md)。
 
@@ -440,7 +443,7 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 
 | 文档 | 内容 |
 | :--- | :--- |
-| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm、桌面版、飞牛OS 安装包与构建 |
+| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm、桌面版、飞牛OS、安卓安装包与构建 |
 | [HTTPS_SETUP.md](doc/HTTPS_SETUP.md) | HTTPS 配置（屏幕截图需要） |
 | [TIME_ZONE.md](doc/TIME_ZONE.md) | 应用时区 |
 | [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) | 日志 |

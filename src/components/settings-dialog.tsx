@@ -37,6 +37,7 @@ import { AnthropicSettings } from "@/components/settings/anthropic-settings";
 import { VendorSettings } from "@/components/settings/vendor-settings";
 import { DuplicateThresholdSetting } from "@/components/settings/duplicate-threshold-setting";
 import { TimeZoneSetting } from "@/components/settings/time-zone-setting";
+import { AndroidAppSetting } from "@/components/settings/android-app-setting";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
 import { isVendorProvider, VENDOR_PRESETS, VENDOR_PROVIDER_IDS } from "@/lib/ai/vendor-presets";
@@ -1586,6 +1587,8 @@ export function SettingsDialog() {
                                 <Info className="h-4 w-4" />
                                 <span>{t.settings?.about?.version || "Version"}: v{version || "unknown"}</span>
                             </div>
+
+                            <AndroidAppSetting />
 
                             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 w-full sm:w-auto px-4 sm:px-0">
                                 <Button variant="outline" asChild className="gap-2 w-full sm:w-auto">

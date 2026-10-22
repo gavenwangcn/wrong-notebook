@@ -7,6 +7,8 @@
  *   node scripts/package/build.mjs desktop [electron-builder 参数...]
  *                                                          打包 Windows / macOS / Linux 桌面安装包
  *   node scripts/package/build.mjs fnos --arch x86|arm     打包飞牛OS fpk（需要 fnpack）
+ *   node scripts/package/build.mjs android [--flavor phone|tablet]
+ *                                                          打包安卓手机版、平板版 APK（需要 Android SDK 和 Gradle）
  *
  * 版本号依次取 --version、环境变量 PACKAGE_VERSION、package.json。
  * Prisma 引擎与当前构建机平台一致，因此桌面端和飞牛OS 需在目标平台上构建（见 .github/workflows/packages.yml）。
@@ -15,6 +17,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { androidVersionCode } from './android-version.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DIST = path.join(ROOT, 'dist');
@@ -30,7 +33,7 @@ const version = String(flags.version || process.env.PACKAGE_VERSION || rootPkg.v
 function parseFlags(args) {
     const out = { _: [] };
     for (let i = 0; i < args.length; i++) {
-        const m = /^--(version|arch)(?:=(.*))?$/.exec(args[i]);
+        const m = /^--(version|arch|flavor)(?:=(.*))?$/.exec(args[i]);
         if (m) out[m[1]] = m[2] ?? args[++i];
         else if (args[i] === '--skip-build') out.skipBuild = true;
         else out._.push(args[i]);
@@ -343,9 +346,41 @@ function buildFnos() {
     log(`飞牛OS 安装包已生成：${path.relative(ROOT, out)}`);
 }
 
-const commands = { bundle: buildBundle, npm: buildNpm, desktop: buildDesktop, fnos: buildFnos };
+/**
+ * 安卓客户端只是连接服务器的 WebView 外壳，不依赖 dist/bundle。
+ * 签名密钥通过环境变量 ANDROID_KEYSTORE_FILE 等传入（见 packaging/android/app/build.gradle），未提供时使用调试签名。
+ */
+function buildAndroid() {
+    const flavors = flags.flavor ? [flags.flavor] : ['phone', 'tablet'];
+    for (const flavor of flavors) {
+        if (!['phone', 'tablet'].includes(flavor)) throw new Error('--flavor 只能是 phone 或 tablet');
+    }
+    if (!process.env.ANDROID_HOME && !process.env.ANDROID_SDK_ROOT) {
+        throw new Error('未设置 ANDROID_HOME，请安装 Android SDK（compileSdk 35）');
+    }
+    const project = path.join(PACKAGING, 'android');
+    const versionCode = androidVersionCode(version);
+    const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
+    log(`构建安卓 APK（${flavors.join('、')}，v${version}，versionCode ${versionCode}）`);
+    run(process.env.GRADLE || 'gradle', [
+        '-p', project, '--no-daemon',
+        ...flavors.map((flavor) => `:app:assemble${capitalize(flavor)}Release`),
+        `-PappVersionName=${version}`,
+        `-PappVersionCode=${versionCode}`,
+    ]);
+    fs.mkdirSync(DIST, { recursive: true });
+    for (const flavor of flavors) {
+        const apk = path.join(project, 'app', 'build', 'outputs', 'apk', flavor, 'release', `app-${flavor}-release.apk`);
+        if (!fs.existsSync(apk)) throw new Error(`未找到 ${path.relative(ROOT, apk)}`);
+        const out = path.join(DIST, `WrongNotebook-Android-${capitalize(flavor)}-${version}.apk`);
+        fs.copyFileSync(apk, out);
+        log(`安卓安装包已生成：${path.relative(ROOT, out)}`);
+    }
+}
+
+const commands = { bundle: buildBundle, npm: buildNpm, desktop: buildDesktop, fnos: buildFnos, android: buildAndroid };
 if (!commands[command]) {
-    console.error('用法：node scripts/package/build.mjs <bundle|npm|desktop|fnos> [参数]');
+    console.error('用法：node scripts/package/build.mjs <bundle|npm|desktop|fnos|android> [参数]');
     process.exit(1);
 }
 try {

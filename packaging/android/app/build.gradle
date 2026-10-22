@@ -1,0 +1,71 @@
+plugins {
+    id 'com.android.application'
+}
+
+// 版本号由 scripts/package/build.mjs 根据发布标签传入（-PappVersionName / -PappVersionCode）
+def appVersionName = project.findProperty('appVersionName') ?: '0.0.0-dev'
+def appVersionCode = (project.findProperty('appVersionCode') ?: '1') as Integer
+
+// 发布签名：通过环境变量提供密钥库，未提供时 release 构建使用调试签名，仅供本地测试
+def keystoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
+def hasReleaseKey = keystoreFile && file(keystoreFile).exists()
+
+android {
+    namespace 'com.margrop.wrongnotebook'
+    compileSdk 35
+    buildToolsVersion '35.0.0'
+
+    defaultConfig {
+        applicationId 'com.margrop.wrongnotebook'
+        minSdk 24
+        targetSdk 35
+        versionCode appVersionCode
+        versionName appVersionName
+    }
+
+    signingConfigs {
+        if (hasReleaseKey) {
+            release {
+                storeFile file(keystoreFile)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD') ?: System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
+    // 手机版锁定竖屏；平板版跟随系统旋转，横竖屏均可使用
+    flavorDimensions = ['device']
+    productFlavors {
+        phone {
+            dimension 'device'
+            manifestPlaceholders = [screenOrientation: 'portrait']
+            buildConfigField 'String', 'DEVICE_TYPE', '"phone"'
+        }
+        tablet {
+            dimension 'device'
+            manifestPlaceholders = [screenOrientation: 'fullUser']
+            buildConfigField 'String', 'DEVICE_TYPE', '"tablet"'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig hasReleaseKey ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}

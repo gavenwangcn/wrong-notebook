@@ -9,10 +9,12 @@
 | macOS | `WrongNotebook-Mac-<版本>-arm64.dmg`（Apple 芯片）/ `-x64.dmg`（Intel），另有同名 `.zip` | 未签名，首次打开需右键选择「打开」 |
 | Linux | `WrongNotebook-Linux-<版本>-<架构>.AppImage` / `.deb` | x86_64 与 arm64 |
 | 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk` / `-arm.fpk` | 在应用中心手动安装，依赖应用中心的 Node.js v24 |
+| 安卓手机 | `WrongNotebook-Android-Phone-<版本>.apk` | 客户端，连接已部署的服务器；锁定竖屏 |
+| 安卓平板 | `WrongNotebook-Android-Tablet-<版本>.apk` | 客户端，连接已部署的服务器；横竖屏自动旋转 |
 
 校验和见 Release 中的 `SHA256SUMS.txt`。
 
-所有安装包运行同一个服务端（Next.js standalone 构建）和启动器 `packaging/runtime/launcher.js`，行为与 Docker 镜像一致：
+除安卓客户端外，所有安装包运行同一个服务端（Next.js standalone 构建）和启动器 `packaging/runtime/launcher.js`，行为与 Docker 镜像一致：
 
 - 首次启动复制预置数据库（含默认管理员和系统标签），默认管理员为 `admin@localhost` / `123456`，登录后请立即修改密码。
 - 每次启动执行 `prisma migrate deploy`，只做增量迁移，升级保留已有数据。
@@ -49,6 +51,25 @@ wrong-notebook --port 3000 --host 0.0.0.0 --data-dir ~/.wrong-notebook
 
 数据保存在应用数据目录（`@appdata/wrongnotebook`），日志为其中的 `wrong-notebook.log`。
 
+### 安卓手机 / 平板
+
+安卓客户端（`packaging/android`）是原生 WebView 外壳，不内置服务端，需要先用 Docker 或上面任一安装包部署服务端。
+
+1. 手机安装 `Phone` 版（锁定竖屏），平板安装 `Tablet` 版（横竖屏自动旋转）。两者包名相同，同一设备只能装一个，可以互相覆盖安装。需要 Android 7.0 及以上，安装时允许「安装未知来源应用」。
+2. 首次打开填写服务器地址，如 `http://192.168.1.10:3000`，省略协议时默认 `http://`。客户端会请求 `/api/health` 确认是错题本服务器；检查失败（如自签名证书）时可选择仍然使用。
+3. 之后在「设置 → 关于」中可查看当前服务器并更换；连接失败的页面上也有「更换服务器」按钮。
+
+客户端补齐了 WebView 默认不具备的能力：
+
+- 上传图片时可选择拍照或从相册、文件中选取。
+- 导出备份、下载试卷等文件通过系统「另存为」保存。
+- 打印预览中的「打印」调用系统打印，可另存为 PDF。
+- 服务器以外的链接（项目主页、AI 服务商控制台等）用系统浏览器打开。
+
+局域网部署通常使用 HTTP，客户端允许明文连接。使用自签名证书的 HTTPS 时，首次访问会提示证书不受信任，确认后在本次运行中信任；也可以在系统中安装该证书的 CA，之后不再提示。
+
+网页可以通过 User-Agent 中的 `WrongNotebookAndroid/<版本> (phone|tablet)` 识别客户端，客户端向网页提供的接口见 `src/lib/android-app.ts`。
+
 ## 本地构建
 
 需要 Node.js 22.15 及以上。Prisma 引擎与构建机平台一致，桌面版和飞牛OS 包须在目标平台（及架构）上构建。
@@ -59,7 +80,12 @@ node scripts/package/build.mjs bundle                 # 构建通用服务端包
 node scripts/package/build.mjs npm                    # dist/wrong-notebook-<版本>.tgz
 node scripts/package/build.mjs desktop --mac --arm64  # 参数原样传给 electron-builder
 node scripts/package/build.mjs fnos --arch x86        # 需要 PATH 中有 fnpack
+node scripts/package/build.mjs android                # 手机版和平板版 APK，可加 --flavor phone|tablet
 ```
+
+安卓客户端不依赖 `bundle`，构建需要 JDK 17、Android SDK（`ANDROID_HOME`，compileSdk 35、build-tools 35.0.0）和 Gradle 8.11（PATH 中的 `gradle`，或用环境变量 `GRADLE` 指定）。versionCode 由版本号换算（`scripts/package/android-version.mjs`）：预览版 `2026.10.22-3` 为 `2026102203`，正式版 `2026.10.22` 为 `2026102299`，保证升级时递增。
+
+签名密钥通过环境变量传入：`ANDROID_KEYSTORE_FILE`（密钥库路径）、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`（缺省与密钥库密码相同）。未提供时使用调试签名，只能用于测试。
 
 - 版本号依次取 `--version`、环境变量 `PACKAGE_VERSION`、`package.json`。
 - `bundle` 会构建 Next.js；只改了打包脚本时可加 `--skip-build` 复用已有的 `.next`。
@@ -68,6 +94,17 @@ node scripts/package/build.mjs fnos --arch x86        # 需要 PATH 中有 fnpac
 ## 发布
 
 推送 `v*` 标签后，`.github/workflows/packages.yml` 在各平台 Runner 上构建全部安装包并上传到对应的 GitHub Release；也可以在 Actions 页面手动运行，只生成构建产物。
+
+安卓 APK 必须一直使用同一个密钥签名，否则用户无法覆盖安装升级。需要在仓库 Settings → Secrets and variables → Actions 中配置：
+
+| Secret | 说明 |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | 密钥库文件的 Base64（`base64 -i release.jks`） |
+| `ANDROID_KEYSTORE_PASSWORD` | 密钥库密码 |
+| `ANDROID_KEY_ALIAS` | 密钥别名 |
+| `ANDROID_KEY_PASSWORD` | 密钥密码，与密钥库密码相同时可不配置 |
+
+推送标签时未配置这些 Secret，安卓构建会失败，Release 也不会上传安装包；手动运行时使用调试签名。密钥库须妥善备份，丢失后已安装的用户只能卸载重装。
 
 npm 使用 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（OIDC）发布，不需要 `NPM_TOKEN`。npmjs.com 上 `wrong-notebook` 包的 Settings → Trusted Publisher 已登记 GitHub Actions：`margrop/wrong-notebook`、工作流 `packages.yml`；重命名该工作流文件时需同步修改登记。带 `-` 的预发布标签发布到 npm 的 `next` 标签。npm 发布在独立的 Job 中，失败不影响安装包上传到 Release。
 
@@ -80,3 +117,4 @@ npm 使用 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（OID
 | `packaging/npm/` | npm 命令行入口与 README |
 | `packaging/desktop/` | Electron 桌面壳与 electron-builder 配置 |
 | `packaging/fnos/` | 飞牛OS manifest、生命周期脚本、安装向导和图标 |
+| `packaging/android/` | 安卓客户端 Gradle 工程（手机版、平板版两个 flavor） |

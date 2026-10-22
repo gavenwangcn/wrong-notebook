@@ -16,7 +16,7 @@ An AI-powered notebook for the questions you got wrong. Snap a photo or type a q
 
 > The demo uses a shared account and its data is visible to every visitor. Do not enter personal information.
 
-📦 **Install anywhere**: Docker image (amd64 / arm64) · npm (`npm i -g wrong-notebook`) · Windows · macOS · Linux · fnOS. Get the installers from [Releases](https://github.com/margrop/wrong-notebook/releases); see [Quick Start](#-quick-start) for instructions.
+📦 **Install anywhere**: Docker image (amd64 / arm64) · npm (`npm i -g wrong-notebook`) · Windows · macOS · Linux · fnOS · Android phone / tablet client. Get the installers from [Releases](https://github.com/margrop/wrong-notebook/releases); see [Quick Start](#-quick-start) for instructions.
 
 > This repository is a fork of [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook) with many additional features (listed below).
 
@@ -154,7 +154,7 @@ Screen capture requires a secure browser context (HTTPS). When running in Docker
 The app is a PWA: add it to your phone's or tablet's home screen to run it full screen and open it with one tap. Tablets can use it in landscape.
 
 - **iPhone / iPad (Safari)**: tap **Share** at the bottom → **Add to Home Screen**.
-- **Android (Chrome)**: tap the **menu** at the top right → **Add to Home screen** or **Install app**.
+- **Android (Chrome)**: tap the **menu** at the top right → **Add to Home screen** or **Install app**. You can also install the Android client from [Releases](https://github.com/margrop/wrong-notebook/releases) (see Installers below).
 
 When served over HTTPS (or `localhost`), a service worker caches scripts, styles and icons so the app opens faster, and shows an offline page when the network is down. Questions, statistics and other data always come from the server and are not cached offline.
 
@@ -279,7 +279,7 @@ docker run -d --name wrong-notebook \
 
 With `docker-compose.yml`, change `image` to `wrong-notebook:local`.
 
-### Option 4: Installers (npm / Windows / macOS / Linux / fnOS)
+### Option 4: Installers (npm / Windows / macOS / Linux / fnOS / Android)
 
 If you prefer not to use Docker, download the desktop app or the fnOS package from [Releases](https://github.com/margrop/wrong-notebook/releases), or install with npm:
 
@@ -294,8 +294,11 @@ wrong-notebook --port 3000
 | macOS | `WrongNotebook-Mac-<version>-arm64.dmg` (Apple silicon), `WrongNotebook-Mac-<version>-x64.dmg` (Intel) |
 | Linux | `WrongNotebook-Linux-<version>-<arch>.AppImage`, `.deb` |
 | fnOS | `WrongNotebook-FnOS-<version>-x86.fpk`, `WrongNotebook-FnOS-<version>-arm.fpk` |
+| Android phone / tablet | `WrongNotebook-Android-Phone-<version>.apk` (portrait), `WrongNotebook-Android-Tablet-<version>.apk` (rotates between portrait and landscape) |
 
-The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. Data directories, default accounts and local builds are described in [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) (Chinese).
+The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. The Android client does not include the server: on first launch, enter the address of a deployed server (for example `http://192.168.1.10:3000`). It supports taking photos for upload, saving exported files and system printing, and you can change the server under Settings → About. It needs Android 7.0 or later.
+
+Data directories, default accounts and local builds are described in [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) (Chinese).
 
 ## 🔧 Environment variables
 
@@ -444,7 +447,7 @@ Most documents are written in Simplified Chinese.
 
 | Document | Content |
 | :--- | :--- |
-| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm, desktop and fnOS packages and builds |
+| [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) | npm, desktop, fnOS and Android packages and builds |
 | [HTTPS_SETUP.md](doc/HTTPS_SETUP.md) | HTTPS setup (needed for screen capture) |
 | [TIME_ZONE.md](doc/TIME_ZONE.md) | Application time zone |
 | [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) | Logging |

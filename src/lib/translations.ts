@@ -430,6 +430,8 @@ export const translations = {
                 releaseNotes: "Release Notes",
                 feedback: "Feedback",
                 copyright: "© 2026 margrop · Based on wttwins/wrong-notebook · MIT License",
+                androidServer: "Server",
+                changeServer: "Change server",
             },
             account: {
                 changePassword: "Change Password (Leave empty to keep)",
@@ -1455,6 +1457,8 @@ export const translations = {
                 releaseNotes: "发行说明",
                 feedback: "问题反馈",
                 copyright: "© 2026 margrop · 基于 wttwins/wrong-notebook 扩展 · MIT 许可证",
+                androidServer: "服务器",
+                changeServer: "更换服务器",
             },
             account: {
                 changePassword: "修改密码 (留空不修改)",
