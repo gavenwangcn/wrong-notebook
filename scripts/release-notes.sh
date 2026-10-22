@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # 生成 GitHub Release 说明：列出从上一个版本标签到指定标签之间的 feat / fix / 其他提交。
 # 预览版（带 - 后缀）与上一个任意版本标签比较；正式版与上一个正式版标签比较。
-# 用法：bash scripts/release-notes.sh <标签>
+# 用法：bash scripts/release-notes.sh <标签> [<提交>]
+# 标签尚未创建时（如发版前更新 CHANGELOG.md）用第二个参数指定该版本对应的提交，默认就是标签本身。
 set -euo pipefail
 
-tag=${1:?usage: release-notes.sh <tag>}
+tag=${1:?usage: release-notes.sh <tag> [<ref>]}
+ref=${2:-$tag}
 
 if [[ "$tag" == *-* ]]; then
-    prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' "$tag^" 2>/dev/null || true)
+    prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' "$ref^" 2>/dev/null || true)
 else
-    prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude 'v*-*' "$tag^" 2>/dev/null || true)
+    prev=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude 'v*-*' "$ref^" 2>/dev/null || true)
 fi
 
 if [[ -n "$prev" ]]; then
-    range="$prev..$tag"
+    range="$prev..$ref"
 else
-    range="$tag"
+    range="$ref"
 fi
 echo "范围: $range" >&2
 

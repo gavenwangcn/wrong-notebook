@@ -470,7 +470,7 @@ The `scripts/` directory contains maintenance and debugging scripts, for example
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md).
+Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md). See the [changelog](CHANGELOG.md) (Chinese) for changes in each stable release.
 
 ## 📄 License
 

@@ -31,7 +31,20 @@ git commit -m "feat: 新功能描述"
 git push github main
 ```
 
-### 2. 创建版本标签
+### 2. 正式版：更新 CHANGELOG.md
+
+预览版跳过此步。正式版发布前，用 `scripts/changelog.sh` 把自上一个正式版以来的提交写入 [CHANGELOG.md](../CHANGELOG.md)，提交后再在该提交上打标签：
+
+```bash
+bash scripts/changelog.sh v2026.10.19
+git add CHANGELOG.md
+git commit -m "docs: 更新 CHANGELOG，发布 v2026.10.19"
+git push github main
+```
+
+CHANGELOG.md 与 GitHub Release 说明使用同一脚本（`scripts/release-notes.sh`）按提交信息分类生成，每次运行都会整体重写，手动修改会被覆盖；因此提交信息应写成用户能看懂的改动说明。
+
+### 3. 创建版本标签
 
 ```bash
 # 默认创建预览版标签（当天日期 + 序号）
@@ -44,7 +57,7 @@ git tag v2026.10.19
 git tag v2026.10.19 <commit-sha>
 ```
 
-### 3. 推送标签触发构建
+### 4. 推送标签触发构建
 
 ```bash
 python3 scripts/check-public-history.py v2026.10.19-1
@@ -54,7 +67,7 @@ git push origin v2026.10.19-1
 
 首次发布后，GHCR 镜像默认为私有，需在 GitHub 的 Packages → wrong-notebook → Package settings 中改为 Public。
 
-### 4. 查看构建状态
+### 5. 查看构建状态
 
 访问 GitHub 仓库的 **Actions** 页面查看构建进度。
 
