@@ -211,6 +211,8 @@ function buildBundle() {
     }
     pruneBundle();
     fs.copyFileSync(path.join(PACKAGING, 'runtime', 'launcher.js'), path.join(BUNDLE, 'launcher.js'));
+    // MIT 许可证要求随软件分发许可证文本，npm、桌面版和飞牛OS 安装包都基于此目录
+    fs.copyFileSync(path.join(ROOT, 'LICENSE'), path.join(BUNDLE, 'LICENSE'));
 
     const pkg = readJson(path.join(BUNDLE, 'package.json'));
     writeJson(path.join(BUNDLE, 'package.json'), {
@@ -254,7 +256,7 @@ function buildNpm() {
         bugs: 'https://github.com/margrop/wrong-notebook/issues',
         license: 'MIT',
         bin: { 'wrong-notebook': 'bin/wrong-notebook.js' },
-        files: ['bin', 'launcher.js', 'server.js', '.next', 'public', 'prisma', 'README.md'],
+        files: ['bin', 'launcher.js', 'server.js', '.next', 'public', 'prisma', 'README.md', 'LICENSE'],
         engines: { node: '>=22.15' },
         scripts: { postinstall: 'node bin/wrong-notebook.js prepare-client' },
         dependencies: readJson(path.join(WORK, 'runtime-dependencies.json')),
