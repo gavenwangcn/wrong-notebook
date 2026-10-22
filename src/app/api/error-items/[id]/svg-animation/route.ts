@@ -9,6 +9,16 @@ import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 const logger = createLogger('api:error-items:svg-animation');
 
 type RouteContext = { params: Promise<{ id: string }> };
+type AnimationLanguage = 'zh' | 'en';
+
+/** 动画按语言分别保存：中文版存 svgAnimation，英文版存 svgAnimationEn；未指定时为中文 */
+function parseLanguage(value: unknown): AnimationLanguage {
+    return value === 'en' ? 'en' : 'zh';
+}
+
+function animationField(language: AnimationLanguage) {
+    return language === 'en' ? 'svgAnimationEn' : 'svgAnimation';
+}
 
 /** 当前用户拥有的错题；不存在或不属于该用户时返回 null */
 async function findOwnedItem(id: string, userId: string) {
@@ -21,10 +31,13 @@ async function findOwnedItem(id: string, userId: string) {
 
 /**
  * POST /api/error-items/:id/svg-animation
- * 由 AI 根据题目、答案和解析生成 SVG 动画讲解并保存（覆盖已有的动画）
+ * 由 AI 根据题目、答案和解析生成 SVG 动画讲解并保存（覆盖该语言已有的动画）
+ * 请求体 { language: 'zh' | 'en' }：动画中的文字使用该语言，未指定时为中文
  */
-export async function POST(_req: Request, { params }: RouteContext) {
+export async function POST(req: Request, { params }: RouteContext) {
     const { id } = await params;
+    const body = await req.json().catch(() => ({})) as { language?: unknown };
+    const language = parseLanguage(body.language);
 
     try {
         const user = await getCurrentUser();
@@ -45,9 +58,9 @@ export async function POST(_req: Request, { params }: RouteContext) {
         const svgAnimation = await trackBackgroundTask(
             { userId: user.id, kind: 'svg_animation', subject: describeQuestion(item), link: `/error-items/${id}` },
             async () => {
-                const svg = await getAIService().generateSvgAnimation(questionText, item.answerText || "", item.analysis || "", item.figureSvg);
+                const svg = await getAIService().generateSvgAnimation(questionText, item.answerText || "", item.analysis || "", item.figureSvg, language);
                 if (!svg) throw new Error("NO_VALID_ANIMATION");
-                await prisma.errorItem.update({ where: { id }, data: { svgAnimation: svg } });
+                await prisma.errorItem.update({ where: { id }, data: { [animationField(language)]: svg } });
                 return svg;
             }
         ).catch((error: unknown) => {
@@ -58,8 +71,8 @@ export async function POST(_req: Request, { params }: RouteContext) {
             return badRequest("NO_VALID_ANIMATION");
         }
 
-        logger.info({ errorItemId: id, svgLength: svgAnimation.length }, 'SVG animation generated');
-        return NextResponse.json({ svgAnimation });
+        logger.info({ errorItemId: id, language, svgLength: svgAnimation.length }, 'SVG animation generated');
+        return NextResponse.json({ svgAnimation, language });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logger.error({ error: message }, 'Error generating SVG animation');
@@ -69,11 +82,12 @@ export async function POST(_req: Request, { params }: RouteContext) {
 }
 
 /**
- * DELETE /api/error-items/:id/svg-animation
- * 删除已生成的 SVG 动画讲解
+ * DELETE /api/error-items/:id/svg-animation?language=zh|en
+ * 删除指定语言已生成的 SVG 动画讲解，另一语言的动画保留；未指定时为中文
  */
-export async function DELETE(_req: Request, { params }: RouteContext) {
+export async function DELETE(req: Request, { params }: RouteContext) {
     const { id } = await params;
+    const language = parseLanguage(new URL(req.url).searchParams.get('language'));
 
     try {
         const user = await getCurrentUser();
@@ -84,8 +98,8 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
             return notFound("Item not found");
         }
 
-        await prisma.errorItem.update({ where: { id }, data: { svgAnimation: null } });
-        logger.info({ errorItemId: id }, 'SVG animation deleted');
+        await prisma.errorItem.update({ where: { id }, data: { [animationField(language)]: null } });
+        logger.info({ errorItemId: id, language }, 'SVG animation deleted');
         return NextResponse.json({ success: true });
     } catch (error) {
         logger.error({ error }, 'Error deleting SVG animation');

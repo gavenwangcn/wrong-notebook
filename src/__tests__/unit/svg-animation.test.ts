@@ -54,6 +54,22 @@ describe('generateSvgAnimationPrompt', () => {
     it('没有配图时不输出配图段落', () => {
         expect(generateSvgAnimationPrompt('求面积', '6', '解析')).not.toContain('题目配图');
     });
+
+    it('默认要求动画文字使用简体中文', () => {
+        const prompt = generateSvgAnimationPrompt('求面积', '6', '解析');
+        expect(prompt).toContain('简体中文，每行不超过 24 个字');
+        expect(prompt).not.toContain('must be in English');
+        expect(prompt).not.toContain('{{');
+    });
+
+    it('language=en 时要求动画中全部文字使用英文', () => {
+        const prompt = generateSvgAnimationPrompt('求面积', '6', '解析', null, 'en');
+        expect(prompt).toContain('All text in the animation');
+        expect(prompt).toContain('must be in English');
+        expect(prompt).toContain('英文，每行不超过 48 个字符');
+        expect(prompt).not.toContain('简体中文，每行不超过 24 个字');
+        expect(prompt).not.toContain('{{');
+    });
 });
 
 import { buildSvgAnimationDocument, getSvgAnimationDuration, getSvgAspectRatio, parseClockValue } from '@/lib/svg-animation';

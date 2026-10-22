@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt, SVG_ANIMATION_REQUEST } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
 import { parseLatexFix } from './latex-fix';
 import type { LatexFixInput, LatexFixResult } from './latex-fix';
@@ -614,8 +614,8 @@ export class OpenAIProvider implements AIService {
         }
     }
 
-    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
-        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg);
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language: 'zh' | 'en' = 'zh'): Promise<string | null> {
+        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg, language);
         logger.info({ provider: 'OpenAI', model: this.model, questionLength: questionText.length }, 'SVG Animation Request');
 
         try {
@@ -623,7 +623,7 @@ export class OpenAIProvider implements AIService {
                 model: this.model,
                 messages: [
                     { role: "system", content: prompt },
-                    { role: "user", content: "请为上述题目制作 SVG 动画讲解。" },
+                    { role: "user", content: SVG_ANIMATION_REQUEST[language] },
                 ],
                 max_tokens: maxTokens,
             }), 16384, () => logger.warn('Output truncated by reasoning, retrying with larger max_tokens'));

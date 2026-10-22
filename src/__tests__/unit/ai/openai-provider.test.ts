@@ -392,6 +392,17 @@ describe('OpenAI Provider SVG 动画讲解', () => {
         expect(svg).not.toContain('<script');
     });
 
+    it('language=en 时提示词和用户消息都要求动画文字使用英文', async () => {
+        mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: `<svg_animation>${animation}</svg_animation>` } }] });
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+
+        await provider.generateSvgAnimation('求三角形面积', '6', '底乘高除以二', null, 'en');
+
+        const request = mockCompletionCreate.mock.calls[0][0];
+        expect(request.messages[0].content).toContain('must be in English');
+        expect(request.messages[1].content).toContain('in English');
+    });
+
     it('回复中没有有效 SVG 时返回 null', async () => {
         mockCompletionCreate.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: '<svg_animation>无法生成</svg_animation>' } }] });
         const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });

@@ -840,7 +840,8 @@ export const DEFAULT_SVG_ANIMATION_TEMPLATE = `【角色与核心任务 (ROLE AN
 
 【动画要求】
 - 分 3~6 个步骤，每步 4~6 秒，总时长不超过 40 秒；动画只播放一遍，全部元素使用 fill="freeze"，结束时停在完整的解题结论画面。
-- 每一步在画面底部的字幕区显示该步的讲解文字（简体中文，每行不超过 24 个字，最多两行），进入下一步时替换为新字幕。
+- 每一步在画面底部的字幕区显示该步的讲解文字（{{subtitle_rule}}），进入下一步时替换为新字幕。
+- {{language_instruction}}
 - 画面与讲解同步：逐步画出辅助线、标出已知条件、高亮正在讲解的部分、移动或变换图形、写出关键算式。几何题按题目条件画图；非几何题用线段图、数轴、表格、示意图或算式推导等合适的形式。
 - 用 SMIL 动画（<animate>、<set>、<animateTransform>、<animateMotion>）实现，用 begin 属性按时间排列（如 begin="4s"）；需要先隐藏的元素设 opacity="0" 再用 <animate> 或 <set> 显示。
 - 公式不要用 LaTeX，用普通文字和 Unicode 符号（如 x²、√2、π、×、÷、≤、≥、∠、△、⊥、∥）。
@@ -856,16 +857,29 @@ export const DEFAULT_SVG_ANIMATION_TEMPLATE = `【角色与核心任务 (ROLE AN
 完整的 SVG 动画
 </svg_animation>`;
 
+/** 生成 SVG 动画讲解时随提示词发送的用户消息 */
+export const SVG_ANIMATION_REQUEST: Record<'zh' | 'en', string> = {
+    zh: '请为上述题目制作 SVG 动画讲解。',
+    en: 'Please create the SVG animated explanation for the question above, with all text in English.',
+};
+
 /**
- * 生成 SVG 动画讲解提示词；figureSvg 为题目配图，动画据此作图
+ * 生成 SVG 动画讲解提示词；figureSvg 为题目配图，动画据此作图；language 决定动画中文字的语言
  */
 export function generateSvgAnimationPrompt(
     questionText: string,
     answerText: string,
     analysis: string,
-    figureSvg?: string | null
+    figureSvg?: string | null,
+    language: 'zh' | 'en' = 'zh'
 ): string {
     return replaceVariables(DEFAULT_SVG_ANIMATION_TEMPLATE, {
+        subtitle_rule: language === 'en'
+            ? '英文，每行不超过 48 个字符，最多两行'
+            : '简体中文，每行不超过 24 个字，最多两行',
+        language_instruction: language === 'en'
+            ? 'IMPORTANT: All text in the animation (title, labels, table headers, subtitles and conclusions) must be in English. If the question, answer or analysis is in Chinese, translate it into natural English; keep names of points, variables and numbers unchanged.'
+            : '动画中的全部文字（标题、标注、表头、字幕和结论）使用简体中文；题目为英文时，题目原文中的专有名词与变量可保留英文。',
         question_text: questionText.trim() || '（无题目文字）',
         answer_text: answerText.trim() || '（无）',
         analysis: analysis.trim() || '（无）',

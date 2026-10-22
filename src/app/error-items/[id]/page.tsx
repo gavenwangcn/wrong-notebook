@@ -69,7 +69,8 @@ interface ErrorItemDetail {
     hasFigure?: boolean;
     figureSvg?: string | null;
     geogebraCommands?: string | null;
-    svgAnimation?: string | null;
+    svgAnimation?: string | null;    // 中文版动画讲解
+    svgAnimationEn?: string | null;  // 英文版动画讲解
 }
 
 export default function ErrorDetailPage() {
@@ -208,8 +209,9 @@ export default function ErrorDetailPage() {
         setItem((current) => current && { ...current, ...updated });
     }, []);
 
-    const handleSvgAnimationChange = useCallback((svgAnimation: string | null) => {
-        setItem((current) => current && { ...current, svgAnimation });
+    // 动画按语言分别保存，生成或删除只影响对应语言的版本
+    const handleSvgAnimationChange = useCallback((animationLanguage: 'zh' | 'en', svgAnimation: string | null) => {
+        setItem((current) => current && { ...current, [animationLanguage === 'en' ? 'svgAnimationEn' : 'svgAnimation']: svgAnimation });
     }, []);
 
     const toggleMastery = async () => {
@@ -672,7 +674,16 @@ export default function ErrorDetailPage() {
                 </div>
 
                 <div className="space-y-6">
-                    {svgAnimationEnabled && <SvgAnimationExplainer errorItemId={item.id} svgAnimation={item.svgAnimation} onChange={handleSvgAnimationChange} />}
+                    {svgAnimationEnabled && (
+                        // 切换界面语言时自动显示对应语言的动画；key 让播放器随语言重新加载
+                        <SvgAnimationExplainer
+                            key={language}
+                            errorItemId={item.id}
+                            svgAnimation={language === 'en' ? item.svgAnimationEn : item.svgAnimation}
+                            hasOtherLanguage={!!(language === 'en' ? item.svgAnimation : item.svgAnimationEn)}
+                            onChange={handleSvgAnimationChange}
+                        />
+                    )}
 
                     {geogebraEnabled && (item.geogebraCommands ? (
                         <GeogebraDemo commands={item.geogebraCommands} height={700} showToolBar={true} showAlgebraInput={false} showMenuBar={false} onRegenerate={handleAnalyzeGeogebra} onSaveCommands={handleSaveGeogebraCommands} onDelete={handleDeleteGeogebra} />

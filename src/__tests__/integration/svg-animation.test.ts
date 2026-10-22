@@ -20,8 +20,8 @@ import { POST, DELETE } from '@/app/api/error-items/[id]/svg-animation/route';
 import { DELETE as DELETE_GEOGEBRA } from '@/app/api/error-items/[id]/geogebra/route';
 
 const context = { params: Promise.resolve({ id: 'e1' }) };
-const generate = () => POST(new Request('http://localhost', { method: 'POST' }), context);
-const remove = () => DELETE(new Request('http://localhost', { method: 'DELETE' }), context);
+const generate = (body?: unknown) => POST(new Request('http://localhost', { method: 'POST', ...(body ? { body: JSON.stringify(body) } : {}) }), context);
+const remove = (query = '') => DELETE(new Request(`http://localhost${query}`, { method: 'DELETE' }), context);
 const removeGeogebra = () => DELETE_GEOGEBRA(new Request('http://localhost', { method: 'DELETE' }), context);
 const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"><animate attributeName="r" from="0" to="4" dur="1s"/></circle></svg>';
 
@@ -34,15 +34,35 @@ describe('SVG 动画讲解接口', () => {
         mocks.errorItem.update.mockResolvedValue({});
     });
 
-    it('POST 把题目、答案、解析和配图交给 AI，保存生成的动画', async () => {
+    it('POST 把题目、答案、解析和配图交给 AI，未指定语言时生成并保存中文版动画', async () => {
         mocks.generateSvgAnimation.mockResolvedValue(svg);
 
         const response = await generate();
 
         expect(response.status).toBe(200);
-        expect(mocks.generateSvgAnimation).toHaveBeenCalledWith('求面积', '6', '底乘高', '<svg/>');
+        expect(mocks.generateSvgAnimation).toHaveBeenCalledWith('求面积', '6', '底乘高', '<svg/>', 'zh');
         expect(mocks.errorItem.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { svgAnimation: svg } });
-        expect(await response.json()).toEqual({ svgAnimation: svg });
+        expect(await response.json()).toEqual({ svgAnimation: svg, language: 'zh' });
+    });
+
+    it('POST language=en 时生成英文版动画，单独保存且不覆盖中文版', async () => {
+        mocks.generateSvgAnimation.mockResolvedValue(svg);
+
+        const response = await generate({ language: 'en' });
+
+        expect(response.status).toBe(200);
+        expect(mocks.generateSvgAnimation).toHaveBeenCalledWith('求面积', '6', '底乘高', '<svg/>', 'en');
+        expect(mocks.errorItem.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { svgAnimationEn: svg } });
+        expect(await response.json()).toEqual({ svgAnimation: svg, language: 'en' });
+    });
+
+    it('POST 不支持的语言按中文处理', async () => {
+        mocks.generateSvgAnimation.mockResolvedValue(svg);
+
+        await generate({ language: 'fr' });
+
+        expect(mocks.generateSvgAnimation.mock.calls[0][4]).toBe('zh');
+        expect(mocks.errorItem.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { svgAnimation: svg } });
     });
 
     it('POST 题目文字为空时返回 NO_QUESTION_TEXT，不调用 AI', async () => {
@@ -74,11 +94,18 @@ describe('SVG 动画讲解接口', () => {
         expect((await response.json()).message).toBe('AI_TIMEOUT_ERROR');
     });
 
-    it('DELETE 清空已生成的动画', async () => {
+    it('DELETE 未指定语言时清空中文版动画', async () => {
         const response = await remove();
 
         expect(response.status).toBe(200);
         expect(mocks.errorItem.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { svgAnimation: null } });
+    });
+
+    it('DELETE language=en 只清空英文版动画', async () => {
+        const response = await remove('?language=en');
+
+        expect(response.status).toBe(200);
+        expect(mocks.errorItem.update).toHaveBeenCalledWith({ where: { id: 'e1' }, data: { svgAnimationEn: null } });
     });
 
     it('未登录返回 401，不能操作他人的题目', async () => {

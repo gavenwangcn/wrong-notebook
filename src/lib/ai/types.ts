@@ -86,8 +86,8 @@ export interface AIService {
     analyzeForGeogebra(questionText: string, answerText: string, analysis: string, previousErrors?: string): Promise<GeogebraAnalysisResult>;
     /** 只修复各字段中的 LaTeX 语法，返回 AI 修复后的字段内容 */
     fixLatex(input: LatexFixInput): Promise<LatexFixResult>;
-    /** 生成 SVG 动画讲解（已净化），无有效 SVG 时返回 null；figureSvg 为题目配图 */
-    generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null>;
+    /** 生成 SVG 动画讲解（已净化），无有效 SVG 时返回 null；figureSvg 为题目配图，language 决定动画中文字的语言 */
+    generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language?: 'zh' | 'en'): Promise<string | null>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
     /** 从标签库中选知识点，并评定难度星级 */
     suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult>;

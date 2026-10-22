@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt, SVG_ANIMATION_REQUEST } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
 import { parseLatexFix } from './latex-fix';
 import type { LatexFixInput, LatexFixResult } from './latex-fix';
@@ -499,14 +499,14 @@ export class GeminiProvider implements AIService {
         }
     }
 
-    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
-        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg);
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language: 'zh' | 'en' = 'zh'): Promise<string | null> {
+        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg, language);
         logger.info({ provider: 'Gemini', model: this.modelName, questionLength: questionText.length }, 'SVG Animation Request');
 
         try {
             const response = await this.retryOperation(() => this.ai.models.generateContent({
                 model: this.modelName,
-                contents: [{ text: prompt }, { text: "请为上述题目制作 SVG 动画讲解。" }],
+                contents: [{ text: prompt }, { text: SVG_ANIMATION_REQUEST[language] }],
             }));
 
             const text = response.text || '';

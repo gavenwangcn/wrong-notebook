@@ -8,22 +8,27 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { toast, confirmDialog } from "@/lib/feedback";
+import type { Language } from "@/lib/translations";
 
 /** 动画 SVG 较长，AI 通常需要几分钟才能写完，前端等待上限与服务端 AI 请求超时一致 */
 const GENERATE_TIMEOUT_MS = 10 * 60 * 1000;
 
 interface SvgAnimationExplainerProps {
     errorItemId: string;
+    /** 当前界面语言对应的动画 */
     svgAnimation: string | null | undefined;
-    /** 生成或删除后回调新的动画（删除后为 null） */
-    onChange: (svgAnimation: string | null) => void;
+    /** 另一语言是否已有动画（当前语言未生成时提示切换语言查看） */
+    hasOtherLanguage?: boolean;
+    /** 生成或删除后回调该语言的新动画（删除后为 null） */
+    onChange: (language: Language, svgAnimation: string | null) => void;
 }
 
 /**
- * 题目的 SVG 动画讲解：未生成时显示生成入口；已生成时可播放/暂停、拖动进度、重新生成和删除（删除需二次确认）。
+ * 题目的 SVG 动画讲解，按界面语言分别生成和显示：中文界面用中文版动画，英文界面用英文版动画。
+ * 未生成时显示生成入口；已生成时可播放/暂停、拖动进度、重新生成和删除（删除需二次确认，只删除当前语言的动画）。
  */
-export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: SvgAnimationExplainerProps) {
-    const { t } = useLanguage();
+export function SvgAnimationExplainer({ errorItemId, svgAnimation, hasOtherLanguage, onChange }: SvgAnimationExplainerProps) {
+    const { t, language } = useLanguage();
     const [generating, setGenerating] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,8 +37,8 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
         setGenerating(true);
         setError(null);
         try {
-            const result = await apiClient.post<{ svgAnimation: string }>(`/api/error-items/${errorItemId}/svg-animation`, {}, { timeout: GENERATE_TIMEOUT_MS });
-            onChange(result.svgAnimation);
+            const result = await apiClient.post<{ svgAnimation: string }>(`/api/error-items/${errorItemId}/svg-animation`, { language }, { timeout: GENERATE_TIMEOUT_MS });
+            onChange(language, result.svgAnimation);
         } catch (err) {
             const code = (err as { data?: { message?: string } })?.data?.message || "";
             const mapped = (t.errors as Record<string, unknown>)[code];
@@ -52,8 +57,8 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
         if (!(await confirmDialog(t.svgAnimation.confirmDelete, { destructive: true }))) return;
         setDeleting(true);
         try {
-            await apiClient.delete(`/api/error-items/${errorItemId}/svg-animation`);
-            onChange(null);
+            await apiClient.delete(`/api/error-items/${errorItemId}/svg-animation?language=${language}`);
+            onChange(language, null);
             setError(null);
         } catch (err) {
             frontendLogger.error('[SvgAnimation]', 'Failed to delete SVG animation', { error: err instanceof Error ? err.message : String(err) });
@@ -77,7 +82,7 @@ export function SvgAnimationExplainer({ errorItemId, svgAnimation, onChange }: S
                     </Button>
                 </div>
                 {error && <p className="text-xs text-destructive mt-2">{error}</p>}
-                <p className="text-xs text-muted-foreground mt-2">{t.svgAnimation.hint}</p>
+                <p className="text-xs text-muted-foreground mt-2">{hasOtherLanguage ? t.svgAnimation.otherLanguageAvailable : t.svgAnimation.hint}</p>
             </div>
         );
     }

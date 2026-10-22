@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateReanswerPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt, SVG_ANIMATION_REQUEST } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
 import { parseLatexFix } from './latex-fix';
 import type { LatexFixInput, LatexFixResult } from './latex-fix';
@@ -324,11 +324,11 @@ export class AnthropicProvider implements AIService {
         }
     }
 
-    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language: 'zh' | 'en' = 'zh'): Promise<string | null> {
         logger.info({ provider: 'Anthropic', model: this.model, questionLength: questionText.length }, 'SVG Animation Request');
 
         try {
-            const text = await this.complete(generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg), "请为上述题目制作 SVG 动画讲解。", 16384);
+            const text = await this.complete(generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg, language), SVG_ANIMATION_REQUEST[language], 16384);
             logger.debug({ rawResponse: text }, 'SVG animation AI raw response');
             return sanitizeSvgAnimation(extractTag(text, "svg_animation") || text);
         } catch (error) {

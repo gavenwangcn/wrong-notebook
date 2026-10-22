@@ -122,7 +122,7 @@ Practice statistics show total practice, accuracy and active months, with distri
 
 ### Explanations and demos
 
-- **🎬 SVG animated explanations**: AI generates step-by-step SVG animations of the solution, with play/pause, seeking, replay and full screen. On by default; turn it off in **Settings → General**.
+- **🎬 SVG animated explanations**: AI generates step-by-step SVG animations of the solution, with play/pause, seeking, replay and full screen. Animation text follows the interface language: the English interface generates an English version and the Chinese interface a Chinese one. Both are kept, and switching the language shows the matching version automatically. On by default; turn it off in **Settings → General**.
 - **📐 GeoGebra demos**: for math and physics questions, AI can generate interactive GeoGebra figures. Off by default; turn it on in **Settings → General**.
 - Generated animations and GeoGebra demos can be deleted (with confirmation).
 

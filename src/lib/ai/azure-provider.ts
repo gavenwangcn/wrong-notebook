@@ -1,6 +1,6 @@
 import { AzureOpenAI } from "openai";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
-import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt } from './prompts';
+import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateReanswerPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt, SVG_ANIMATION_REQUEST } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
 import { parseLatexFix } from './latex-fix';
 import type { LatexFixInput, LatexFixResult } from './latex-fix';
@@ -545,8 +545,8 @@ Knowledge Points: ${knowledgePoints.join(", ")}
         }
     }
 
-    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null): Promise<string | null> {
-        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg);
+    async generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language: 'zh' | 'en' = 'zh'): Promise<string | null> {
+        const prompt = generateSvgAnimationPrompt(questionText, answerText, analysis, figureSvg, language);
         logger.info({ provider: 'Azure OpenAI', deployment: this.deployment, questionLength: questionText.length }, 'SVG Animation Request');
 
         try {
@@ -554,7 +554,7 @@ Knowledge Points: ${knowledgePoints.join(", ")}
                 model: this.deployment,
                 messages: [
                     { role: "system", content: prompt },
-                    { role: "user", content: "请为上述题目制作 SVG 动画讲解。" },
+                    { role: "user", content: SVG_ANIMATION_REQUEST[language] },
                 ],
                 max_tokens: maxTokens,
             }), 16384, () => logger.warn('Output truncated by reasoning, retrying with larger max_tokens'));
