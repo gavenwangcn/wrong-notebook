@@ -292,7 +292,7 @@ wrong-notebook --port 3000
 | macOS | `WrongNotebook-Mac-<版本>-arm64.dmg`（Apple 芯片）、`WrongNotebook-Mac-<版本>-x64.dmg`（Intel） |
 | Linux | `WrongNotebook-Linux-<版本>-<架构>.AppImage`、`.deb` |
 | 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk`、`WrongNotebook-FnOS-<版本>-arm.fpk` |
-| 安卓手机 / 平板 | `WrongNotebook-Android-Phone-<版本>.apk`（竖屏）、`WrongNotebook-Android-Tablet-<版本>.apk`（横竖屏自动旋转） |
+| 安卓手机 / 平板 | `WrongNotebook-Android-Client-Phone-<版本>.apk`（竖屏）、`WrongNotebook-Android-Client-Tablet-<版本>.apk`（横竖屏自动旋转） |
 
 安卓客户端不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），支持拍照上传、导出文件和系统打印，可在「设置 → 关于」中更换服务器。需要 Android 7.0 及以上。
 

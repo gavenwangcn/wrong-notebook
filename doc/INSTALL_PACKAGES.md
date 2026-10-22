@@ -9,8 +9,8 @@
 | macOS | `WrongNotebook-Mac-<版本>-arm64.dmg`（Apple 芯片）/ `-x64.dmg`（Intel），另有同名 `.zip` | 未签名，首次打开需右键选择「打开」 |
 | Linux | `WrongNotebook-Linux-<版本>-<架构>.AppImage` / `.deb` | x86_64 与 arm64 |
 | 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk` / `-arm.fpk` | 在应用中心手动安装，依赖应用中心的 Node.js v24 |
-| 安卓手机 | `WrongNotebook-Android-Phone-<版本>.apk` | 客户端，连接已部署的服务器；锁定竖屏 |
-| 安卓平板 | `WrongNotebook-Android-Tablet-<版本>.apk` | 客户端，连接已部署的服务器；横竖屏自动旋转 |
+| 安卓手机 | `WrongNotebook-Android-Client-Phone-<版本>.apk` | 客户端，连接已部署的服务器；锁定竖屏 |
+| 安卓平板 | `WrongNotebook-Android-Client-Tablet-<版本>.apk` | 客户端，连接已部署的服务器；横竖屏自动旋转 |
 
 校验和见 Release 中的 `SHA256SUMS.txt`。
 

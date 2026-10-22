@@ -372,7 +372,7 @@ function buildAndroid() {
     for (const flavor of flavors) {
         const apk = path.join(project, 'app', 'build', 'outputs', 'apk', flavor, 'release', `app-${flavor}-release.apk`);
         if (!fs.existsSync(apk)) throw new Error(`未找到 ${path.relative(ROOT, apk)}`);
-        const out = path.join(DIST, `WrongNotebook-Android-${capitalize(flavor)}-${version}.apk`);
+        const out = path.join(DIST, `WrongNotebook-Android-Client-${capitalize(flavor)}-${version}.apk`);
         fs.copyFileSync(apk, out);
         log(`安卓安装包已生成：${path.relative(ROOT, out)}`);
     }

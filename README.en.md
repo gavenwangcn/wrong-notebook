@@ -294,7 +294,7 @@ wrong-notebook --port 3000
 | macOS | `WrongNotebook-Mac-<version>-arm64.dmg` (Apple silicon), `WrongNotebook-Mac-<version>-x64.dmg` (Intel) |
 | Linux | `WrongNotebook-Linux-<version>-<arch>.AppImage`, `.deb` |
 | fnOS | `WrongNotebook-FnOS-<version>-x86.fpk`, `WrongNotebook-FnOS-<version>-arm.fpk` |
-| Android phone / tablet | `WrongNotebook-Android-Phone-<version>.apk` (portrait), `WrongNotebook-Android-Tablet-<version>.apk` (rotates between portrait and landscape) |
+| Android phone / tablet | `WrongNotebook-Android-Client-Phone-<version>.apk` (portrait), `WrongNotebook-Android-Client-Tablet-<version>.apk` (rotates between portrait and landscape) |
 
 The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. The Android client does not include the server: on first launch, enter the address of a deployed server (for example `http://192.168.1.10:3000`). It supports taking photos for upload, saving exported files and system printing, and you can change the server under Settings → About. It needs Android 7.0 or later.
 
