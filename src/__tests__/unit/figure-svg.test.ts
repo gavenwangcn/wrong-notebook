@@ -30,6 +30,20 @@ describe('sanitizeFigureSvg', () => {
         expect(clean).toContain('xmlns="http://www.w3.org/2000/svg"'); // 缺少命名空间时补上，<img> 才能加载
     });
 
+    it('嵌套拼接的脚本、事件属性和伪协议不会在净化后重新出现', () => {
+        const svg = sanitizeFigureSvg(
+            '<svg viewBox="0 0 10 10"><scr<script></script>ipt>alert(1)</script>'
+            + '<rect x="1" oonnload="1" onclick="x()" width="5" height="5"/>'
+            + '<text style="background:url(javajavascript:script:x)">a</text>'
+            + '<a href="vbscript:x"><circle r="1" fill="data:x"/></a></svg>'
+        );
+        expect(svg).not.toBeNull();
+        expect(svg).not.toMatch(/<script/i);
+        expect(svg).not.toMatch(/\son[a-z]+\s*=/i);
+        expect(svg).not.toMatch(/javascript:|vbscript:|data:/i);
+        expect(svg).toContain('<rect');
+    });
+
     it('没有图形元素、不是 SVG、超长或不是字符串时返回 null', () => {
         expect(sanitizeFigureSvg('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).toBeNull();
         expect(sanitizeFigureSvg('<svg><script>alert(1)</script></svg>')).toBeNull();

@@ -14,19 +14,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 const DANGEROUS_ELEMENTS = /<(script|foreignObject|iframe|object|embed|audio|video|image)\b[\s\S]*?(<\/\1\s*>|\/>)/gi;
 const DANGEROUS_OPEN_TAGS = /<\/?(script|foreignObject|iframe|object|embed|audio|video|image)\b[^>]*>/gi;
 
-/**
- * 从 AI 回复中取出 <svg>…</svg> 并净化；没有有效 SVG、超长或净化后为空时返回 null
- */
-export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_SVG_LENGTH): string | null {
-    if (typeof raw !== 'string') return null;
-    const start = raw.search(/<svg[\s>]/i);
-    const end = raw.toLowerCase().lastIndexOf('</svg>');
-    if (start === -1 || end === -1 || end < start) return null;
+const MAX_SANITIZE_PASSES = 10;
 
-    let svg = raw.slice(start, end + '</svg>'.length);
-    if (svg.length > maxLength) return null;
-
-    svg = svg
+function sanitizeOnce(svg: string): string {
+    return svg
         .replace(/<!--[\s\S]*?-->/g, '')
         .replace(/<!DOCTYPE[^>]*>/gi, '')
         .replace(/<\?[\s\S]*?\?>/g, '')
@@ -39,7 +30,28 @@ export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_S
         // 样式中的外部资源与脚本
         .replace(/@import[^;]*;?/gi, '')
         .replace(/url\(\s*(['"]?)(?!#)[^)]*\)/gi, 'none')
-        .replace(/javascript:/gi, '');
+        .replace(/(?:javascript|vbscript|data)\s*:/gi, '');
+}
+
+/**
+ * 从 AI 回复中取出 <svg>…</svg> 并净化；没有有效 SVG、超长或净化后为空时返回 null
+ */
+export function sanitizeFigureSvg(raw: unknown, maxLength: number = MAX_FIGURE_SVG_LENGTH): string | null {
+    if (typeof raw !== 'string') return null;
+    const start = raw.search(/<svg[\s>]/i);
+    const end = raw.toLowerCase().lastIndexOf('</svg>');
+    if (start === -1 || end === -1 || end < start) return null;
+
+    let svg = raw.slice(start, end + '</svg>'.length);
+    if (svg.length > maxLength) return null;
+
+    // 删除一处可能拼出新的危险片段（如 <scr<script>ipt>），反复净化直到结果不再变化
+    for (let pass = 0; ; pass++) {
+        const next = sanitizeOnce(svg);
+        if (next === svg) break;
+        if (pass >= MAX_SANITIZE_PASSES) return null;
+        svg = next;
+    }
 
     if (!/<svg[^>]*\sxmlns\s*=/i.test(svg)) {
         svg = svg.replace(/<svg/i, `<svg xmlns="${SVG_NS}"`);
