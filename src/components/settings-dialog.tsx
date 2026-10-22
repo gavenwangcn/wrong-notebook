@@ -40,6 +40,7 @@ import { TimeZoneSetting } from "@/components/settings/time-zone-setting";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
 import { isVendorProvider, VENDOR_PRESETS, VENDOR_PROVIDER_IDS } from "@/lib/ai/vendor-presets";
+import { PROJECT_REPO_URL } from "@/lib/constants/project";
 
 import { MessageSquareText, Info, ExternalLink, Github, ScrollText } from "lucide-react";
 import { toast, confirmDialog } from "@/lib/feedback";
@@ -1588,7 +1589,7 @@ export function SettingsDialog() {
 
                             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 w-full sm:w-auto px-4 sm:px-0">
                                 <Button variant="outline" asChild className="gap-2 w-full sm:w-auto">
-                                    <a href="https://github.com/wttwins/wrong-notebook" target="_blank" rel="noopener noreferrer">
+                                    <a href={PROJECT_REPO_URL} target="_blank" rel="noopener noreferrer">
                                         <Github className="h-4 w-4" />
                                         {t.settings?.about?.github || "GitHub Repository"}
                                         <ExternalLink className="h-3 w-3 ml-1 opacity-50" />
@@ -1596,7 +1597,7 @@ export function SettingsDialog() {
                                 </Button>
 
                                 <Button variant="outline" asChild className="gap-2 w-full sm:w-auto">
-                                    <a href="https://github.com/wttwins/wrong-notebook/releases" target="_blank" rel="noopener noreferrer">
+                                    <a href={`${PROJECT_REPO_URL}/releases`} target="_blank" rel="noopener noreferrer">
                                         <ScrollText className="h-4 w-4" />
                                         {t.settings?.about?.releaseNotes || "Release Notes"}
                                         <ExternalLink className="h-3 w-3 ml-1 opacity-50" />
@@ -1604,7 +1605,7 @@ export function SettingsDialog() {
                                 </Button>
 
                                 <Button variant="outline" asChild className="gap-2 w-full sm:w-auto">
-                                    <a href="https://github.com/wttwins/wrong-notebook/issues" target="_blank" rel="noopener noreferrer">
+                                    <a href={`${PROJECT_REPO_URL}/issues`} target="_blank" rel="noopener noreferrer">
                                         <MessageSquareText className="h-4 w-4" />
                                         {t.settings?.about?.feedback || "Feedback"}
                                         <ExternalLink className="h-3 w-3 ml-1 opacity-50" />
@@ -1613,7 +1614,7 @@ export function SettingsDialog() {
                             </div>
 
                             <p className="text-xs text-muted-foreground mt-8">
-                                {t.settings?.about?.copyright || "© 2025 Wttwins. All rights reserved."}
+                                {t.settings?.about?.copyright || "© 2026 margrop · Based on wttwins/wrong-notebook · MIT License"}
                             </p>
                         </div>
                     </TabsContent>

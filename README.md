@@ -459,3 +459,5 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 ## 📄 许可证
 
 MIT License
+
+© 2026 margrop。本项目基于 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook) 扩展，原项目代码版权归原作者所有。

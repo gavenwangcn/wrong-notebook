@@ -463,3 +463,5 @@ The `scripts/` directory contains maintenance and debugging scripts, for example
 ## 📄 License
 
 MIT License
+
+© 2026 margrop. This project extends [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook); copyright in the original code remains with its author.

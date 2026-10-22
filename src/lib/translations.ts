@@ -429,7 +429,7 @@ export const translations = {
                 desc: "Smart Error Notebook - AI-powered learning assistant",
                 releaseNotes: "Release Notes",
                 feedback: "Feedback",
-                copyright: "© 2025 Wttwins. All rights reserved.",
+                copyright: "© 2026 margrop · Based on wttwins/wrong-notebook · MIT License",
             },
             account: {
                 changePassword: "Change Password (Leave empty to keep)",
@@ -1454,7 +1454,7 @@ export const translations = {
                 desc: "智能错题本 - AI 驱动的学习助手",
                 releaseNotes: "发行说明",
                 feedback: "问题反馈",
-                copyright: "© 2025 Wttwins. All rights reserved.",
+                copyright: "© 2026 margrop · 基于 wttwins/wrong-notebook 扩展 · MIT 许可证",
             },
             account: {
                 changePassword: "修改密码 (留空不修改)",
