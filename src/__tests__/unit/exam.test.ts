@@ -85,6 +85,11 @@ describe('exam-print', () => {
         expect(html).toContain('<div class="exam-sheet">内容</div>');
     });
 
+    it('KaTeX 样式版本与安装的 katex 一致，避免类名前缀不匹配', async () => {
+        const { version } = (await import('katex')).default;
+        expect(KATEX_CSS_URL).toContain(`katex@${version}/`);
+    });
+
     it('文件名去掉非法字符', () => {
         expect(examFileName('数学 2026/10/18 测试')).toBe('数学_2026_10_18_测试.html');
         expect(examFileName('')).toBe('exam.html');
