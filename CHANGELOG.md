@@ -3,6 +3,28 @@
 本文件记录各正式版的改动，由 `scripts/changelog.sh` 根据提交信息生成，请勿手动编辑。
 预览版（`v年.月.日-n`）的改动见 [GitHub Releases](https://github.com/margrop/wrong-notebook/releases)，并归入其后的正式版。
 
+## [2026.10.23](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.23) - 2026-10-23
+
+### ✨ 新功能
+- 错题复习状态改为待复习、复习中、已掌握三类
+- 新增安卓单机版，APK 内置 Node.js 与服务端，无需部署服务器
+- 新增安卓手机版、平板版客户端，发布时随 Release 提供 APK
+- 完善 PWA，补齐多尺寸图标并加入 Service Worker 与离线页
+- SVG 动画讲解绑定界面语言，中英文版本分别生成并随语言自动切换
+
+### 🛠 修复
+- SVG 净化循环内联到替换处，日志去换行改用标准写法，便于代码扫描识别
+- 桌面版 Electron 升级到 42.11.3，修复多项已公开的安全漏洞
+- 安卓 App 关闭系统备份，Bridge 只为本服务器页面执行操作
+- HTTPS 代理与测试脚本日志去掉换行，防止伪造日志行
+- 配置文件和会话密钥读写消除先判断后操作的竞态
+- 题目配图 SVG 反复净化直到稳定，防止嵌套拼接出脚本
+- 拉取模型列表只允许 http/https 地址，去掉末尾斜杠改用无回溯实现
+- 升级 global-agent 4 与 KaTeX 0.19，修复依赖漏洞和 http 模块代理未生效
+- 「关于」页链接指向本项目仓库，更新版权说明
+
+**完整变更**：https://github.com/margrop/wrong-notebook/compare/v2026.10.22...v2026.10.23
+
 ## [2026.10.22](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.22) - 2026-10-22
 
 ### ✨ 新功能
