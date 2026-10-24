@@ -63,6 +63,13 @@ export async function GET(req: Request) {
             where: userFilter,
         });
 
+        const examPapers = await prisma.examPaper.findMany({
+            where: userFilter,
+            include: {
+                questions: { orderBy: { order: 'asc' } },
+            },
+        });
+
         const exportData = {
             version: 2,
             exportedAt: new Date().toISOString(),
@@ -80,6 +87,7 @@ export async function GET(req: Request) {
             errorItems,
             reviewSchedules,
             practiceRecords,
+            examPapers,
         };
 
         logger.info({
@@ -90,6 +98,7 @@ export async function GET(req: Request) {
             errorItemsCount: errorItems.length,
             reviewSchedulesCount: reviewSchedules.length,
             practiceRecordsCount: practiceRecords.length,
+            examPapersCount: examPapers.length,
         }, 'Data export completed');
 
         const jsonString = JSON.stringify(exportData, null, 2);

@@ -418,12 +418,13 @@ export function SettingsDialog() {
             const stats = (response as any).stats;
 
             toast.success(
-                (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records.")
+                (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records, {papers} exam papers.")
                     .replace('{subjects}', String(stats.subjectsCreated))
                     .replace('{tags}', String(stats.tagsCreated))
                     .replace('{items}', String(stats.errorItemsCreated))
                     .replace('{schedules}', String(stats.reviewSchedulesCreated))
                     .replace('{records}', String(stats.practiceRecordsCreated))
+                    .replace('{papers}', String(stats.examPapersCreated ?? 0))
                     .replace('{duplicates}', String(stats.duplicateErrorItems ?? 0))
             );
 
@@ -458,12 +459,13 @@ export function SettingsDialog() {
             if (result.success) {
                 const s = result.stats;
                 toast.success(
-                    (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records.")
+                    (t.settings?.importResultDesc || "Imported {subjects} notebooks, {tags} tags, {items} error items, {schedules} review schedules, {records} practice records, {papers} exam papers.")
                         .replace('{subjects}', String(s.subjectsCreated))
                         .replace('{tags}', String(s.tagsCreated))
                         .replace('{items}', String(s.errorItemsCreated))
                         .replace('{schedules}', String(s.reviewSchedulesCreated))
                         .replace('{records}', String(s.practiceRecordsCreated))
+                        .replace('{papers}', String(s.examPapersCreated ?? 0))
                         .replace('{duplicates}', String(s.duplicateErrorItems ?? 0))
                 );
                 setSelectedFile(null);

@@ -139,6 +139,49 @@ describe('数据导出后再导入（真实 SQLite）', () => {
         expect(mocks.scheduleMasteryEvaluation).toHaveBeenCalledWith([item.id]);
     });
 
+    it('试卷、试卷题目及其作答记录完整保留，重复导入不新建试卷', async () => {
+        await database.examPaper.create({
+            data: {
+                id: 'paper-1', userId: 'user-1', title: '周测', status: 'generating', scope: 'unmastered', difficulty: 'hard', requestedCount: 2,
+                subjectIds: JSON.stringify(['math']), tagNames: JSON.stringify(['自定义标签']), resultsRecordedAt: new Date('2026-10-22T00:00:00Z'),
+                createdAt: new Date('2026-10-21T00:00:00Z'),
+                questions: { create: [
+                    { id: 'question-1', order: 0, errorItemId: 'item-1', sourceShortId: 'AbC234', status: 'ready', questionText: '试卷新题', answerText: '答', analysis: '析', figureSvg: figure },
+                    { id: 'question-2', order: 1, errorItemId: 'item-1', sourceShortId: 'AbC234', status: 'pending' },
+                ] },
+            },
+        });
+        await database.practiceRecord.create({
+            data: { userId: 'user-1', errorItemId: 'item-1', examQuestionId: 'question-1', result: 'wrong', isCorrect: false, source: 'exam', questionText: '试卷新题' },
+        });
+        const backup = await exportBackup();
+        await clearUserData();
+        const { stats } = await importBackup(backup);
+        expect(stats.examPapersCreated).toBe(1);
+
+        const item = await database.errorItem.findFirstOrThrow({ where: { userId: 'user-1' } });
+        const subject = await database.subject.findFirstOrThrow({ where: { userId: 'user-1' } });
+        const paper = await database.examPaper.findFirstOrThrow({ where: { userId: 'user-1' }, include: { questions: { orderBy: { order: 'asc' } } } });
+        expect(paper).toMatchObject({
+            title: '周测', status: 'partial', scope: 'unmastered', difficulty: 'hard', requestedCount: 2,
+            subjectIds: JSON.stringify([subject.id]), tagNames: JSON.stringify(['自定义标签']),
+            resultsRecordedAt: new Date('2026-10-22T00:00:00Z'), createdAt: new Date('2026-10-21T00:00:00Z'),
+        });
+        expect(paper.questions).toMatchObject([
+            { order: 0, errorItemId: item.id, sourceShortId: 'AbC234', status: 'ready', questionText: '试卷新题', figureSvg: figure },
+            // 导出时仍在生成的题目按失败导入
+            { order: 1, errorItemId: item.id, status: 'failed' },
+        ]);
+        expect(await database.practiceRecord.findFirstOrThrow({ where: { source: 'exam' } })).toMatchObject({ examQuestionId: paper.questions[0].id, errorItemId: item.id });
+
+        // 再导入一次：试卷不重复，作答记录关联到已有的试卷题目
+        const again = await importBackup(backup);
+        expect(again.stats.examPapersCreated).toBe(0);
+        expect(await database.examPaper.count({ where: { userId: 'user-1' } })).toBe(1);
+        const examRecords = await database.practiceRecord.findMany({ where: { source: 'exam' } });
+        expect(examRecords.map((record) => record.examQuestionId)).toEqual([paper.questions[0].id, paper.questions[0].id]);
+    });
+
     it('导入时重新净化 SVG，丢弃不合法的暂存练习和掌握概率', async () => {
         const backup = await exportBackup();
         await clearUserData();

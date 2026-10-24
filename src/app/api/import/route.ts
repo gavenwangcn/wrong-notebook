@@ -15,6 +15,7 @@ import { sanitizeFigureSvg } from "@/lib/figure-svg";
 import { sanitizeSvgAnimation } from "@/lib/svg-animation";
 import { parseLastPractice } from "@/lib/last-practice";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
+import { EXAM_DIFFICULTIES, EXAM_SCOPES, summarizePaperStatus } from "@/lib/exam";
 
 const logger = createLogger('api:import');
 
@@ -111,7 +112,34 @@ interface ImportData {
         originalImageUrl?: string | null;
         figureSvg?: string | null;
         source?: string;
+        examQuestionId?: string | null;
         createdAt: string;
+    }>;
+    examPapers?: Array<{ // version 2 起导出
+        id: string;
+        userId: string;
+        title: string;
+        status: string;
+        scope: string;
+        difficulty: string;
+        requestedCount: number;
+        subjectIds: string;
+        tagNames: string | null;
+        resultsRecordedAt: string | null;
+        createdAt: string;
+        updatedAt: string;
+        questions: Array<{
+            id: string;
+            order: number;
+            errorItemId: string | null;
+            sourceShortId: string;
+            status: string;
+            questionText: string | null;
+            answerText: string | null;
+            analysis: string | null;
+            figureSvg: string | null;
+            error: string | null;
+        }>;
     }>;
 }
 
@@ -131,6 +159,17 @@ function safeMasteryProbability(val: unknown): number | null {
 function safeLastPractice(raw: string | null | undefined): string | null {
     const practice = parseLastPractice(raw);
     return practice ? JSON.stringify(practice) : null;
+}
+
+/** 试卷的错题本 ID 为 JSON 数组，导入时换成新 ID，找不到的去掉 */
+function mapSubjectIds(raw: string | null | undefined, subjectIdMap: Map<string, string>): string {
+    try {
+        const ids: unknown = JSON.parse(raw || '[]');
+        if (!Array.isArray(ids)) return '[]';
+        return JSON.stringify(ids.flatMap((id) => (typeof id === 'string' && subjectIdMap.has(id) ? [subjectIdMap.get(id)!] : [])));
+    } catch {
+        return '[]';
+    }
 }
 
 /** Validate masteryLevel is an integer in range [0, 2] */
@@ -187,6 +226,7 @@ export async function POST(req: Request) {
             tagsCreated: 0,
             errorItemsCreated: 0,
             reviewSchedulesCreated: 0,
+            examPapersCreated: 0,
             practiceRecordsCreated: 0,
             tagsLinked: 0,
             duplicateErrorItems: 0,
@@ -402,12 +442,76 @@ export async function POST(req: Request) {
                 }
             }
 
-            // 6. 导入 practice records
+            // 6. 导入试卷：同一用户下标题和创建时间都相同视为已导入过，只建立题目映射
+            const examQuestionIdMap = new Map<string, string>();
+            const examQuestionOwnerMap = new Map<string, string>();
+            for (const paper of (body.examPapers || [])) {
+                const targetUserId = importAll ? paper.userId : user.id;
+                const questions = Array.isArray(paper.questions) ? paper.questions : [];
+                const createdAt = safeParseDate(paper.createdAt);
+                const existing = createdAt && await tx.examPaper.findFirst({
+                    where: { userId: targetUserId, title: paper.title, createdAt },
+                    select: { questions: { select: { id: true, order: true } } },
+                });
+                if (existing) {
+                    for (const question of questions) {
+                        const matched = existing.questions.find((candidate) => candidate.order === question.order);
+                        if (matched) {
+                            examQuestionIdMap.set(question.id, matched.id);
+                            examQuestionOwnerMap.set(question.id, targetUserId);
+                        }
+                    }
+                    continue;
+                }
+
+                // 导出时还在生成的题目不会继续生成，按失败处理，可在试卷页重新生成
+                const statuses = questions.map((question) => (question.status === 'ready' ? 'ready' : 'failed'));
+                const created = await tx.examPaper.create({
+                    data: {
+                        userId: targetUserId,
+                        title: String(paper.title || ''),
+                        status: statuses.length > 0 ? summarizePaperStatus(statuses) : 'failed',
+                        scope: (EXAM_SCOPES as readonly string[]).includes(paper.scope) ? paper.scope : 'all',
+                        difficulty: (EXAM_DIFFICULTIES as readonly string[]).includes(paper.difficulty) ? paper.difficulty : 'medium',
+                        requestedCount: Number.isInteger(paper.requestedCount) && paper.requestedCount > 0 ? paper.requestedCount : questions.length,
+                        subjectIds: mapSubjectIds(paper.subjectIds, subjectIdMap),
+                        tagNames: typeof paper.tagNames === 'string' ? paper.tagNames : null,
+                        resultsRecordedAt: safeParseDate(paper.resultsRecordedAt),
+                        createdAt,
+                        updatedAt: safeParseDate(paper.updatedAt),
+                    },
+                });
+                for (const [index, question] of questions.entries()) {
+                    const errorItemId = question.errorItemId && errorItemOwnerMap.get(question.errorItemId) === targetUserId
+                        ? errorItemIdMap.get(question.errorItemId) : undefined;
+                    const createdQuestion = await tx.examQuestion.create({
+                        data: {
+                            paperId: created.id,
+                            order: Number.isInteger(question.order) ? question.order : index,
+                            errorItemId,
+                            sourceShortId: String(question.sourceShortId || ''),
+                            status: statuses[index],
+                            questionText: question.questionText,
+                            answerText: question.answerText,
+                            analysis: question.analysis,
+                            figureSvg: sanitizeFigureSvg(question.figureSvg),
+                            error: question.error,
+                        },
+                    });
+                    examQuestionIdMap.set(question.id, createdQuestion.id);
+                    examQuestionOwnerMap.set(question.id, targetUserId);
+                }
+                stats.examPapersCreated++;
+            }
+
+            // 7. 导入 practice records
             for (const record of (body.practiceRecords || [])) {
                 const targetUserId = importAll ? record.userId : user.id;
                 const errorItemId = record.errorItemId && errorItemOwnerMap.get(record.errorItemId) === targetUserId
                     ? errorItemIdMap.get(record.errorItemId) : undefined;
                 const result = isPracticeResult(record.result) ? record.result : undefined;
+                const examQuestionId = record.examQuestionId && examQuestionOwnerMap.get(record.examQuestionId) === targetUserId
+                    ? examQuestionIdMap.get(record.examQuestionId) : undefined;
                 await tx.practiceRecord.create({
                     data: {
                         userId: targetUserId,
@@ -425,6 +529,7 @@ export async function POST(req: Request) {
                             originalImageUrl: record.originalImageUrl,
                             figureSvg: sanitizeFigureSvg(record.figureSvg),
                             source: ['practice', 'manual', 'exam', 'duplicate_import'].includes(record.source || '') ? record.source : 'practice',
+                            examQuestionId,
                         } : {}),
                         createdAt: safeParseDate(record.createdAt),
                     },
