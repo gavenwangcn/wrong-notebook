@@ -15,9 +15,16 @@ export default defineConfig({
         exclude: ['node_modules', '.next', 'dist'],
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'json', 'html'],
+            reporter: ['text', 'json', 'json-summary', 'html'],
             include: ['src/lib/**/*.ts', 'src/app/api/**/*.ts'],
             exclude: ['src/__tests__/**', 'node_modules/**'],
+            // 略低于当前覆盖率，防止覆盖率下降；补充测试后可逐步提高
+            thresholds: {
+                statements: 70,
+                branches: 65,
+                functions: 75,
+                lines: 70,
+            },
         },
     },
 })

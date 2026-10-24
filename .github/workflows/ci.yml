@@ -78,6 +78,49 @@ jobs:
       - name: Run integration tests
         run: npm run test:integration
 
+  coverage:
+    runs-on: ubuntu-latest
+    name: Test Coverage
+    needs: unit-test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # 低于 vitest.config.ts 中的覆盖率阈值时失败
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Write coverage summary
+        if: always()
+        run: |
+          node -e '
+          const fs = require("fs");
+          if (!fs.existsSync("coverage/coverage-summary.json")) process.exit(0);
+          const { total } = JSON.parse(fs.readFileSync("coverage/coverage-summary.json", "utf8"));
+          const rows = ["statements", "branches", "functions", "lines"].map((k) => `| ${k} | ${total[k].pct}% | ${total[k].covered}/${total[k].total} |`);
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, ["### 测试覆盖率（src/lib、src/app/api）", "", "| 指标 | 覆盖率 | 覆盖数 |", "| --- | --- | --- |", ...rows, ""].join("\n"));
+          '
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 14
+
   build-check:
     runs-on: ubuntu-latest
     name: Build Check
