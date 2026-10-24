@@ -12,6 +12,8 @@ export const translations = {
         },
         common: {
             loading: "Loading...",
+            showPassword: "Show",
+            hidePassword: "Hide",
             error: "Error",
             success: "Success",
             save: "Save",
@@ -1038,6 +1040,8 @@ export const translations = {
         },
         common: {
             loading: "加载中...",
+            showPassword: "显示",
+            hidePassword: "隐藏",
             error: "错误",
             success: "成功",
             save: "保存",
