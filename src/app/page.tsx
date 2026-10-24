@@ -26,6 +26,9 @@ import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-imp
 import type { ImportedQuestion } from "@/lib/question-import";
 import { DirectTextEditor } from "@/components/direct-text-editor";
 import { toast } from "@/lib/feedback";
+import { getApiErrorMessage, getErrorMessage } from "@/lib/error-message";
+import { getAnalysisErrorMessage } from "@/lib/analysis-error";
+import { normalizeMistakeStatus } from "@/lib/mistake-status";
 
 function HomeContent() {
     const [step, setStep] = useState<"upload" | "review">("upload");
@@ -205,56 +208,14 @@ function HomeContent() {
             frontendLogger.info('[HomeAnalyze]', 'Analysis completed successfully', {
                 totalDuration
             });
-        } catch (error: any) {
+        } catch (error) {
             const errorDuration = Date.now() - startTime;
             frontendLogger.error('[HomeError]', 'Analysis failed', {
                 errorDuration,
-                error: error.message || String(error)
+                error: getErrorMessage(error)
             });
 
-            // 安全的错误处理逻辑，防止在报错时二次报错
-            try {
-                let errorMessage = t.common?.messages?.analysisFailed || 'Analysis failed, please try again';
-
-                // ApiError 的结构：error.data.message 包含后端返回的错误类型
-                const backendErrorType = error?.data?.message;
-
-                if (backendErrorType && typeof backendErrorType === 'string') {
-                    // 检查是否是已知的 AI 错误类型
-                    if (t.errors && typeof t.errors === 'object' && backendErrorType in t.errors) {
-                        const mappedError = (t.errors as any)[backendErrorType];
-                        if (typeof mappedError === 'string') {
-                            errorMessage = mappedError;
-                            frontendLogger.info('[HomeError]', `Matched error type: ${backendErrorType}`, {
-                                errorMessage
-                            });
-                        }
-                    } else {
-                        // 使用后端返回的具体错误消息
-                        errorMessage = backendErrorType;
-                        frontendLogger.info('[HomeError]', 'Using backend error message', {
-                            errorMessage
-                        });
-                    }
-                } else if (error?.message) {
-                    // Fallback：检查 error.message（用于非 API 错误）
-                    if (error.message.includes('fetch') || error.message.includes('network')) {
-                        errorMessage = t.errors?.AI_CONNECTION_FAILED || '网络连接失败';
-                    } else if (typeof error.data === 'string') {
-                        frontendLogger.info('[HomeError]', 'Raw error data', {
-                            errorDataPreview: error.data.substring(0, 100)
-                        });
-                        errorMessage += ` (${error.status || 'Error'})`;
-                    }
-                }
-
-                toast.error(errorMessage);
-            } catch (innerError) {
-                frontendLogger.error('[HomeError]', 'Failed to process error message', {
-                    innerError: String(innerError)
-                });
-                toast.error('Analysis failed. Please try again.');
-            }
+            toast.error(getAnalysisErrorMessage(error, t));
         } finally {
             // Always reset analysis state, even if setState throws
             frontendLogger.info('[HomeAnalyze]', 'Finally: Resetting analysis state to idle');
@@ -296,11 +257,9 @@ function HomeContent() {
             } else if (finalData.subjectId) {
                 router.push(`/notebooks/${finalData.subjectId}`);
             }
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[HomeSave]', 'Save failed', {
-                errorStatus: error?.status,
-                errorMessage: error?.data?.message || error?.message || String(error),
-                errorData: error?.data,
+                errorMessage: getApiErrorMessage(error) ?? getErrorMessage(error),
             });
             toast.error(t.common?.messages?.saveFailed || 'Failed to save');
         }
@@ -344,7 +303,7 @@ function HomeContent() {
                 knowledgePoints: result.knowledgePoints || [],
                 wrongAnswerText: result.wrongAnswerText || "",
                 mistakeAnalysis: result.mistakeAnalysis || "",
-                mistakeStatus: (result.mistakeStatus as any) || "unknown",
+                mistakeStatus: normalizeMistakeStatus(result.mistakeStatus),
                 subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
                 difficultyStars: result.difficultyStars ?? null,
@@ -363,28 +322,14 @@ function HomeContent() {
 
             const totalDuration = Date.now() - startTime;
             frontendLogger.info('[HomeTextSubmit]', 'Text analysis completed', { totalDuration });
-        } catch (error: any) {
+        } catch (error) {
             const errorDuration = Date.now() - startTime;
             frontendLogger.error('[HomeTextSubmit]', 'Analysis failed', {
                 errorDuration,
-                error: error.message || String(error)
+                error: getErrorMessage(error)
             });
 
-            try {
-                let errorMessage = t.common?.messages?.analysisFailed || 'Analysis failed, please try again';
-                const backendErrorType = error?.data?.message;
-                if (backendErrorType && typeof backendErrorType === 'string') {
-                    if (t.errors && typeof t.errors === 'object' && backendErrorType in t.errors) {
-                        const mappedError = (t.errors as any)[backendErrorType];
-                        if (typeof mappedError === 'string') errorMessage = mappedError;
-                    } else {
-                        errorMessage = backendErrorType;
-                    }
-                }
-                toast.error(errorMessage);
-            } catch {
-                toast.error('Analysis failed. Please try again.');
-            }
+            toast.error(getAnalysisErrorMessage(error, t));
         } finally {
             setAnalysisStep('idle');
         }
@@ -437,10 +382,9 @@ function HomeContent() {
             } else if (data.subjectId) {
                 router.push(`/notebooks/${data.subjectId}`);
             }
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[HomeDirectSave]', 'Save failed', {
-                errorStatus: error?.status,
-                errorMessage: error?.data?.message || error?.message || String(error),
+                errorMessage: getApiErrorMessage(error) ?? getErrorMessage(error),
             });
             setAnalysisStep('idle');
             toast.error(t.common?.messages?.saveFailed || 'Failed to save');

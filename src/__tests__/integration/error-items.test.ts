@@ -93,7 +93,7 @@ describe('/api/error-items', () => {
         mocks.mockPrismaSubject.findUnique.mockResolvedValue(null);
 
         // Default: knowledgeTag returns a mock tag (used when finding existing tags)
-        mocks.mockPrismaKnowledgeTag.findFirst.mockImplementation(async (args: any) => {
+        mocks.mockPrismaKnowledgeTag.findFirst.mockImplementation(async (args: { where?: { name?: string } }) => {
             // Return a mock tag based on the search name
             const name = args?.where?.name;
             if (name) {
@@ -103,7 +103,7 @@ describe('/api/error-items', () => {
         });
 
         // Default: create returns the created tag
-        mocks.mockPrismaKnowledgeTag.create.mockImplementation(async (args: any) => ({
+        mocks.mockPrismaKnowledgeTag.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({
             id: `tag-new-${Date.now()}`,
             ...args.data,
         }));
@@ -130,7 +130,7 @@ describe('/api/error-items', () => {
 
         it('创建时应生成 6 位 base58 短 ID', async () => {
             mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
-            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ id: 'e1', ...args.data }));
 
             const response = await post(baseData);
             const data = await response.json();
@@ -142,7 +142,7 @@ describe('/api/error-items', () => {
         it('未指定错题本时按学科名包含匹配已有错题本', async () => {
             mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
             mocks.mockPrismaSubject.findMany.mockResolvedValue([{ id: 'nb-math', name: '初二数学' }]);
-            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ id: 'e1', ...args.data }));
 
             await post({ ...baseData, subjectName: '数学' });
 
@@ -154,7 +154,7 @@ describe('/api/error-items', () => {
             mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
             mocks.mockPrismaSubject.findMany.mockResolvedValue([{ id: 'nb-math', name: '数学' }]);
             mocks.mockPrismaSubject.upsert.mockResolvedValue({ id: 'nb-physics', name: '物理' });
-            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ id: 'e1', ...args.data }));
 
             await post({ ...baseData, subjectName: '物理' });
 
@@ -167,7 +167,7 @@ describe('/api/error-items', () => {
 
         it('指定错题本时忽略学科名', async () => {
             mocks.mockPrismaErrorItem.findUnique.mockResolvedValue(null);
-            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: any) => ({ id: 'e1', ...args.data }));
+            mocks.mockPrismaErrorItem.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ id: 'e1', ...args.data }));
 
             await post({ ...baseData, subjectId: 'nb-chosen', subjectName: '物理' });
 

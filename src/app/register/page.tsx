@@ -16,6 +16,7 @@ import { apiClient } from "@/lib/api-client";
 import { RegisterRequest } from "@/types/api";
 import { toast } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { getApiErrorMessage } from "@/lib/error-message";
 
 export default function RegisterPage() {
     const { timeZone } = useTimeZone();
@@ -62,7 +63,7 @@ export default function RegisterPage() {
         }
 
         try {
-            await apiClient.post<any, RegisterRequest>("/api/register", {
+            await apiClient.post<unknown, RegisterRequest>("/api/register", {
                 name,
                 email,
                 password,
@@ -72,8 +73,8 @@ export default function RegisterPage() {
 
             toast.success(t.auth?.register?.success || 'Registration successful! Please login');
             router.push("/login");
-        } catch (error: any) {
-            let errorMsg = error.data?.message;
+        } catch (error) {
+            let errorMsg = getApiErrorMessage(error);
             if (errorMsg === 'User with this email already exists') {
                 errorMsg = t.auth?.register?.emailExists || errorMsg;
             } else {

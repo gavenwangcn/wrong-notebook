@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import type { ChatCompletion } from "openai/resources/chat/completions";
 import { AIService, GradeLevel, ParsedQuestion, DifficultyLevel, AIConfig, ReanswerQuestionResult, GeogebraAnalysisResult, MasteryEvaluationInput, MasteryEvaluationResult, TagSuggestionInput, TagSuggestionResult, CandidateTags, FigureResult } from "./types";
 import { generateAnalyzePrompt, generateSimilarQuestionPrompt, generateGeogebraPrompt, generateMasteryPrompt, generateTagSuggestPrompt, generateFigurePrompt, generateSvgAnimationPrompt, generateLatexFixPrompt, SVG_ANIMATION_REQUEST } from './prompts';
 import { sanitizeSvgAnimation } from '../svg-animation';
@@ -13,6 +14,17 @@ import { normalizeMistakeStatusForSave } from '../mistake-status';
 import { normalizeGeneratedQuestion } from './generated-question';
 
 const logger = createLogger('ai:openai');
+
+/** 发给 LongCat 的消息内容片段：OpenAI 格式的文字、图片，以及 LongCat 的 input_image */
+type LongCatContentPart =
+    | { type: 'text'; text: string }
+    | { type: 'image_url'; image_url: { url: string } }
+    | { type: 'input_image'; input_image: { data: string[]; type: 'url' } };
+
+interface LongCatMessage {
+    role: string;
+    content: string | LongCatContentPart[];
+}
 
 export const DEFAULT_OPENAI_MODEL = 'gpt-6.1-sol';
 
@@ -57,13 +69,13 @@ export class OpenAIProvider implements AIService {
         }, 'AI Provider initialized');
     }
 
-    private adaptMessagesForLongCat(messages: Array<{ role: string; content: any }>): Array<{ role: string; content: any }> {
+    private adaptMessagesForLongCat(messages: LongCatMessage[]): LongCatMessage[] {
         return messages.map(msg => {
             if (typeof msg.content === 'string') {
                 return { ...msg, content: [{ type: 'text', text: msg.content }] };
             }
             if (Array.isArray(msg.content)) {
-                const adapted = msg.content.map((part: any) => {
+                const adapted = msg.content.map((part): LongCatContentPart => {
                     if (part.type === 'image_url') {
                         return {
                             type: 'input_image',
@@ -218,7 +230,7 @@ export class OpenAIProvider implements AIService {
 
             logger.box('📤 API Request (发送给 AI 的原始请求)', JSON.stringify(requestParamsForLog, null, 2));
 
-            let response: any;
+            let response: ChatCompletion;
 
             if (this.isLongCat) {
                 // LongCat 使用不同的多模态格式，绕过 SDK 直接请求
@@ -256,7 +268,7 @@ export class OpenAIProvider implements AIService {
                     throw new Error(`${res.status} status code (${errBody})`);
                 }
 
-                response = await res.json();
+                response = await res.json() as ChatCompletion;
             } else {
                 response = await withTruncationRetry((maxTokens) => this.openai.chat.completions.create({
                     model: this.model,

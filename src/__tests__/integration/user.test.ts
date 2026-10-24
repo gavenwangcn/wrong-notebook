@@ -41,6 +41,7 @@ vi.mock('bcryptjs', () => ({
 
 // Import after mocks
 import { GET, PATCH } from '@/app/api/user/route';
+import type { Session } from 'next-auth';
 
 describe('/api/user', () => {
     beforeEach(() => {
@@ -426,7 +427,7 @@ describe('/api/user', () => {
                     name: 'No Email User',
                 },
                 expires: '2025-12-31',
-            } as any);
+            } as unknown as Session);
 
             const response = await GET();
             const data = await response.json();

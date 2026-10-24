@@ -38,6 +38,7 @@ import { frontendLogger } from "@/lib/frontend-logger";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { toast, confirmDialog } from "@/lib/feedback";
 import type { MasteryStatus } from "@/lib/mastery-status";
+import { getApiErrorMessage, getErrorMessage } from "@/lib/error-message";
 
 interface KnowledgeTag {
     id: string;
@@ -153,9 +154,9 @@ export default function ErrorDetailPage() {
             } else {
                 setGeogebraError(result.description || "该题目不适合用 GeoGebra 演示");
             }
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[ErrorDetail]', 'GeoGebra analysis failed', { error });
-            const msg = error?.data?.message || error?.message || "";
+            const msg = getApiErrorMessage(error) || getErrorMessage(error);
             if (msg.includes("AI_AUTH_ERROR")) {
                 setGeogebraError("AI 认证失败，请检查设置");
             } else if (msg.includes("AI_CONNECTION")) {

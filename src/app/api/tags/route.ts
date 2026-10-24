@@ -9,6 +9,7 @@ import { getServerSession } from 'next-auth';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 import { createLogger } from '@/lib/logger';
+import type { KnowledgeTag } from '@prisma/client';
 
 const logger = createLogger('api:tags');
 
@@ -23,7 +24,7 @@ interface TagTreeNode {
 /**
  * 构建标签树
  */
-function buildTagTree(tags: any[]): TagTreeNode[] {
+function buildTagTree(tags: KnowledgeTag[]): TagTreeNode[] {
     const tagMap = new Map<string, TagTreeNode>();
     const roots: TagTreeNode[] = [];
 

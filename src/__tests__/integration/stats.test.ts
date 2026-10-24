@@ -48,6 +48,7 @@ import { GET as GET_PRACTICE_STATS } from '@/app/api/stats/practice/route';
 import { DELETE as DELETE_PRACTICE_STATS } from '@/app/api/stats/practice/clear/route';
 import { DELETE as DELETE_ERROR_ITEMS } from '@/app/api/error-items/clear/route';
 import { getServerSession } from 'next-auth';
+import type { Session } from 'next-auth';
 
 describe('/api/stats', () => {
     beforeEach(() => {
@@ -164,7 +165,7 @@ describe('/api/stats', () => {
             vi.mocked(getServerSession).mockResolvedValue({
                 user: undefined,
                 expires: '2025-12-31',
-            } as any);
+            } as unknown as Session);
 
             const response = await GET_PRACTICE_STATS();
             const data = await response.json();
@@ -284,7 +285,7 @@ describe('/api/stats', () => {
             vi.mocked(getServerSession).mockResolvedValue({
                 user: undefined,
                 expires: '2025-12-31',
-            } as any);
+            } as unknown as Session);
 
 
             const response = await DELETE_ERROR_ITEMS();

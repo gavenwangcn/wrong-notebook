@@ -64,6 +64,7 @@ import { GET as GENERATE_GET, POST as GENERATE_POST } from '@/app/api/practice/g
 import { POST as RECORD_POST } from '@/app/api/practice/record/route';
 import { DELETE as RECORD_DELETE } from '@/app/api/practice/record/[id]/route';
 import { getServerSession } from 'next-auth';
+import type { Session } from 'next-auth';
 
 describe('/api/practice', () => {
     beforeEach(() => {
@@ -673,7 +674,7 @@ describe('/api/practice', () => {
             vi.mocked(getServerSession).mockResolvedValue({
                 user: undefined,
                 expires: '2025-12-31',
-            } as any);
+            } as unknown as Session);
 
             const request = new Request('http://localhost/api/practice/record', {
                 method: 'POST',

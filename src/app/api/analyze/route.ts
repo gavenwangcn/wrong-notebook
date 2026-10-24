@@ -12,6 +12,7 @@ import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scop
 import { createLogger } from "@/lib/logger";
 import { trackBackgroundTask } from "@/lib/background-tasks";
 import { getAppTimeZone } from "@/lib/config";
+import { getErrorMessage } from "@/lib/error-message";
 
 const logger = createLogger('api:analyze');
 
@@ -119,39 +120,40 @@ export async function POST(req: Request) {
         logger.info('AI analysis successful');
 
         return NextResponse.json(analysisResult);
-    } catch (error: any) {
+    } catch (error) {
+        const message = getErrorMessage(error);
         logger.error({
-            error: error.message,
-            stack: error.stack
+            error: message,
+            stack: error instanceof Error ? error.stack : undefined
         }, 'Analysis error occurred');
 
         // 返回具体的错误类型，便于前端显示详细提示
-        let errorMessage = error.message || "Failed to analyze image";
+        let errorMessage = message || "Failed to analyze image";
 
         // 识别特定错误类型
-        if (error.message && (
-            error.message === 'AI_CONNECTION_FAILED' ||
-            error.message === 'AI_RESPONSE_ERROR' ||
-            error.message.includes('AI_AUTH_ERROR') ||
-            error.message === 'AI_TIMEOUT_ERROR' ||
-            error.message === 'AI_QUOTA_EXCEEDED' ||
-            error.message === 'AI_PERMISSION_DENIED' ||
-            error.message === 'AI_NOT_FOUND' ||
-            error.message === 'AI_SERVICE_UNAVAILABLE' ||
-            error.message === 'AI_UNKNOWN_ERROR' ||
-            error.message === 'AI_OUTPUT_TRUNCATED'
+        if (message && (
+            message === 'AI_CONNECTION_FAILED' ||
+            message === 'AI_RESPONSE_ERROR' ||
+            message.includes('AI_AUTH_ERROR') ||
+            message === 'AI_TIMEOUT_ERROR' ||
+            message === 'AI_QUOTA_EXCEEDED' ||
+            message === 'AI_PERMISSION_DENIED' ||
+            message === 'AI_NOT_FOUND' ||
+            message === 'AI_SERVICE_UNAVAILABLE' ||
+            message === 'AI_UNKNOWN_ERROR' ||
+            message === 'AI_OUTPUT_TRUNCATED'
         )) {
             // 直接传递 AI Provider 定义的错误类型 (如果是 AI_AUTH_ERROR，提取出来)
-            if (error.message.includes('AI_AUTH_ERROR')) {
+            if (message.includes('AI_AUTH_ERROR')) {
                 errorMessage = 'AI_AUTH_ERROR';
             } else {
-                errorMessage = error.message;
+                errorMessage = message;
             }
-        } else if (error.message?.includes('Zod') || error.message?.includes('validate')) {
+        } else if (message.includes('Zod') || message.includes('validate')) {
             // Zod 验证错误
             errorMessage = 'AI_RESPONSE_ERROR';
         }
 
-        return createErrorResponse(errorMessage, 500, ErrorCode.AI_ERROR, error.message);
+        return createErrorResponse(errorMessage, 500, ErrorCode.AI_ERROR, message);
     }
 }

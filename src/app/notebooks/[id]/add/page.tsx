@@ -23,6 +23,9 @@ import { BatchImportPanel } from "@/components/batch-import-panel";
 import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
 import type { ImportedQuestion } from "@/lib/question-import";
 import { toast } from "@/lib/feedback";
+import { getErrorMessage } from "@/lib/error-message";
+import { getAnalysisErrorMessage } from "@/lib/analysis-error";
+import { normalizeMistakeStatus } from "@/lib/mistake-status";
 
 export default function AddErrorPage() {
     const params = useParams();
@@ -189,60 +192,14 @@ export default function AddErrorPage() {
             frontendLogger.info('[AddAnalyze]', 'Analysis completed successfully', {
                 totalDuration
             });
-        } catch (error: any) {
+        } catch (error) {
             const errorDuration = Date.now() - startTime;
             frontendLogger.error('[AddError]', 'Analysis failed', {
                 errorDuration,
-                error: error.message || String(error)
+                error: getErrorMessage(error)
             });
 
-            // 安全的错误处理逻辑，防止在报错时二次报错
-            try {
-                // 解析详细错误信息
-                let errorMessage = t.common.messages?.analysisFailed || 'Analysis failed';
-
-                // ApiError 的结构：error.data.message 包含后端返回的错误类型
-                const backendErrorType = error?.data?.message;
-
-                if (backendErrorType && typeof backendErrorType === 'string') {
-                    // 检查是否是已知的 AI 错误类型
-                    // 使用安全访问
-                    if (t.errors && typeof t.errors === 'object' && backendErrorType in t.errors) {
-                        const mappedError = (t.errors as any)[backendErrorType];
-                        if (typeof mappedError === 'string') {
-                            errorMessage = mappedError;
-                            frontendLogger.info('[AddError]', `Matched error type: ${backendErrorType}`, {
-                                errorMessage
-                            });
-                        }
-                    } else {
-                        // 使用后端返回的具体错误消息
-                        errorMessage = backendErrorType;
-                        frontendLogger.info('[AddError]', 'Using backend error message', {
-                            errorMessage
-                        });
-                    }
-                } else if (error?.message) {
-                    // Fallback：检查 error.message（用于非 API 错误）
-                    if (error.message.includes('fetch') || error.message.includes('network')) {
-                        errorMessage = t.errors?.AI_CONNECTION_FAILED || '网络连接失败';
-                    } else if (typeof error.data === 'string') {
-                        // 如果 data 是字符串（例如 HTML 错误页），可能包含提示
-                        frontendLogger.info('[AddError]', 'Raw error data', {
-                            errorDataPreview: error.data.substring(0, 100)
-                        });
-                        errorMessage += ` (${error.status || 'Error'})`;
-                    }
-                }
-
-                toast.error(errorMessage);
-            } catch (innerError) {
-                frontendLogger.error('[AddError]', 'Failed to process error message', {
-                    innerError: String(innerError)
-                });
-                // 确保至少弹出一个提示
-                toast.error('Analysis failed. Please try again.');
-            }
+            toast.error(getAnalysisErrorMessage(error, t));
         } finally {
             // Always reset analysis state, even if setState throws
             frontendLogger.info('[AddAnalyze]', 'Finally: Resetting analysis state to idle');
@@ -283,7 +240,7 @@ export default function AddErrorPage() {
                 knowledgePoints: result.knowledgePoints || [],
                 wrongAnswerText: result.wrongAnswerText || "",
                 mistakeAnalysis: result.mistakeAnalysis || "",
-                mistakeStatus: (result.mistakeStatus as any) || "unknown",
+                mistakeStatus: normalizeMistakeStatus(result.mistakeStatus),
                 subject: (result.subject || "其他") as ParsedQuestion["subject"],
                 requiresImage: false,
                 difficultyStars: result.difficultyStars ?? null,
@@ -302,28 +259,14 @@ export default function AddErrorPage() {
 
             const totalDuration = Date.now() - startTime;
             frontendLogger.info('[AddTextSubmit]', 'Text analysis completed', { totalDuration });
-        } catch (error: any) {
+        } catch (error) {
             const errorDuration = Date.now() - startTime;
             frontendLogger.error('[AddTextSubmit]', 'Analysis failed', {
                 errorDuration,
-                error: error.message || String(error)
+                error: getErrorMessage(error)
             });
 
-            try {
-                let errorMessage = t.common.messages?.analysisFailed || 'Analysis failed';
-                const backendErrorType = error?.data?.message;
-                if (backendErrorType && typeof backendErrorType === 'string') {
-                    if (t.errors && typeof t.errors === 'object' && backendErrorType in t.errors) {
-                        const mappedError = (t.errors as any)[backendErrorType];
-                        if (typeof mappedError === 'string') errorMessage = mappedError;
-                    } else {
-                        errorMessage = backendErrorType;
-                    }
-                }
-                toast.error(errorMessage);
-            } catch {
-                toast.error('Analysis failed. Please try again.');
-            }
+            toast.error(getAnalysisErrorMessage(error, t));
         } finally {
             setAnalysisStep('idle');
         }

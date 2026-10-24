@@ -30,7 +30,7 @@ const mocks = vi.hoisted(() => ({
             similar: '',
         },
     })),
-    mockUpdateAppConfig: vi.fn((config: any) => ({
+    mockUpdateAppConfig: vi.fn((config: Partial<AppConfig>) => ({
         ...config,
         aiProvider: config.aiProvider || 'gemini',
     })),
@@ -48,6 +48,7 @@ vi.mock('@/lib/auth', () => ({ authOptions: {} }));
 
 // Import after mocks
 import { GET, POST } from '@/app/api/settings/route';
+import type { AppConfig } from '@/lib/config';
 
 const adminSession = { user: { id: 'admin-1', email: 'admin@localhost', role: 'admin' }, expires: '2099-01-01' };
 const userSession = { user: { id: 'user-1', email: 'user@localhost', role: 'user' }, expires: '2099-01-01' };

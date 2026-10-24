@@ -2053,3 +2053,6 @@ export const translations = {
         },
     }
 };
+
+/** 界面文案的结构，以英文版为准 */
+export type Translations = typeof translations['en'];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useId, useRef, useState, useCallback, useMemo } from "react";
 import { Loader2, Maximize2, Minimize2, RotateCcw, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -20,13 +20,33 @@ interface GeogebraDemoProps {
     onDelete?: () => Promise<void>;
 }
 
+/** GeoGebra 小程序 API（只列出用到的方法） */
+interface GgbApi {
+    evalCommand(command: string): boolean;
+    setSize(width: number, height: number): void;
+    resetConstruction(): void;
+    remove?: () => void;
+    // 命令中以 API 形式调用的其他方法（见 API_PREFIXES）
+    [method: string]: unknown;
+}
+
+interface GgbAppletConstructor {
+    new (parameters: Record<string, unknown> & { appletOnLoad?: (api: GgbApi) => void }, html5NoWebSimple?: boolean): { inject(id: string): void };
+}
+
+declare global {
+    interface Window {
+        GGBApplet?: GgbAppletConstructor;
+    }
+}
+
 // ── Singleton script loader ─────────────────────────────────────────────
 let ggbScriptPromise: Promise<void> | null = null;
 
 function loadGeoGebraScript(): Promise<void> {
     if (ggbScriptPromise) return ggbScriptPromise;
     ggbScriptPromise = new Promise<void>((resolve, reject) => {
-        if (typeof window !== "undefined" && (window as any).GGBApplet) {
+        if (typeof window !== "undefined" && window.GGBApplet) {
             resolve();
             return;
         }
@@ -104,12 +124,22 @@ function parseApiArgs(cmd: string): { m: string; a: unknown[] } | null {
     catch { return null; }
 }
 
-function runCommands(api: any, cmds: string[]) {
+/** 让小程序宽度铺满容器，并设置高度 */
+function resizeApplet(host: HTMLDivElement | null, api: GgbApi | null, height: number) {
+    const ggbDiv = host?.firstElementChild as HTMLElement | null;
+    if (!ggbDiv) return;
+    ggbDiv.style.width = '100%';
+    ggbDiv.style.height = `${height}px`;
+    api?.setSize(host?.offsetWidth || ggbDiv.offsetWidth || 800, height);
+}
+
+function runCommands(api: GgbApi, cmds: string[]) {
     for (const cmd of cmds) {
         try {
             if (isApiCall(cmd)) {
                 const p = parseApiArgs(cmd);
-                if (p && typeof api[p.m] === 'function') api[p.m](...p.a);
+                const method = p ? api[p.m] : undefined;
+                if (p && typeof method === 'function') method.apply(api, p.a);
             } else {
                 // Basic command validation: only allow safe characters
                 const sanitized = cmd.trim();
@@ -141,8 +171,10 @@ export function GeogebraDemo({
     // All GeoGebra DOM is injected via innerHTML in the effect, so
     // React's reconciler never touches the inside of this node.
     const ggbHostRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<any>(null);
-    const idRef = useRef(`ggb-${Math.random().toString(36).slice(2, 9)}`);
+    const apiRef = useRef<GgbApi | null>(null);
+    // useId 可能含冒号等字符，去掉后作为注入目标的元素 ID
+    const reactId = useId();
+    const idRef = useRef(`ggb-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -158,17 +190,17 @@ export function GeogebraDemo({
 
         let dead = false;
         const id = idRef.current;
+        const host = ggbHostRef.current;
 
         loadGeoGebraScript().then(() => {
             if (dead) return;
-            const GGBApplet = (window as any).GGBApplet;
+            const GGBApplet = window.GGBApplet;
             if (!GGBApplet) { setError("GeoGebra 未正确加载"); setLoading(false); return; }
 
-            const el = ggbHostRef.current;
-            if (!el) return;
+            if (!host) return;
 
             // Write the inject target directly — React never reconciles this.
-            el.innerHTML = `<div id="${id}" style="width:100%;height:${height}px"></div>`;
+            host.innerHTML = `<div id="${id}" style="width:100%;height:${height}px"></div>`;
 
             try {
                 const applet = new GGBApplet({
@@ -182,15 +214,10 @@ export function GeogebraDemo({
                     enableRightClick: true,
                     enableShiftDragZoom: true,
                     language: "zh",
-                    appletOnLoad: (api: any) => {
+                    appletOnLoad: (api: GgbApi) => {
                         if (dead) return;
                         apiRef.current = api;
-                        const ggbDiv = ggbHostRef.current?.firstElementChild as HTMLElement | null;
-                        if (ggbDiv) {
-                            ggbDiv.style.width = '100%';
-                            const w = ggbHostRef.current?.offsetWidth || ggbDiv.offsetWidth || 800;
-                            api.setSize(w, height);
-                        }
+                        resizeApplet(host, api, height);
                         runCommands(api, cmds);
                         setLoading(false);
                     },
@@ -211,7 +238,7 @@ export function GeogebraDemo({
             // Cleanup GeoGebra instance to prevent memory leaks
             try {
                 const api = apiRef.current;
-                if (api && typeof api.remove === 'function') {
+                if (api?.remove) {
                     api.remove();
                 }
             } catch (e) {
@@ -219,8 +246,8 @@ export function GeogebraDemo({
             }
             apiRef.current = null;
             // Clear injected DOM
-            if (ggbHostRef.current) {
-                ggbHostRef.current.innerHTML = '';
+            if (host) {
+                host.innerHTML = '';
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,16 +255,7 @@ export function GeogebraDemo({
 
     // ── Resize when expanded toggles ────────────────────────────────────
     useEffect(() => {
-        const ggbDiv = ggbHostRef.current?.firstElementChild as HTMLElement | null;
-        if (!ggbDiv) return;
-        const h = expanded ? 700 : height;
-        ggbDiv.style.width = '100%';
-        ggbDiv.style.height = `${h}px`;
-        const api = apiRef.current;
-        if (api?.setSize) {
-            const w = ggbHostRef.current?.offsetWidth || ggbDiv.offsetWidth || 800;
-            api.setSize(w, h);
-        }
+        resizeApplet(ggbHostRef.current, apiRef.current, expanded ? 700 : height);
     }, [expanded, height]);
 
     // ── Reset ───────────────────────────────────────────────────────────

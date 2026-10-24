@@ -11,11 +11,13 @@ import { toast } from "@/lib/feedback";
 
 // 添加 CaptureController 类型声明
 declare global {
+    interface CaptureController {
+        setFocusBehavior(behavior: 'no-focus-change' | 'focus-capturing-application'): void;
+    }
+
     interface Window {
         CaptureController: {
-            new(): {
-                setFocusBehavior(behavior: 'no-focus-change' | 'focus-capturing-application'): void;
-            };
+            new(): CaptureController;
         };
     }
 }
@@ -151,7 +153,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
 
         try {
             // 创建 CaptureController 来控制焦点行为
-            let controller;
+            let controller: CaptureController | undefined;
             if ('CaptureController' in window) {
                 controller = new window.CaptureController();
             }
@@ -159,7 +161,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
             // 请求屏幕共享权限，优先当前标签页
             const displayMediaOptions: DisplayMediaStreamOptions & {
                 preferCurrentTab?: boolean;
-                controller?: any;
+                controller?: CaptureController;
             } = {
                 video: true,
                 audio: false,
@@ -167,7 +169,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
             };
 
             if (controller) {
-                (displayMediaOptions as any).controller = controller;
+                displayMediaOptions.controller = controller;
             }
 
             const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
@@ -175,7 +177,7 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
             // 获取视频轨道并检查捕获类型
             const [videoTrack] = stream.getVideoTracks();
             const settings = videoTrack.getSettings();
-            const displaySurface = (settings as any).displaySurface;  // 'browser' 表示标签页
+            const displaySurface = settings.displaySurface;  // 'browser' 表示标签页
 
             // 如果是标签页或窗口，设置不切换焦点
             if (controller && (displaySurface === 'browser' || displaySurface === 'window')) {

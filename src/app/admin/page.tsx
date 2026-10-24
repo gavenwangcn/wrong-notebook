@@ -15,8 +15,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminDashboardData, AdminUserStats } from "@/types/api";
+import type { Translations } from "@/lib/translations";
 
-function OverviewCards({ data, t }: { data: AdminDashboardData; t: any }) {
+function OverviewCards({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const cards = [
         {
             title: t.admin?.dashboard?.totalUsers || "总用户数",
@@ -67,7 +68,7 @@ function OverviewCards({ data, t }: { data: AdminDashboardData; t: any }) {
     )
 }
 
-function DailyTrendChart({ data, t }: { data: AdminDashboardData; t: any }) {
+function DailyTrendChart({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const maxCount = Math.max(...data.dailyTrend.map(d => d.count), 1)
 
     return (
@@ -102,7 +103,7 @@ function DailyTrendChart({ data, t }: { data: AdminDashboardData; t: any }) {
     )
 }
 
-function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: any }) {
+function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const total = data.subjectDistribution.reduce((sum, s) => sum + s.count, 0)
     const colors = [
         "bg-blue-500", "bg-green-500", "bg-orange-500", "bg-purple-500",
@@ -148,7 +149,7 @@ function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: an
     )
 }
 
-function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: any }) {
+function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const total = data.masteryDistribution.new + data.masteryDistribution.reviewing + data.masteryDistribution.mastered
     const items = [
         { key: "new", label: t.admin?.dashboard?.masteryNew || "待复习", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
@@ -349,7 +350,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (status === "loading") return
-        if (!session?.user || (session.user as any).role !== "admin") {
+        if (!session?.user || session.user.role !== "admin") {
             router.push("/")
             return
         }

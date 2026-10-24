@@ -18,6 +18,7 @@ import { PracticeResultCard } from "@/components/practice-result-card";
 import { QuestionFigure } from "@/components/question-figure";
 import { frontendLogger } from "@/lib/frontend-logger";
 import type { LastPractice } from "@/lib/last-practice";
+import { getApiErrorMessage } from "@/lib/error-message";
 
 export const dynamic = 'force-dynamic';
 
@@ -117,9 +118,9 @@ function PracticeContent() {
             setGeneratedDifficulty(difficulty);
             setGeneratedAt(data.generatedAt ?? null);
             setQuestionVersion(v => v + 1);
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[Practice]', 'Failed to generate practice question', { error });
-            const msg = error.data?.message || "";
+            const msg = getApiErrorMessage(error) || "";
 
             let errorMessage = t.practice.errors?.default || "Failed to generate";
 
@@ -212,15 +213,15 @@ function PracticeContent() {
                         <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-lg">
                             <span className="text-sm font-medium text-muted-foreground">{t.practice.difficulty?.label || "Difficulty"}:</span>
                             <div className="flex gap-1">
-                                {[
+                                {([
                                     { value: "easy", label: t.practice.difficulty?.easy || "Easy", color: "bg-green-100 text-green-700 hover:bg-green-200" },
                                     { value: "medium", label: t.practice.difficulty?.medium || "Medium", color: "bg-blue-100 text-blue-700 hover:bg-blue-200" },
                                     { value: "hard", label: t.practice.difficulty?.hard || "Hard", color: "bg-orange-100 text-orange-700 hover:bg-orange-200" },
                                     { value: "harder", label: t.practice.difficulty?.harder || "Challenge", color: "bg-red-100 text-red-700 hover:bg-red-200" }
-                                ].map((level) => (
+                                ] as const).map((level) => (
                                     <button
                                         key={level.value}
-                                        onClick={() => setDifficulty(level.value as any)}
+                                        onClick={() => setDifficulty(level.value)}
                                         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${difficulty === level.value
                                             ? level.color.replace("bg-", "bg-opacity-100 bg-").replace("text-", "ring-2 ring-offset-1 ring-")
                                             : "bg-transparent hover:bg-muted text-muted-foreground"
@@ -258,7 +259,7 @@ function PracticeContent() {
                                 <div className="flex items-center gap-2">
                                     <select
                                         value={difficulty}
-                                        onChange={(e) => setDifficulty(e.target.value as any)}
+                                        onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
                                         className="h-8 text-xs border rounded px-2 bg-background"
                                         disabled={loading}
                                     >

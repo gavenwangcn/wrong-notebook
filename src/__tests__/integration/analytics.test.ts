@@ -40,6 +40,7 @@ vi.mock('@/lib/config', () => ({ getAppTimeZone: () => 'Asia/Shanghai' }));
 // Import after mocks
 import { GET } from '@/app/api/analytics/route';
 import { getServerSession } from 'next-auth';
+import type { Session } from 'next-auth';
 
 describe('/api/analytics', () => {
     beforeEach(() => {
@@ -108,11 +109,11 @@ describe('/api/analytics', () => {
 
             expect(response.status).toBe(200);
 
-            const mathStat = data.subjectStats.find((s: any) => s.name === '数学');
+            const mathStat = data.subjectStats.find((s: { name: string }) => s.name === '数学');
             expect(mathStat).toBeDefined();
             expect(mathStat.value).toBe(3);
 
-            const physicsStat = data.subjectStats.find((s: any) => s.name === '物理');
+            const physicsStat = data.subjectStats.find((s: { name: string }) => s.name === '物理');
             expect(physicsStat).toBeDefined();
             expect(physicsStat.value).toBe(1);
         });
@@ -129,7 +130,7 @@ describe('/api/analytics', () => {
 
             expect(response.status).toBe(200);
 
-            const unknownStat = data.subjectStats.find((s: any) => s.name === 'Unknown');
+            const unknownStat = data.subjectStats.find((s: { name: string }) => s.name === 'Unknown');
             expect(unknownStat).toBeDefined();
             expect(unknownStat.value).toBe(1);
         });
@@ -187,7 +188,7 @@ describe('/api/analytics', () => {
             vi.mocked(getServerSession).mockResolvedValue({
                 user: undefined,
                 expires: '2025-12-31',
-            } as any);
+            } as unknown as Session);
 
             const response = await GET();
             const data = await response.json();

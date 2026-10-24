@@ -15,6 +15,7 @@ import { apiClient } from "@/lib/api-client";
 import { TagStats, TagStatsResponse } from "@/types/api";
 import { toast, confirmDialog } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { getErrorMessage } from "@/lib/error-message";
 
 // 标签树节点类型
 interface TagTreeNode {
@@ -158,8 +159,8 @@ export default function TagsPage() {
             await fetchCustomTags();
             await fetchTags(newTagSubject);
             toast.success(t.tags?.custom?.success || "Tag added successfully!");
-        } catch (error: any) {
-            if (error?.message?.includes('409')) {
+        } catch (error) {
+            if (getErrorMessage(error).includes('409')) {
                 toast.warning(t.tags?.custom?.exists || "Tag already exists");
             } else {
                 toast.error("Failed to add tag");
@@ -269,7 +270,7 @@ export default function TagsPage() {
         return (
             <>
                 {SUBJECTS.map(({ key, name }) => {
-                    const subjectName = (t.tags?.subjects as any)?.[key] || name;
+                    const subjectName = (t.tags?.subjects as Record<string, string | undefined> | undefined)?.[key] || name;
                     const isExpanded = expandedNodes[`subject-${key}`];
                     const tags = tagsBySubject[key];
 
@@ -331,7 +332,7 @@ export default function TagsPage() {
                                 <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {SUBJECTS.map(({ key, name }) => (
-                                        <SelectItem key={key} value={key}>{(t.tags?.subjects as any)?.[key] || name}</SelectItem>
+                                        <SelectItem key={key} value={key}>{(t.tags?.subjects as Record<string, string | undefined> | undefined)?.[key] || name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -392,7 +393,7 @@ export default function TagsPage() {
 
                         return (
                             <Card key={key}>
-                                <CardHeader><CardTitle className="text-lg">{(t.tags?.subjects as any)?.[key] || name} ({tags.length})</CardTitle></CardHeader>
+                                <CardHeader><CardTitle className="text-lg">{(t.tags?.subjects as Record<string, string | undefined> | undefined)?.[key] || name} ({tags.length})</CardTitle></CardHeader>
                                 <CardContent className="space-y-4">
                                     {groupKeys.map(groupName => (
                                         <div key={groupName} className="space-y-2">

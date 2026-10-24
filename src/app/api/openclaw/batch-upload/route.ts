@@ -14,6 +14,7 @@ import { findDuplicateQuestion, recordDuplicateQuestion, runQuestionImportTransa
 import { parseDifficultyStars } from "@/lib/ai/schema";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { getAppTimeZone } from "@/lib/config";
+import { getErrorMessage } from "@/lib/error-message";
 
 const logger = createLogger('api:openclaw:batch-upload');
 
@@ -102,10 +103,10 @@ async function callOpenclawAgent(imageBase64: string, mimeType: string, timeout:
 
         const data = await response.json() as OpenclawResponse;
         return data;
-    } catch (error: any) {
+    } catch (error) {
         clearTimeout(timeoutId);
         
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
             logger.error('Openclaw agent timeout');
             return {
                 success: false,
@@ -113,10 +114,10 @@ async function callOpenclawAgent(imageBase64: string, mimeType: string, timeout:
             };
         }
         
-        logger.error({ error: error?.message || String(error) }, 'Openclaw agent request failed');
+        logger.error({ error: getErrorMessage(error) }, 'Openclaw agent request failed');
         return {
             success: false,
-            error: `识别服务请求失败: ${error?.message || String(error)}`,
+            error: `识别服务请求失败: ${getErrorMessage(error)}`,
         };
     }
 }
@@ -430,12 +431,12 @@ export async function POST(req: Request) {
                 });
 
                 logger.info({ index: i, errorItemId: errorItem.id }, 'Error item created successfully');
-            } catch (dbError: any) {
-                logger.error({ index: i, error: dbError?.message || String(dbError) }, 'Failed to create error item');
+            } catch (dbError) {
+                logger.error({ index: i, error: getErrorMessage(dbError) }, 'Failed to create error item');
                 results.push({
                     success: false,
                     index: i,
-                    error: `数据库写入失败: ${dbError?.message || String(dbError)}`,
+                    error: `数据库写入失败: ${getErrorMessage(dbError)}`,
                 });
             }
         }
@@ -461,14 +462,15 @@ export async function POST(req: Request) {
             failCount,
             results,
         }, { status: statusCode });
-    } catch (error: any) {
+    } catch (error) {
         task?.fail(error);
-        logger.error({ error: error?.message || String(error), stack: error?.stack }, 'Batch upload error');
+        const message = getErrorMessage(error);
+        logger.error({ error: message, stack: error instanceof Error ? error.stack : undefined }, 'Batch upload error');
         return createErrorResponse(
-            error?.message || '批量上传失败',
+            message || '批量上传失败',
             500,
             ErrorCode.INTERNAL_ERROR,
-            error?.message || String(error)
+            message
         );
     }
 }

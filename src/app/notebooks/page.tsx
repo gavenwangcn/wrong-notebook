@@ -19,6 +19,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { toast, confirmDialog } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { getApiErrorMessage } from "@/lib/error-message";
 
 export default function NotebooksPage() {
     const router = useRouter();
@@ -48,9 +49,9 @@ export default function NotebooksPage() {
         try {
             await apiClient.post("/api/notebooks", input);
             await fetchNotebooks();
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[Notebooks]', 'Failed to create notebook', { error });
-            const message = error.data?.message || t.notebooks?.createError || "Failed to create";
+            const message = getApiErrorMessage(error) || t.notebooks?.createError || "Failed to create";
             toast.error(message);
         }
     };
@@ -72,9 +73,9 @@ export default function NotebooksPage() {
         try {
             await apiClient.delete(`/api/notebooks/${id}`);
             await fetchNotebooks();
-        } catch (error: any) {
+        } catch (error) {
             frontendLogger.error('[Notebooks]', 'Failed to delete notebook', { error });
-            const message = error.data?.message || t.notebooks?.deleteError || "Failed to delete";
+            const message = getApiErrorMessage(error) || t.notebooks?.deleteError || "Failed to delete";
             toast.error(message);
         }
     };

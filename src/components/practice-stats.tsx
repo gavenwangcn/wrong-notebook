@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Loader2, TrendingUp, BookOpen, Target } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
+import type { Translations } from "@/lib/translations";
 import { PracticeStatsData } from "@/types/api";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -18,12 +19,19 @@ const DIFFICULTY_COLORS: Record<string, string> = {
     'Unknown': '#94a3b8' // Slate-400
 };
 
-const CustomTooltip = ({ active, payload, label, t }: any) => {
+/** recharts 传给自定义提示框的参数（只列出用到的字段） */
+interface ChartTooltipProps {
+    active?: boolean;
+    payload?: Array<{ name?: string | number; value?: string | number; color?: string }>;
+    label?: string | number;
+}
+
+const CustomTooltip = ({ active, payload, label, t }: ChartTooltipProps & { t: Translations }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-background border rounded-lg shadow-lg p-3 text-sm">
                 <p className="font-medium mb-2">{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry, index) => (
                     <div key={index} className="flex items-center gap-2 mb-1 last:mb-0">
                         <div
                             className="w-3 h-3 rounded-full"
@@ -40,7 +48,7 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
                 <div className="mt-2 pt-2 border-t flex justify-between gap-4">
                     <span className="text-muted-foreground">{t.stats?.total || "Total"}:</span>
                     <span className="font-bold">
-                        {payload.reduce((acc: number, curr: any) => acc + (typeof curr.value === 'number' ? curr.value : 0), 0)}
+                        {payload.reduce((acc, curr) => acc + (typeof curr.value === 'number' ? curr.value : 0), 0)}
                     </span>
                 </div>
             </div>
