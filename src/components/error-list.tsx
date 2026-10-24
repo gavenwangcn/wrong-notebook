@@ -1,41 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Search, Filter, ChevronDown, Printer, ListChecks, GitCompareArrows, Inbox } from "lucide-react";
-import Link from "next/link";
-import { useTimeZone } from "@/contexts/TimeZoneContext";
-import { formatDateTime } from "@/lib/date-time";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { GitCompareArrows, Inbox, ListChecks, Printer, Search } from "lucide-react";
+import { ErrorItemCard } from "@/components/error-list/error-item-card";
+import { FilterMenu } from "@/components/error-list/filter-menu";
+import { PaperLevelFilter } from "@/components/error-list/paper-level-filter";
 import { ErrorListSelectionBar } from "@/components/error-list-selection-bar";
-import { DifficultyStars } from "@/components/difficulty-stars";
 import { KnowledgeFilter } from "@/components/knowledge-filter";
-import { MASTERY_STATUS_BORDER, MasteryStatusBadge } from "@/components/mastery-status-badge";
-import { ErrorItem, PaginatedResponse } from "@/types/api";
-import { apiClient } from "@/lib/api-client";
-import { cleanMarkdown } from "@/lib/markdown-utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { apiClient } from "@/lib/api-client";
 import { DEFAULT_PAGE_SIZE } from "@/lib/constants/pagination";
-import { getMistakeStatusLabel } from "@/lib/mistake-status";
-import { isShortId } from "@/lib/short-id-format";
-import { locateByShortId } from "@/lib/short-id-client";
-import { toast, confirmDialog } from "@/lib/feedback";
-import type { MasteryStatus } from "@/lib/mastery-status";
+import { buildErrorListParams } from "@/lib/error-list-filters";
+import { confirmDialog, toast } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
+import { locateByShortId } from "@/lib/short-id-client";
+import { isShortId } from "@/lib/short-id-format";
+import type { ErrorListFilters, PaperLevelFilter as PaperLevel, TimeFilter } from "@/lib/error-list-filters";
+import type { MasteryStatus } from "@/lib/mastery-status";
+import type { ErrorItem, PaginatedResponse } from "@/types/api";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -49,64 +37,39 @@ type KnowledgeFilterChange = {
 };
 
 export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
-    const { timeZone } = useTimeZone();
+    const { t } = useLanguage();
+    const router = useRouter();
     const [items, setItems] = useState<ErrorItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [masteryFilter, setMasteryFilter] = useState<"all" | MasteryStatus>("all");
-    const [timeFilter, setTimeFilter] = useState<"all" | "week" | "month">("all");
+    const [timeFilter, setTimeFilter] = useState<TimeFilter>("all");
     const [gradeFilter, setGradeFilter] = useState("");
     const [chapterFilter, setChapterFilter] = useState("");
-    const [paperLevelFilter, setPaperLevelFilter] = useState<"all" | "a" | "b" | "other">("all");
+    const [paperLevelFilter, setPaperLevelFilter] = useState<PaperLevel>("all");
     const [selectedTag, setSelectedTag] = useState<string | null>(null);
-    const [expandedTags, setExpandedTags] = useState<Set<string>>(new Set());
     // 分页状态
     const [page, setPage] = useState(1);
-    const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+    const pageSize = DEFAULT_PAGE_SIZE;
     const [total, setTotal] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     // 多选模式状态
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
-    const { t, language } = useLanguage();
-    const router = useRouter();
 
-    const handleExportPrint = () => {
-        const params = new URLSearchParams();
-        if (subjectId) params.append("subjectId", subjectId);
-        if (search) params.append("query", search);
-        if (masteryFilter !== "all") {
-            params.append("mastery", masteryFilter);
-        }
-        if (timeFilter !== "all") {
-            params.append("timeRange", timeFilter);
-        }
-        if (selectedTag) {
-            params.append("tag", selectedTag);
-        }
-        if (gradeFilter) params.append("gradeSemester", gradeFilter);
-        if (chapterFilter) params.append("chapter", chapterFilter); // 章节筛选
-        if (paperLevelFilter !== "all") params.append("paperLevel", paperLevelFilter);
-
-        router.push(`/print-preview?${params.toString()}`);
-    };
-
-    const handleTagClick = (tag: string) => {
-        setSelectedTag(selectedTag === tag ? null : tag);
-    };
+    const filters: ErrorListFilters = useMemo(() => ({
+        subjectId, search, mastery: masteryFilter, timeRange: timeFilter, tag: selectedTag,
+        gradeSemester: gradeFilter, chapter: chapterFilter, paperLevel: paperLevelFilter,
+    }), [subjectId, search, masteryFilter, timeFilter, selectedTag, gradeFilter, chapterFilter, paperLevelFilter]);
 
     const handleFilterChange = ({ gradeSemester, chapter, tag }: KnowledgeFilterChange) => {
         if (gradeSemester !== undefined) setGradeFilter(gradeSemester);
         if (chapter !== undefined) setChapterFilter(chapter);
-        // 注意：tag 可能是 undefined（表示清除），需要用 'tag' in obj 来判断是否传入了该参数
-        // 但由于我们的结构是直接解构，这里改用 null 作为清除标识
-        // 实际上 KnowledgeFilter 传入的是 { tag: undefined }，所以 tag 参数确实会被设置
-        // 问题在于 !== undefined 不能区分"未传入"和"传入undefined"
-        // 正确的做法是检查参数对象中是否有该 key
+        // KnowledgeFilter 清除标签时传入 { tag: undefined }，统一转成 null
         setSelectedTag(tag === undefined ? null : tag);
 
-        // Clear dependent filters and reset page
+        // 清除年级时一并清除章节和标签，清除章节时只清章节
         if (!gradeSemester) {
             setGradeFilter("");
             setChapterFilter("");
@@ -117,55 +80,47 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         setPage(1); // 筛选变化时重置页码
     };
 
-    // 使用服务端 items 直接渲染，章节过滤已在 KnowledgeFilter 中通过 tag 实现
-    const filteredItems = items;
-
-    const toggleTagsExpanded = (itemId: string, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setExpandedTags(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(itemId)) {
-                newSet.delete(itemId);
-            } else {
-                newSet.add(itemId);
-            }
-            return newSet;
-        });
-    };
-
     // 多选模式相关函数
     const toggleSelectMode = () => {
         setIsSelectMode(!isSelectMode);
         setSelectedIds(new Set());
     };
 
-    const toggleSelectItem = (id: string, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const toggleSelectItem = (id: string) => {
         setSelectedIds(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
         });
     };
+
+    const fetchItems = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = buildErrorListParams(filters);
+            params.append("page", page.toString());
+            params.append("pageSize", pageSize.toString());
+            const response = await apiClient.get<PaginatedResponse<ErrorItem>>(`/api/error-items/list?${params.toString()}`);
+            setItems(response.items);
+            setTotal(response.total);
+            setTotalPages(response.totalPages);
+        } catch (error) {
+            frontendLogger.error('[ErrorList]', 'Failed to fetch error items', { error });
+        } finally {
+            setLoading(false);
+        }
+    }, [filters, page, pageSize]);
 
     const handleBatchDelete = async () => {
         if (selectedIds.size === 0) return;
 
-        const confirmMsg = (t.notebook?.confirmBatchDelete || "Delete {count} items?")
-            .replace("{count}", selectedIds.size.toString());
+        const confirmMsg = (t.notebook?.confirmBatchDelete || "Delete {count} items?").replace("{count}", selectedIds.size.toString());
         if (!(await confirmDialog(confirmMsg, { destructive: true }))) return;
 
         setIsDeleting(true);
         try {
-            await apiClient.post("/api/error-items/batch-delete", {
-                ids: Array.from(selectedIds),
-            });
+            await apiClient.post("/api/error-items/batch-delete", { ids: Array.from(selectedIds) });
             toast.success(t.notebook?.batchDeleteSuccess || "Deleted successfully");
             setIsSelectMode(false);
             setSelectedIds(new Set());
@@ -178,56 +133,12 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         }
     };
 
-    const fetchItems = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = new URLSearchParams();
-            if (subjectId) params.append("subjectId", subjectId);
-            if (search) params.append("query", search);
-            if (masteryFilter !== "all") {
-                params.append("mastery", masteryFilter);
-            }
-            if (timeFilter !== "all") {
-                params.append("timeRange", timeFilter);
-            }
-            if (selectedTag) {
-                params.append("tag", selectedTag);
-            }
-            if (gradeFilter) params.append("gradeSemester", gradeFilter);
-            if (chapterFilter) params.append("chapter", chapterFilter); // 章节筛选
-            if (paperLevelFilter !== "all") params.append("paperLevel", paperLevelFilter);
-            // 分页参数
-            params.append("page", page.toString());
-            params.append("pageSize", pageSize.toString());
-
-            const response = await apiClient.get<PaginatedResponse<ErrorItem>>(`/api/error-items/list?${params.toString()}`);
-            setItems(response.items);
-            setTotal(response.total);
-            setTotalPages(response.totalPages);
-        } catch (error) {
-            frontendLogger.error('[ErrorList]', 'Failed to fetch error items', { error });
-        } finally {
-            setLoading(false);
-        }
-    }, [subjectId, search, masteryFilter, timeFilter, selectedTag, gradeFilter, chapterFilter, paperLevelFilter, page, pageSize]);
-
     // 追踪筛选条件是否变化（用于判断是否需要重置页码）
-    const prevFiltersRef = useRef({ search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter });
+    const prevFiltersRef = useRef(filters);
 
     useEffect(() => {
-        const prevFilters = prevFiltersRef.current;
-        const filtersChanged =
-            prevFilters.search !== search ||
-            prevFilters.masteryFilter !== masteryFilter ||
-            prevFilters.timeFilter !== timeFilter ||
-            prevFilters.selectedTag !== selectedTag ||
-            prevFilters.subjectId !== subjectId ||
-            prevFilters.gradeFilter !== gradeFilter ||
-            prevFilters.chapterFilter !== chapterFilter ||
-            prevFilters.paperLevelFilter !== paperLevelFilter;
-
-        // 更新 ref
-        prevFiltersRef.current = { search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter };
+        const filtersChanged = prevFiltersRef.current !== filters;
+        prevFiltersRef.current = filters;
 
         if (filtersChanged && page !== 1) {
             // 筛选条件变化且不在第一页，重置到第一页（会再次触发此 effect）
@@ -235,9 +146,8 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             return;
         }
 
-        // 正常请求数据
         fetchItems();
-    }, [page, search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter, fetchItems]);
+    }, [page, filters, fetchItems]);
 
     return (
         <div className={`space-y-6 ${isSelectMode ? "pb-40 sm:pb-24" : ""}`}>
@@ -260,109 +170,30 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                     />
                 </div>
                 <div className="flex flex-wrap gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-10">
-                            <Filter className="mr-2 h-4 w-4" />
-                            {t.notebook.filter}
-                            <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>{t.filter.masteryStatus || "Mastery Status"}</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setMasteryFilter("all")}>
-                            {masteryFilter === "all" && "✓ "}{t.filter.all || "All"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMasteryFilter("new")}>
-                            {masteryFilter === "new" && "✓ "}{t.filter.review || "To Review"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMasteryFilter("reviewing")}>
-                            {masteryFilter === "reviewing" && "✓ "}{t.filter.reviewing || "Reviewing"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setMasteryFilter("mastered")}>
-                            {masteryFilter === "mastered" && "✓ "}{t.filter.mastered || "Mastered"}
-                        </DropdownMenuItem>
-
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuLabel>{t.filter.timeRange || "Time Range"}</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setTimeFilter("all")}>
-                            {timeFilter === "all" && "✓ "}{t.filter.allTime || "All Time"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTimeFilter("week")}>
-                            {timeFilter === "week" && "✓ "}{t.filter.lastWeek || "Last Week"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setTimeFilter("month")}>
-                            {timeFilter === "month" && "✓ "}{t.filter.lastMonth || "Last Month"}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <Button variant="outline" size="sm" className="h-10" onClick={handleExportPrint}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    {t.notebook?.exportPrint || "导出打印"}
-                </Button>
-                {!isSelectMode && (
-                    <Button variant="outline" size="sm" className="h-10" onClick={toggleSelectMode}>
-                        <GitCompareArrows className="mr-2 h-4 w-4" />
-                        {t.questionSimilarity.title}
+                    <FilterMenu mastery={masteryFilter} timeRange={timeFilter} onMasteryChange={setMasteryFilter} onTimeRangeChange={setTimeFilter} />
+                    <Button variant="outline" size="sm" className="h-10" onClick={() => router.push(`/print-preview?${buildErrorListParams(filters).toString()}`)}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        {t.notebook?.exportPrint || "导出打印"}
                     </Button>
-                )}
-                <Button
-                    variant={isSelectMode ? "secondary" : "outline"}
-                    size="sm"
-                    className="h-10"
-                    onClick={toggleSelectMode}
-                >
-                    <ListChecks className="mr-2 h-4 w-4" />
-                    {isSelectMode ? (t.notebook?.cancelSelect || "取消") : (t.notebook?.selectMode || "多选")}
-                </Button>
+                    {!isSelectMode && (
+                        <Button variant="outline" size="sm" className="h-10" onClick={toggleSelectMode}>
+                            <GitCompareArrows className="mr-2 h-4 w-4" />
+                            {t.questionSimilarity.title}
+                        </Button>
+                    )}
+                    <Button variant={isSelectMode ? "secondary" : "outline"} size="sm" className="h-10" onClick={toggleSelectMode}>
+                        <ListChecks className="mr-2 h-4 w-4" />
+                        {isSelectMode ? (t.notebook?.cancelSelect || "取消") : (t.notebook?.selectMode || "多选")}
+                    </Button>
                 </div>
             </div>
 
             {/* Advanced Filters Row */}
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                 <div className="w-full sm:w-auto">
-                    <KnowledgeFilter
-                        gradeSemester={gradeFilter}
-                        tag={selectedTag}
-                        onFilterChange={handleFilterChange}
-                        subjectName={subjectName}
-                    />
+                    <KnowledgeFilter gradeSemester={gradeFilter} tag={selectedTag} onFilterChange={handleFilterChange} subjectName={subjectName} />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    <Button
-                        variant={paperLevelFilter === "all" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setPaperLevelFilter("all")}
-                    >
-                        {t.filter.all || "All"}
-                    </Button>
-                    <Button
-                        variant={paperLevelFilter === "a" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setPaperLevelFilter("a")}
-                    >
-                        {t.editor.paperLevels?.a || "Paper A"}
-                    </Button>
-                    <Button
-                        variant={paperLevelFilter === "b" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setPaperLevelFilter("b")}
-                    >
-                        {t.editor.paperLevels?.b || "Paper B"}
-                    </Button>
-                    <Button
-                        variant={paperLevelFilter === "other" ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => setPaperLevelFilter("other")}
-                    >
-                        {t.editor.paperLevels?.other || "Other"}
-                    </Button>
-                </div>
+                <PaperLevelFilter value={paperLevelFilter} onChange={setPaperLevelFilter} />
             </div>
 
             {selectedTag && (
@@ -377,11 +208,11 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                 </div>
             )}
 
-            {!loading && filteredItems.length === 0 && (
+            {!loading && items.length === 0 && (
                 <EmptyState icon={Inbox} title={t.notebook.emptyList} description={t.notebook.emptyListHint} />
             )}
 
-            {loading && filteredItems.length === 0 && (
+            {loading && items.length === 0 && (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {Array.from({ length: 6 }, (_, i) => (
                         <div key={i} className="h-44 animate-pulse rounded-2xl bg-muted" />
@@ -390,112 +221,20 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             )}
 
             <div className={`grid gap-4 md:grid-cols-2 lg:grid-cols-3 transition-opacity ${loading ? "opacity-60" : ""}`}>
-                {filteredItems.map((item) => {
-                    // 优先使用 tags 关联，回退到 knowledgePoints
-                    let tags: string[] = [];
-                    if (item.tags && item.tags.length > 0) {
-                        tags = item.tags.map((tag) => tag.name);
-                    } else {
-                        try {
-                            tags = JSON.parse(item.knowledgePoints || "[]");
-                        } catch {
-                            tags = [];
-                        }
-                    }
-                    return (
-                        <div key={item.id} className="relative animate-in fade-in duration-300">
-                            {/* 选择模式下的复选框 */}
-                            {isSelectMode && (
-                                <div
-                                    className="absolute top-2 left-2 z-10"
-                                    onClick={(e) => toggleSelectItem(item.id, e)}
-                                >
-                                    <Checkbox
-                                        checked={selectedIds.has(item.id)}
-                                        aria-label={t.questionSimilarity.selectQuestion.replace("{id}", item.shortId || item.id)}
-                                        className="h-5 w-5 border-2 bg-background shadow-sm"
-                                    />
-                                </div>
-                            )}
-                            <Link href={isSelectMode ? "#" : `/error-items/${item.id}`} onClick={(e) => isSelectMode && e.preventDefault()}>
-                                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${MASTERY_STATUS_BORDER[item.masteryStatus ?? "new"]} ${isSelectMode && selectedIds.has(item.id) ? "ring-2 ring-primary" : "hover:border-primary/40"}`}>
-                                    <CardHeader className="pb-0">
-                                        <div className={`flex justify-between items-start ${isSelectMode ? "pl-7" : ""}`}>
-                                            <MasteryStatusBadge status={item.masteryStatus ?? "new"} />
-                                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                {typeof item.masteryProbability === "number" && (
-                                                    <span title={t.mastery.probability}>{Math.round(item.masteryProbability * 100)}%</span>
-                                                )}
-                                                {item.shortId && <span className="font-mono">{item.shortId}</span>}
-                                                {formatDateTime(item.createdAt, "MM/dd", timeZone)}
-                                            </span>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="text-sm line-clamp-3">
-                                            {(() => {
-                                                // 提取文本并清理 LaTeX/Markdown 格式
-                                                const rawText = (item.questionText || "").split('\n\n')[0]; // 取第一段
-                                                const cleanText = cleanMarkdown(rawText);
-
-                                                return cleanText.length > 80
-                                                    ? cleanText.substring(0, 80) + "..."
-                                                    : cleanText;
-                                            })()}
-                                        </div>
-                                        <div className="flex flex-wrap items-center gap-2 mt-3">
-                                            <Badge variant="secondary" className="text-xs">
-                                                {getMistakeStatusLabel(item.mistakeStatus, language)}
-                                            </Badge>
-                                            <DifficultyStars value={item.difficultyStars} showUnrated={false} />
-                                        </div>
-                                        <div className="flex flex-wrap gap-2 mt-3">
-                                            {(expandedTags.has(item.id) ? tags : tags.slice(0, 3)).map((tag: string) => (
-                                                <Badge
-                                                    key={tag}
-                                                    variant={selectedTag === tag ? "default" : "outline"}
-                                                    className="text-xs cursor-pointer hover:bg-primary/10 transition-colors"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        handleTagClick(tag);
-                                                    }}
-                                                >
-                                                    {tag}
-                                                </Badge>
-                                            ))}
-                                            {tags.length > 3 && (
-                                                <Badge
-                                                    variant="secondary"
-                                                    className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors"
-                                                    title={expandedTags.has(item.id)
-                                                        ? (t.notebooks?.collapseTagsTooltip || "Click to collapse")
-                                                        : (t.notebooks?.expandTagsTooltip || "Click to expand {count} tags").replace("{count}", (tags.length - 3).toString())}
-                                                    onClick={(e) => toggleTagsExpanded(item.id, e)}
-                                                >
-                                                    {expandedTags.has(item.id) ? (
-                                                        <>{t.notebooks?.collapseTags || "Collapse"}</>
-                                                    ) : (
-                                                        <>{(t.notebooks?.expandTags || "+{count} more").replace("{count}", (tags.length - 3).toString())}</>
-                                                    )}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </Link>
-                        </div>
-                    );
-                })}
+                {items.map((item) => (
+                    <ErrorItemCard
+                        key={item.id}
+                        item={item}
+                        selectMode={isSelectMode}
+                        selected={selectedIds.has(item.id)}
+                        onToggleSelect={() => toggleSelectItem(item.id)}
+                        selectedTag={selectedTag}
+                        onTagClick={(tag) => setSelectedTag(selectedTag === tag ? null : tag)}
+                    />
+                ))}
             </div>
 
-            {/* 分页器 */}
-            <Pagination
-                page={page}
-                totalPages={totalPages}
-                total={total}
-                pageSize={pageSize}
-                onPageChange={setPage}
-            />
+            <Pagination page={page} totalPages={totalPages} total={total} pageSize={pageSize} onPageChange={setPage} />
 
             {isSelectMode && (
                 <ErrorListSelectionBar selectedIds={[...selectedIds]} deleting={isDeleting} onCancel={toggleSelectMode} onDelete={handleBatchDelete} />

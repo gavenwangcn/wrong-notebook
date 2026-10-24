@@ -1,3 +1,5 @@
+export { getItemTags } from "@/lib/item-tags";
+
 export interface KnowledgeTag {
     id: string;
     name: string;
@@ -37,19 +39,3 @@ export interface ErrorItemDetail {
 
 /** 局部更新错题，同时合并到页面状态 */
 export type UpdateErrorItem = (fields: Partial<ErrorItemDetail>) => void;
-
-/** 题目的知识点：优先取标签关联，回退到旧的 knowledgePoints 字段 */
-export function getItemTags(item: Pick<ErrorItemDetail, "tags" | "knowledgePoints">): string[] {
-    if (item.tags && item.tags.length > 0) {
-        return item.tags.map((tag) => tag.name);
-    }
-    if (item.knowledgePoints) {
-        try {
-            const parsed = JSON.parse(item.knowledgePoints);
-            return Array.isArray(parsed) ? parsed : [];
-        } catch {
-            return [];
-        }
-    }
-    return [];
-}
