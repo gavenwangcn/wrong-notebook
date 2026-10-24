@@ -31,16 +31,19 @@ wrong-notebook 是一个错题本 Web 应用：上传题目图片或文字，由
 ## 常用命令
 
 ```bash
-npm ci
+npm ci --registry=https://registry.npmjs.org
 npx prisma generate
 npm run dev                 # 开发服务器（0.0.0.0:3000）
-npm run lint
+npm run lint                # 出现任何警告即失败
 npm run test:unit
 npm run test:integration
 npm test                    # 全部 Vitest 测试
+npm run test:coverage       # 覆盖率，低于 vitest.config.ts 中的阈值时失败
 npm run test:e2e            # Playwright
 bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生产构建）
 ```
+
+默认 registry 设为国内镜像（如 npmmirror）时，新发布的包下载很慢，镜像地址还会被写进 `package-lock.json`。安装或升级依赖时指定官方源（`--registry=https://registry.npmjs.org`，运行 `scripts/ci.sh` 时设置 `npm_config_registry`），提交前确认锁文件中没有 `npmmirror`。
 
 ## 语言
 
@@ -48,12 +51,13 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 
 ## 代码规范
 
-- TypeScript：避免 `any`，用 `unknown` 或具体类型；类型导入使用 `import type`。
-- React：组件需有 Props 类型；超过约 200 行的组件应拆分。
+- TypeScript：避免 `any`，用 `unknown` 或具体类型；类型导入使用 `import type`。捕获的错误用 `@/lib/error-message` 的 `getErrorMessage` / `getApiErrorMessage` 取文本。
+- Lint 必须零警告。确需忽略规则时，只在调用处用 `eslint-disable-next-line` 并写明原因（如 effect 中的数据请求），不要整文件关闭。
+- React：组件需有 Props 类型；超过约 200 行的组件应拆分，子组件放在以页面或功能命名的目录（如 `src/components/settings/`、`error-detail/`），可复用逻辑抽成 `src/lib/use-*.ts` hook。
 - 导入顺序：React/Next → 第三方 → `@/components` → `@/lib` → types → styles。
 - 路径别名 `@/` 指向 `src/`。
 - API 错误使用 `@/lib/api-errors`；日志后端用 `@/lib/logger`，前端用 `@/lib/frontend-logger`，不要直接 `console.log`。
-- 界面文本放在 `@/lib/translations.ts`，组件中用 `t.section.key`，缺省回退英文。
+- 界面文本放在 `@/lib/translations.ts`，组件中用 `t.section.key`，缺省回退英文。中英文 key 必须一致（`translations.test.ts` 会检查）。
 - 页面须同时适配 PC 和移动端（移动优先）。
 - 修改 AI 调用时同步更新所有提供商（`gemini-provider.ts`、`openai-provider.ts`、`azure-provider.ts`、`anthropic-provider.ts`），提示词集中在 `prompts.ts`。
 - MiniMax、智谱 GLM、DeepSeek、Kimi 等国产大模型官方渠道复用 `OpenAIProvider`，默认地址和模型集中在 `src/lib/ai/vendor-presets.ts`；新增渠道只需加预设并同步文档与测试。
@@ -72,6 +76,7 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 ## 测试
 
 - 修改逻辑代码后运行 `npm run test:unit && npm run test:integration`；仅改文档、样式、注释时可跳过。
+- 修改导出、导入或新增需要备份的字段和表时，同步更新 `src/app/api/export`、`src/app/api/import` 与 `src/__tests__/integration/data-backup.test.ts`。
 - 测试失败先修复再重跑；不要为通过测试而删除或弱化断言。
 - 除非用户要求或运行完整 CI，不主动执行 `npm run build`。
 
@@ -89,7 +94,7 @@ bash scripts/ci.sh          # 完整 CI（要求 Node.js 22 及以上，含生�
 
 ## 文档同步
 
-- 功能、配置项或默认值变化时，同步更新 `README.md` 与 `README.en.md`，以及受影响的 `doc/`、`doc/wiki/` 页面。
+- 功能、配置项或默认值变化时，同步更新 `README.md` 与 `README.en.md`，以及受影响的 `doc/`、`doc/wiki/` 页面；Wiki 中文页面改动时同步更新 `doc/wiki/en/` 中对应的英文页面，发布流程见 `doc/WIKI_PUBLISHING.md`。
 - 面向用户的功能变化（如新增 AI 提供商、安装方式）同时更新官网项目 `../wrong-notebook-github-pages`（中文 `index.html` 与英文 `en/index.html`），该项目单独提交并推送。
 
 ## 临时文件
