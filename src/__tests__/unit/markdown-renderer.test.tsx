@@ -59,3 +59,16 @@ describe('常见答案格式的公式渲染', () => {
         expect(countFormulas(content)).toBe(count);
     });
 });
+
+describe('代码渲染', () => {
+    it('行内代码保持在段落中，不使用代码块样式', () => {
+        const html = renderToStaticMarkup(<MarkdownRenderer content={'行内 `x + 1` 代码'} />);
+        expect(html).toMatch(/<p[^>]*>行内 <code class="bg-muted px-1.5[^"]*">x \+ 1<\/code> 代码<\/p>/);
+        expect(html).not.toContain('<code class="block');
+    });
+
+    it('代码块由 pre 提供块级样式', () => {
+        const html = renderToStaticMarkup(<MarkdownRenderer content={'```\nblock\n```'} />);
+        expect(html).toMatch(/<pre class="bg-muted p-4[^"]*"><code[^>]*>block\n<\/code><\/pre>/);
+    });
+});
