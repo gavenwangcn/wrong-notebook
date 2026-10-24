@@ -45,7 +45,7 @@ interface OpenclawResponse {
     error?: string;
 }
 
-function validateImage(base64: string, filename: string): { valid: boolean; error?: string } {
+function validateImage(base64: string, filename: string, mimeType: string): { valid: boolean; error?: string } {
     if (!base64 || base64.length === 0) {
         return { valid: false, error: '图片数据为空' };
     }
@@ -53,6 +53,11 @@ function validateImage(base64: string, filename: string): { valid: boolean; erro
     const extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
         return { valid: false, error: `不支持的图片格式: ${extension}，仅支持 JPG、PNG` };
+    }
+
+    // mimeType 会写入题目原图的 data URL，须与扩展名一样限定为 JPG、PNG
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+        return { valid: false, error: `不支持的图片类型: ${String(mimeType).slice(0, 50)}，仅支持 image/jpeg、image/png` };
     }
 
     const estimatedSize = (base64.length * 3) / 4;
@@ -379,7 +384,7 @@ export async function POST(req: Request) {
             const imageData = images[i] as ImageData;
             const { base64, mimeType, filename } = imageData;
 
-            const validation = validateImage(base64, filename);
+            const validation = validateImage(base64, filename, mimeType);
             if (!validation.valid) {
                 logger.warn({ index: i, filename, error: validation.error }, 'Image validation failed');
                 results.push({

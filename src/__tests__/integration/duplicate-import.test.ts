@@ -245,6 +245,19 @@ describe('其他导入入口也使用同一判重规则', () => {
         expect(await database.errorItem.findUnique({ where: { id: data.results[0].errorItemId } })).toMatchObject({ difficultyStars: 5, paperLevel: 'b' });
     });
 
+    it('Openclaw 上传拒绝扩展名合法但类型不是 JPG、PNG 的图片，不调用 AI', async () => {
+        vi.stubEnv('OPENCLAW_AUTH_MODE', 'apikey');
+        vi.stubEnv('OPENCLAW_INTEGRATION_API_KEY', 'test-only-key');
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+        const response = await IMPORT_OPENCLAW(request({ userEmail: mocks.session.user.email, images: [{ base64: 'dGVzdA==', mimeType: 'image/svg+xml', filename: 'question.png' }] }, '/api/openclaw/batch-upload', { 'x-api-key': 'test-only-key' }));
+        const data = await response.json();
+        expect(data.successCount).toBe(0);
+        expect(data.results[0]).toMatchObject({ success: false, error: expect.stringContaining('image/svg+xml') });
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(await database.errorItem.count()).toBe(0);
+    });
+
     it.each([null, 'a', 'other'])('备份导入仅为未设置卷别的 4 星题补 B 卷，原卷别为 %s', async (paperLevel) => {
         const response = await IMPORT_BACKUP(request({ version: 1, user: { email: mocks.session.user.email }, errorItems: [{ id: 'backup-item', userId: 'user-1', questionText, difficultyStars: 4, paperLevel, originalImageUrl: '' }] }, '/api/import'));
         expect(response.status).toBe(200);

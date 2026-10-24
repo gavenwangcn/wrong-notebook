@@ -69,7 +69,7 @@ curl --fail-with-body http://localhost:3000/api/openclaw/batch-upload \
 ## 输入限制与超时
 
 - 每批最多 20 张图片。
-- 预期格式为 JPG、JPEG 或 PNG，单张解码后估算大小不超过 5 MiB。
+- 预期格式为 JPG、JPEG 或 PNG（`mimeType` 须为 `image/jpeg` 或 `image/png`），单张解码后估算大小不超过 5 MiB。
 - `base64` 使用纯 Base64，文件名扩展名应与图片内容匹配。
 - 图片按顺序逐张识别；当前单张识别超时为 `min(3000, OPENCLAW_TIMEOUT / 图片数)` 毫秒。
 
