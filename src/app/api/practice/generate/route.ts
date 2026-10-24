@@ -6,8 +6,44 @@ import { getAIService } from "@/lib/ai";
 import { notFound, internalError, unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
+import { parseLastPractice, serializeLastPractice } from "@/lib/last-practice";
+import type { LastPractice } from "@/lib/last-practice";
 
 const logger = createLogger('api:practice:generate');
+
+const DIFFICULTIES = ['easy', 'medium', 'hard', 'harder'] as const;
+
+/**
+ * GET /api/practice/generate?errorItemId=xxx
+ * 读取该错题最近一次生成的举一反三题目，没有时返回 { practice: null }
+ */
+export async function GET(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+        return unauthorized("Authentication required");
+    }
+
+    try {
+        const errorItemId = new URL(req.url).searchParams.get("errorItemId");
+        if (!errorItemId) {
+            return notFound("Item not found");
+        }
+
+        const item = await prisma.errorItem.findUnique({
+            where: { id: errorItemId },
+            select: { userId: true, lastPractice: true }
+        });
+        if (!item || item.userId !== session.user.id) {
+            return notFound("Item not found");
+        }
+
+        return NextResponse.json({ practice: parseLastPractice(item.lastPractice) });
+    } catch (error) {
+        logger.error({ error }, 'Error loading last practice');
+        return internalError("Failed to load last practice question");
+    }
+}
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
@@ -54,7 +90,26 @@ export async function POST(req: Request) {
         const subjectName = errorItemWithSubject.subject?.name || "其他";
         similarQuestion.subject = validSubjects.includes(subjectName as any) ? subjectName as typeof validSubjects[number] : "其他";
 
-        return NextResponse.json(similarQuestion);
+        // 暂存本次生成结果，下次进入练习页直接显示；写入失败不影响本次返回
+        const lastPractice: LastPractice = {
+            questionText: similarQuestion.questionText,
+            answerText: similarQuestion.answerText,
+            analysis: similarQuestion.analysis,
+            subject: similarQuestion.subject,
+            figureSvg: similarQuestion.figureSvg ?? null,
+            difficulty: DIFFICULTIES.find(d => d === difficulty) ?? 'medium',
+            generatedAt: new Date().toISOString(),
+        };
+        try {
+            await prisma.errorItem.update({
+                where: { id: errorItemId },
+                data: { lastPractice: serializeLastPractice(lastPractice) }
+            });
+        } catch (error) {
+            logger.warn({ error }, 'Failed to cache last practice question');
+        }
+
+        return NextResponse.json({ ...similarQuestion, difficulty: lastPractice.difficulty, generatedAt: lastPractice.generatedAt });
     } catch (error) {
         logger.error({ error }, 'Error generating practice');
         const errorMessage = error instanceof Error ? error.message : "Failed to generate practice question";

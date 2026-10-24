@@ -275,6 +275,7 @@ export const translations = {
             generate: "Generate Practice Question",
             generating: "Generating AI Question...",
             regenerate: "Regenerate",
+            lastGeneratedAt: "Generated at {time}. Click Regenerate for a new question.",
             // practiceProblem: "Practice Problem", // Moved to app
             // yourAnswer: "Your Answer", // Moved to app
             // answerPlaceholder: "Enter your answer...", // Moved to app
@@ -1301,6 +1302,7 @@ export const translations = {
             generate: "生成练习题",
             generating: "AI 正在出题...",
             regenerate: "重新生成",
+            lastGeneratedAt: "生成于 {time}，点击「重新生成」可换一道新题。",
             // practiceProblem: "练习题", // Moved to app
             // yourAnswer: "你的答案", // Moved to app
             // answerPlaceholder: "输入你的答案...", // Moved to app

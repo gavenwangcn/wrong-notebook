@@ -17,6 +17,7 @@ import type { PracticeResult } from "@/types/api";
 import { PracticeResultCard } from "@/components/practice-result-card";
 import { QuestionFigure } from "@/components/question-figure";
 import { frontendLogger } from "@/lib/frontend-logger";
+import type { LastPractice } from "@/lib/last-practice";
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,9 @@ function PracticeContent() {
     // 每生成一道新题递增，用于重置结果卡片
     const [questionVersion, setQuestionVersion] = useState(0);
     const [config, setConfig] = useState<AppConfig | null>(null);
+    // 当前题目的生成时间；读取暂存题目期间不显示生成按钮，避免闪烁
+    const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+    const [loadingCached, setLoadingCached] = useState(true);
 
     useEffect(() => {
         apiClient.get<AppConfig>("/api/settings")
@@ -54,6 +58,38 @@ function PracticeContent() {
     }, []);
 
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "harder">("medium");
+
+    // 进入页面时先读取该错题最近一次生成的题目，有则直接显示
+    useEffect(() => {
+        if (!errorItemId) return;
+        let cancelled = false;
+        apiClient.get<{ practice: LastPractice | null }>(`/api/practice/generate?errorItemId=${encodeURIComponent(errorItemId)}`)
+            .then(({ practice }) => {
+                if (cancelled || !practice) return;
+                setQuestion(prev => prev ?? {
+                    questionText: practice.questionText,
+                    answerText: practice.answerText,
+                    analysis: practice.analysis,
+                    subject: (practice.subject || "其他") as ParsedQuestion["subject"],
+                    knowledgePoints: [],
+                    wrongAnswerText: "",
+                    mistakeAnalysis: "",
+                    mistakeStatus: "unknown",
+                    requiresImage: false,
+                    figureSvg: practice.figureSvg ?? null,
+                });
+                setDifficulty(practice.difficulty);
+                setGeneratedDifficulty(practice.difficulty);
+                setGeneratedAt(practice.generatedAt);
+            })
+            .catch(err => frontendLogger.warn('[Practice]', 'Failed to load last practice question', {
+                error: err instanceof Error ? err.message : String(err),
+            }))
+            .finally(() => {
+                if (!cancelled) setLoadingCached(false);
+            });
+        return () => { cancelled = true; };
+    }, [errorItemId]);
 
     const [error, setError] = useState<string | null>(null);
 
@@ -72,13 +108,14 @@ function PracticeContent() {
             frontendLogger.info('[Practice]', 'Generating question', {
                 timeout
             });
-            const data = await apiClient.post<ParsedQuestion>("/api/practice/generate", {
+            const data = await apiClient.post<ParsedQuestion & { generatedAt?: string }>("/api/practice/generate", {
                 errorItemId,
                 language,
                 difficulty
             }, { timeout });
             setQuestion(data);
             setGeneratedDifficulty(difficulty);
+            setGeneratedAt(data.generatedAt ?? null);
             setQuestionVersion(v => v + 1);
         } catch (error: any) {
             console.error(error);
@@ -164,7 +201,13 @@ function PracticeContent() {
                     </div>
                 )}
 
-                {!question && (
+                {loadingCached && !question && (
+                    <div className="flex justify-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                )}
+
+                {!question && !loadingCached && (
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex items-center gap-2 bg-muted/50 p-2 rounded-lg">
                             <span className="text-sm font-medium text-muted-foreground">{t.practice.difficulty?.label || "Difficulty"}:</span>
@@ -246,6 +289,11 @@ function PracticeContent() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
+                            {generatedAt && (
+                                <p className="mb-3 text-xs text-muted-foreground">
+                                    {(t.practice.lastGeneratedAt || "Generated at {time}").replace("{time}", new Date(generatedAt).toLocaleString(language === "zh" ? "zh-CN" : "en-US"))}
+                                </p>
+                            )}
                             <MarkdownRenderer content={question.questionText} className="font-medium" />
                             <QuestionFigure svg={question.figureSvg} />
                         </CardContent>
