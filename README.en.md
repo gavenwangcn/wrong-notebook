@@ -140,7 +140,7 @@ Practice statistics show total practice, accuracy and active months, with distri
 - **🔍 Filters**: filter by mastery, date range, knowledge point, grade and term, paper level and more; supports bulk actions and comparing the similarity of two questions.
 - **📊 Statistics**: mastery rate, monthly trend and subject distribution for both mistakes and practice.
 - **⏳ Background tasks**: the button at the bottom right shows the progress of long-running jobs such as recognition, AI generation, bulk tagging and exam generation. Jobs keep running on the server after you leave the page.
-- **💾 Import and export**: export or import data backups in **Settings**.
+- **💾 Import and export**: export or import data backups in **Settings**, including notebooks, questions, practice and answer records, exams and personal preferences; account credentials and AI settings are not included.
 - **🕒 Application time zone**: Beijing time by default and changeable by administrators; dates and statistics follow the application time zone. See [TIME_ZONE.md](doc/TIME_ZONE.md) (Chinese).
 - **🔐 Multiple users and admin console**: sign-up and sign-in, with data isolated per user. Administrators open the admin console from **Settings → User Management** to view usage statistics and enable, disable or delete users.
 - **🔌 Openclaw integration**: an external Openclaw agent can upload question images in bulk via `POST /api/openclaw/batch-upload`; see the environment variables below.
@@ -432,10 +432,11 @@ These channels call each vendor's official OpenAI-compatible API, so only an API
 ## 🧪 Development and testing
 
 ```bash
-npm run lint                # ESLint
+npm run lint                # ESLint (fails on any warning)
 npm run test:unit           # Unit tests
 npm run test:integration    # Integration tests
 npm test                    # All Vitest tests
+npm run test:coverage       # Test coverage (fails below the minimum thresholds)
 npm run test:e2e            # Playwright E2E
 bash scripts/ci.sh          # Full CI (Node.js 22+, Python 3, includes production build)
 ```
@@ -444,7 +445,7 @@ After changing `prisma/schema.prisma`, create a migration with `npx prisma migra
 
 ## 📚 Documentation
 
-Most documents are written in Simplified Chinese.
+For usage, deployment and FAQ, see the [Wiki in English](https://github.com/margrop/wrong-notebook/wiki/Home-en) (also available in [Chinese](https://github.com/margrop/wrong-notebook/wiki)). The topic documents below are mostly written in Simplified Chinese.
 
 | Document | Content |
 | :--- | :--- |
@@ -470,7 +471,7 @@ The `scripts/` directory contains maintenance and debugging scripts, for example
 
 ## 🤝 Contributing
 
-Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md). See the [changelog](CHANGELOG.md) (Chinese) for changes in each stable release.
+Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). For questions and bug reports, see [getting help](SUPPORT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md). See the [changelog](CHANGELOG.md) (Chinese) for changes in each stable release.
 
 ## 📄 License
 

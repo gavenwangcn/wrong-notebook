@@ -138,7 +138,7 @@
 - **🔍 多维度筛选**：按掌握状态、时间范围、知识点、年级学期、试卷等级等条件筛选，支持批量操作和两题相似度比较。
 - **📊 数据统计**：错题与练习的掌握率、月度趋势和学科分布。
 - **⏳ 后台任务**：页面右下角的按钮可查看识别、AI 生成、批量标注、组卷等耗时事务的进度；离开页面后事务仍在服务器上继续。
-- **💾 数据导入导出**：在「设置」中导出或导入数据备份。
+- **💾 数据导入导出**：在「设置」中导出或导入数据备份，包含错题本、错题、练习与作答记录、试卷和个人偏好；账户凭据和 AI 配置不在备份中。
 - **🕒 应用时区**：默认北京时间，管理员可修改，日期显示与统计都按应用时区计算，详见 [时区说明](doc/TIME_ZONE.md)。
 - **🔐 多用户与管理后台**：支持注册、登录，数据按用户隔离；管理员可在「设置 → 用户管理」进入管理后台，查看使用统计，启用/禁用或删除用户。
 - **🔌 Openclaw 集成**：外部 Openclaw agent 可通过 `POST /api/openclaw/batch-upload` 批量上传题目图片，配置见下文环境变量。
@@ -430,10 +430,11 @@ AI 配置可在网页中动态修改，无需重启服务器。
 ## 🧪 开发与测试
 
 ```bash
-npm run lint                # ESLint
+npm run lint                # ESLint（出现警告即失败）
 npm run test:unit           # 单元测试
 npm run test:integration    # 集成测试
 npm test                    # 全部 Vitest 测试
+npm run test:coverage       # 测试覆盖率（低于最低要求时失败）
 npm run test:e2e            # Playwright E2E
 bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构建）
 ```
@@ -441,6 +442,8 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 修改 `prisma/schema.prisma` 后使用 `npx prisma migrate dev --name <名称>` 生成正式迁移并提交；迁移须兼容已有数据。更多开发约定见 [AGENTS.md](AGENTS.md)。
 
 ## 📚 文档
+
+使用、部署和常见问题见 [Wiki](https://github.com/margrop/wrong-notebook/wiki)（另有 [English](https://github.com/margrop/wrong-notebook/wiki/Home-en) 版）。专项文档：
 
 | 文档 | 内容 |
 | :--- | :--- |
@@ -466,7 +469,7 @@ bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构�
 
 ## 🤝 参与贡献
 
-欢迎提交 Issue 和 Pull Request，请先阅读[贡献指南](CONTRIBUTING.md)和[行为准则](CODE_OF_CONDUCT.md)。安全漏洞请按[安全策略](SECURITY.md)私下报告。各正式版的改动见[更新日志](CHANGELOG.md)。
+欢迎提交 Issue 和 Pull Request，请先阅读[贡献指南](CONTRIBUTING.md)和[行为准则](CODE_OF_CONDUCT.md)。提问和反馈方式见[获取帮助](SUPPORT.md)，安全漏洞请按[安全策略](SECURITY.md)私下报告。各正式版的改动见[更新日志](CHANGELOG.md)。
 
 ## 📄 许可证
 
