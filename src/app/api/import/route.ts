@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
@@ -16,6 +17,7 @@ import { sanitizeSvgAnimation } from "@/lib/svg-animation";
 import { parseLastPractice } from "@/lib/last-practice";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 import { EXAM_DIFFICULTIES, EXAM_SCOPES, summarizePaperStatus } from "@/lib/exam";
+import type { Prisma } from "@prisma/client";
 
 const logger = createLogger('api:import');
 
@@ -30,6 +32,11 @@ interface ImportData {
         educationStage: string | null;
         enrollmentYear: number | null;
         role: string;
+        // version 2 起导出的偏好设置
+        confirmBeforeImport?: boolean;
+        questionDuplicateThreshold?: number;
+        enableGeogebra?: boolean;
+        enableSvgAnimation?: boolean;
     };
     subjects: Array<{
         id: string;
@@ -143,6 +150,23 @@ interface ImportData {
     }>;
 }
 
+// 与用户设置接口的取值范围一致，单项不合法时只跳过该项
+const PREFERENCE_SCHEMAS = {
+    confirmBeforeImport: z.boolean(),
+    questionDuplicateThreshold: z.number().min(1).max(100),
+    enableGeogebra: z.boolean(),
+    enableSvgAnimation: z.boolean(),
+};
+
+function parsePreferences(source: ImportData['user']) {
+    const preferences: Prisma.UserUpdateInput = {};
+    for (const [key, schema] of Object.entries(PREFERENCE_SCHEMAS)) {
+        const parsed = schema.safeParse(source[key as keyof typeof PREFERENCE_SCHEMAS]);
+        if (parsed.success) Object.assign(preferences, { [key]: parsed.data });
+    }
+    return preferences;
+}
+
 /** Validate and parse a date string, returning undefined if invalid */
 function safeParseDate(dateStr: string | undefined | null): Date | undefined {
     if (!dateStr) return undefined;
@@ -227,6 +251,7 @@ export async function POST(req: Request) {
             errorItemsCreated: 0,
             reviewSchedulesCreated: 0,
             examPapersCreated: 0,
+            preferencesRestored: false,
             practiceRecordsCreated: 0,
             tagsLinked: 0,
             duplicateErrorItems: 0,
@@ -238,6 +263,13 @@ export async function POST(req: Request) {
         // 使用事务确保数据一致性
         task = startBackgroundTask({ userId: user.id, kind: 'data_import' });
         await prisma.$transaction(async (tx) => {
+            // 0. 偏好设置只在导出文件属于当前账户时还原
+            const preferences = body.user.email === user.email ? parsePreferences(body.user) : {};
+            if (Object.keys(preferences).length > 0) {
+                await tx.user.update({ where: { id: user.id }, data: preferences });
+                stats.preferencesRestored = true;
+            }
+
             // 1. 导入 subjects
             const subjectIdMap = new Map<string, string>();
             for (const subject of (body.subjects || [])) {

@@ -182,6 +182,33 @@ describe('数据导出后再导入（真实 SQLite）', () => {
         expect(examRecords.map((record) => record.examQuestionId)).toEqual([paper.questions[0].id, paper.questions[0].id]);
     });
 
+    it('还原本人的偏好设置，不合法的单项跳过', async () => {
+        await database.user.update({
+            where: { id: 'user-1' },
+            data: { confirmBeforeImport: true, questionDuplicateThreshold: 75.5, enableGeogebra: true, enableSvgAnimation: false },
+        });
+        const backup = await exportBackup();
+        expect(backup.user).toMatchObject({ confirmBeforeImport: true, questionDuplicateThreshold: 75.5, enableGeogebra: true, enableSvgAnimation: false });
+
+        await database.user.update({
+            where: { id: 'user-1' },
+            data: { confirmBeforeImport: false, questionDuplicateThreshold: 90, enableGeogebra: false, enableSvgAnimation: true },
+        });
+        backup.user.questionDuplicateThreshold = 500;
+        const { stats } = await importBackup(backup);
+        expect(stats.preferencesRestored).toBe(true);
+        expect(await database.user.findUniqueOrThrow({ where: { id: 'user-1' } })).toMatchObject({
+            confirmBeforeImport: true, questionDuplicateThreshold: 90, enableGeogebra: true, enableSvgAnimation: false,
+        });
+    });
+
+    it('旧版文件没有偏好设置时不改动当前设置', async () => {
+        await database.user.update({ where: { id: 'user-1' }, data: { enableGeogebra: true } });
+        const { stats } = await importBackup({ version: 1, user: { email: mocks.session.user.email }, errorItems: [] });
+        expect(stats.preferencesRestored).toBe(false);
+        expect((await database.user.findUniqueOrThrow({ where: { id: 'user-1' } })).enableGeogebra).toBe(true);
+    });
+
     it('导入时重新净化 SVG，丢弃不合法的暂存练习和掌握概率', async () => {
         const backup = await exportBackup();
         await clearUserData();
