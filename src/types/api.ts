@@ -11,6 +11,13 @@ export interface PaginatedResponse<T> {
     totalPages: number;
 }
 
+/** 今日待复习列表中的错题，附带复习计划 */
+export interface DueReviewItem extends ErrorItem {
+    /** 当前所在轮次（从 0 开始），等于末尾连续做对的次数 */
+    reviewStage: number;
+    nextReviewAt: string;
+}
+
 export interface Tag {
     id: string;
     name: string;

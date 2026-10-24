@@ -3,20 +3,42 @@
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { BookOpen, ListChecks, Target } from "lucide-react";
+import { BookOpen, CalendarCheck, ListChecks, Target } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface HomeHeroProps {
     notebookCount: number;
     itemCount: number;
+    /** 今日待复习的错题数，加载完成前为 null */
+    dueCount: number | null;
     /** 从错题本页进入时的目标错题本名称 */
     targetNotebook?: string;
 }
 
 const subscribeNothing = () => () => {};
 
-/** 首页顶部欢迎区：问候语 + 错题本/错题数量 */
-export function HomeHero({ notebookCount, itemCount, targetNotebook }: HomeHeroProps) {
+interface StatTileProps {
+    href: string;
+    icon: LucideIcon;
+    label: string;
+    value: number | null;
+}
+
+function StatTile({ href, icon: Icon, label, value }: StatTileProps) {
+    return (
+        <Link href={href} className="rounded-xl bg-white/15 px-4 py-3 backdrop-blur-sm transition-colors hover:bg-white/20">
+            <div className="flex items-center gap-1.5 text-xs text-white/75">
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">{label}</span>
+            </div>
+            <div className="mt-1 text-2xl font-bold tabular-nums">{value ?? "–"}</div>
+        </Link>
+    );
+}
+
+/** 首页顶部欢迎区：问候语 + 错题本/错题数量 + 今日待复习 */
+export function HomeHero({ notebookCount, itemCount, dueCount, targetNotebook }: HomeHeroProps) {
     const { t, language } = useLanguage();
     const { data: session } = useSession();
     // 问候语依赖本地时间，服务端渲染时返回 null，避免两端渲染不一致
@@ -48,22 +70,11 @@ export function HomeHero({ notebookCount, itemCount, targetNotebook }: HomeHeroP
                     )}
                 </div>
 
-                <Link href="/notebooks" className="grid grid-cols-2 gap-3 md:w-72">
-                    <div className="rounded-xl bg-white/15 px-4 py-3 backdrop-blur-sm transition-colors hover:bg-white/20">
-                        <div className="flex items-center gap-1.5 text-xs text-white/75">
-                            <BookOpen className="h-3.5 w-3.5" />
-                            {t.home.notebookCount}
-                        </div>
-                        <div className="mt-1 text-2xl font-bold tabular-nums">{notebookCount}</div>
-                    </div>
-                    <div className="rounded-xl bg-white/15 px-4 py-3 backdrop-blur-sm transition-colors hover:bg-white/20">
-                        <div className="flex items-center gap-1.5 text-xs text-white/75">
-                            <ListChecks className="h-3.5 w-3.5" />
-                            {t.home.itemCount}
-                        </div>
-                        <div className="mt-1 text-2xl font-bold tabular-nums">{itemCount}</div>
-                    </div>
-                </Link>
+                <div className="grid grid-cols-3 gap-3 md:w-96">
+                    <StatTile href="/notebooks" icon={BookOpen} label={t.home.notebookCount} value={notebookCount} />
+                    <StatTile href="/notebooks" icon={ListChecks} label={t.home.itemCount} value={itemCount} />
+                    <StatTile href="/review" icon={CalendarCheck} label={t.home.dueCount} value={dueCount} />
+                </div>
             </div>
         </section>
     );

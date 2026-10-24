@@ -25,6 +25,15 @@ Mastery probability helps plan reviews. It does not guarantee the student unders
 
 ![Variant answer history and mastery probability under the original question](https://raw.githubusercontent.com/margrop/wrong-notebook/a5f816515e3dc31dcdb90c9fa456baed12eef94d/doc/screenshots/en/mastery-history.png)
 
+## Daily review
+
+The **Review** page in the navigation lists questions due today, and the home page shows how many are due.
+
+- Reviews follow intervals of 1, 2, 4, 7, 15 and 30 days: the first review is the day after adding a question; each correct answer moves it to the next interval, and a wrong answer starts over.
+- Intervals count from the most recent answer, whether from similar-question practice, manual entry, exams or duplicate imports; "not attempted" records do not change the schedule.
+- After 6 correct answers in a row the question is no longer scheduled. Dates follow the application time zone, and the earliest due questions come first.
+- Open a card for details, or click **Practice** to practice right away; after you record a result the question leaves the list until its next interval.
+
 ## Generate an exam paper
 
 1. Open the exam entry and choose the scope: notebooks, knowledge points, mastery and so on.

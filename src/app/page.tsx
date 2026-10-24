@@ -19,7 +19,7 @@ import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { usePageTitle } from "@/lib/page-title";
 import { useQuestionImport } from "@/lib/use-question-import";
-import type { Notebook } from "@/types/api";
+import type { Notebook, PaginatedResponse } from "@/types/api";
 
 /** 直接录入（不经 AI）提交的内容 */
 interface DirectEntry {
@@ -42,6 +42,7 @@ function HomeContent() {
     const initialNotebookId = searchParams.get("notebook");
     const [notebooks, setNotebooks] = useState<Notebook[]>([]);
     const [autoSelectedNotebookId, setAutoSelectedNotebookId] = useState<string | null>(null);
+    const [dueCount, setDueCount] = useState<number | null>(null);
     // Input mode: "image" for photo upload, "text" for AI solve, "direct" for manual entry
     const [inputMode, setInputMode] = useState<"image" | "text" | "direct">("image");
 
@@ -65,6 +66,9 @@ function HomeContent() {
         apiClient.get<Notebook[]>("/api/notebooks")
             .then(data => setNotebooks(data))
             .catch(err => frontendLogger.error('[Home]', 'Failed to fetch notebooks', { error: err }));
+        apiClient.get<PaginatedResponse<unknown>>("/api/review/due?pageSize=1")
+            .then(data => setDueCount(data.total))
+            .catch(err => frontendLogger.error('[Home]', 'Failed to fetch due reviews', { error: err }));
     }, []);
 
     const handleDirectSave = async (data: DirectEntry): Promise<void> => {
@@ -96,6 +100,7 @@ function HomeContent() {
                         <HomeHero
                             notebookCount={notebooks.length}
                             itemCount={totalItems}
+                            dueCount={dueCount}
                             targetNotebook={initialNotebookId ? targetNotebook?.name : undefined}
                         />
 
