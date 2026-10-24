@@ -47,3 +47,15 @@ describe('LaTeX 公式渲染', () => {
         expect(annotations('$\\begin{cases}a\\\\\\end{cases}$')).toEqual(['\\begin{cases}a\\\\\\end{cases}']);
     });
 });
+
+// 原 /latex-test 调试页中的典型答案格式
+describe('常见答案格式的公式渲染', () => {
+    it.each([
+        ['行内公式', '(1) $a = -12$, $b = 8$, $c = 16$ (2) $t = 12$ (3) $M = \\frac{72}{11}$', 5],
+        ['独立公式', '答案:\n\n$$M = \\frac{72}{11}$$', 1],
+        ['行内与段落混合', '解:\n\n(1) $a = -12, b = 8, c = 16$\n\n(2) 当 $t = 12$ 时\n\n(3) $M = \\frac{72}{11}$', 3],
+        ['行内与独立公式混合', '二次函数: $y = ax^2 + bx + c$\n\n求根公式: $$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$', 2],
+    ])('%s', (_name, content, count) => {
+        expect(countFormulas(content)).toBe(count);
+    });
+});

@@ -40,7 +40,6 @@ wrongNotebook/
 │   │   ├── stats/page.tsx        # 数据统计看板
 │   │   ├── practice/             # 智能练习
 │   │   ├── print-preview/        # 导出打印预览
-│   │   ├── latex-test/           # LaTeX 渲染测试
 │   │   └── api/                  # API 路由
 │   │       ├── analyze/route.ts          # POST 图片分析
 │   │       ├── error-items/route.ts      # CRUD + batch-delete + clear + list
