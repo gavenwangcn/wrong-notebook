@@ -12,6 +12,20 @@
 - [开发与贡献](Development)
 - [常见问题](FAQ)
 
+**English**
+
+- [Home](Home-en)
+- [Quick Start](Quick-Start-en)
+- [Deployment and Upgrades](Deployment-en)
+- [AI Configuration](AI-Configuration-en)
+- [User Guide](User-Guide-en)
+- [Practice and Exams](Practice-and-Exams-en)
+- [Settings and Users](Settings-and-Users-en)
+- [Backup and Restore](Backup-and-Restore-en)
+- [Openclaw Integration](Openclaw-Integration-en)
+- [Development](Development-en)
+- [FAQ](FAQ-en)
+
 **项目链接**
 
 - [GitHub 仓库](https://github.com/margrop/wrong-notebook)

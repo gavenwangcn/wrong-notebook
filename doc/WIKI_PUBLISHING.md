@@ -2,6 +2,8 @@
 
 `doc/wiki/` 保存面向公开仓库 `margrop/wrong-notebook` 的中文 Wiki 源文件。`Home.md` 是首页，`_Sidebar.md` 和 `_Footer.md` 分别是 GitHub Wiki 的侧栏与页脚，其他文件各对应一个页面。
 
+`doc/wiki/en/` 保存英文版页面，文件名为对应中文页面名加 `-en` 后缀（如 `Quick-Start-en.md`），与中文页面一一对应；侧栏和页脚由中英文共用。GitHub Wiki 的页面名只取文件名，发布时把 `en/` 中的文件复制到 Wiki 仓库根目录。修改中文页面时同步更新对应的英文页面。
+
 ## 链接约定
 
 - Wiki 页面之间使用不带 `.md` 的相对页面名，例如 `[快速开始](Quick-Start)`。
@@ -21,7 +23,7 @@ wiki_task_dir="$(mktemp -d)"
 git clone git@github.com:margrop/wrong-notebook.wiki.git "$wiki_task_dir/wiki"
 ```
 
-复制文件后检查 Wiki 工作副本的 `git status` 与完整差异，确认导航、截图和页面名；仅暂存这次准备发布的文件，提交信息使用中文，例如 `docs: 创建智能错题本中文 Wiki`。
+复制 `doc/wiki/*.md` 与 `doc/wiki/en/*.md` 后检查 Wiki 工作副本的 `git status` 与完整差异，确认导航、截图和页面名；仅暂存这次准备发布的文件，提交信息使用中文，例如 `docs: 创建智能错题本中文 Wiki`。
 
 公开历史检查脚本可以从应用源码仓库调用，但工作目录必须位于实际待发布的 Wiki 仓库，传入 Wiki 提交引用：
 
