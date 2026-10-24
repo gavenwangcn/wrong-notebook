@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/back-button";
@@ -32,10 +32,7 @@ function PrintPreviewContent() {
     const [showQuestionText, setShowQuestionText] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        fetchItems();
-    }, []);
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         try {
             const params = new URLSearchParams(searchParams.toString());
             // 打印预览需要所有符合条件的数据，设置较大的 pageSize
@@ -48,8 +45,12 @@ function PrintPreviewContent() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [searchParams]);
 
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+        fetchItems();
+    }, [fetchItems]);
     const handlePrint = () => {
         window.print();
     };

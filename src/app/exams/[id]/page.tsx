@@ -44,6 +44,7 @@ export default function ExamDetailPage() {
     }, [paperId]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
         load();
     }, [load]);
 

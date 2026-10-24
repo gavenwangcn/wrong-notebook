@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,10 +35,12 @@ export function ModelSelector({ provider, apiKey, baseUrl, currentModel, onModel
     const [customModel, setCustomModel] = useState(currentModel || '');
     const [useCustom, setUseCustom] = useState(false);
 
-    // 当外部 currentModel 变化时同步更新 customModel（用于实例切换）
-    useEffect(() => {
+    // 当外部 currentModel 变化时同步更新 customModel（用于实例切换），在渲染时比较
+    const [prevCurrentModel, setPrevCurrentModel] = useState(currentModel);
+    if (currentModel !== prevCurrentModel) {
+        setPrevCurrentModel(currentModel);
         setCustomModel(currentModel || '');
-    }, [currentModel]);
+    }
 
     const fetchModels = async () => {
         if (!apiKey) {

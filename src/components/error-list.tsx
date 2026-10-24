@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -178,35 +178,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         }
     };
 
-    // 追踪筛选条件是否变化（用于判断是否需要重置页码）
-    const prevFiltersRef = useRef({ search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter });
-
-    useEffect(() => {
-        const prevFilters = prevFiltersRef.current;
-        const filtersChanged =
-            prevFilters.search !== search ||
-            prevFilters.masteryFilter !== masteryFilter ||
-            prevFilters.timeFilter !== timeFilter ||
-            prevFilters.selectedTag !== selectedTag ||
-            prevFilters.subjectId !== subjectId ||
-            prevFilters.gradeFilter !== gradeFilter ||
-            prevFilters.chapterFilter !== chapterFilter ||
-            prevFilters.paperLevelFilter !== paperLevelFilter;
-
-        // 更新 ref
-        prevFiltersRef.current = { search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter };
-
-        if (filtersChanged && page !== 1) {
-            // 筛选条件变化且不在第一页，重置到第一页（会再次触发此 effect）
-            setPage(1);
-            return;
-        }
-
-        // 正常请求数据
-        fetchItems();
-    }, [page, search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter]);
-
-    const fetchItems = async () => {
+    const fetchItems = useCallback(async () => {
         setLoading(true);
         try {
             const params = new URLSearchParams();
@@ -237,7 +209,35 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [subjectId, search, masteryFilter, timeFilter, selectedTag, gradeFilter, chapterFilter, paperLevelFilter, page, pageSize]);
+
+    // 追踪筛选条件是否变化（用于判断是否需要重置页码）
+    const prevFiltersRef = useRef({ search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter });
+
+    useEffect(() => {
+        const prevFilters = prevFiltersRef.current;
+        const filtersChanged =
+            prevFilters.search !== search ||
+            prevFilters.masteryFilter !== masteryFilter ||
+            prevFilters.timeFilter !== timeFilter ||
+            prevFilters.selectedTag !== selectedTag ||
+            prevFilters.subjectId !== subjectId ||
+            prevFilters.gradeFilter !== gradeFilter ||
+            prevFilters.chapterFilter !== chapterFilter ||
+            prevFilters.paperLevelFilter !== paperLevelFilter;
+
+        // 更新 ref
+        prevFiltersRef.current = { search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter };
+
+        if (filtersChanged && page !== 1) {
+            // 筛选条件变化且不在第一页，重置到第一页（会再次触发此 effect）
+            setPage(1);
+            return;
+        }
+
+        // 正常请求数据
+        fetchItems();
+    }, [page, search, masteryFilter, timeFilter, selectedTag, subjectId, gradeFilter, chapterFilter, paperLevelFilter, fetchItems]);
 
     return (
         <div className={`space-y-6 ${isSelectMode ? "pb-40 sm:pb-24" : ""}`}>

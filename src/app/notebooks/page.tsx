@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -30,11 +30,7 @@ export default function NotebooksPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [renameTarget, setRenameTarget] = useState<Notebook | null>(null);
 
-    useEffect(() => {
-        fetchNotebooks();
-    }, []);
-
-    const fetchNotebooks = async () => {
+    const fetchNotebooks = useCallback(async () => {
         try {
             const data = await apiClient.get<Notebook[]>("/api/notebooks");
             setNotebooks(data);
@@ -43,7 +39,12 @@ export default function NotebooksPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+        fetchNotebooks();
+    }, [fetchNotebooks]);
 
     const handleCreate = async (input: CreateNotebookInput) => {
         try {

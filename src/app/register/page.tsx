@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,11 +35,7 @@ export default function RegisterPage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [allowRegistration, setAllowRegistration] = useState<boolean | null>(null);
 
-    useEffect(() => {
-        checkRegistrationStatus();
-    }, []);
-
-    const checkRegistrationStatus = async () => {
+    const checkRegistrationStatus = useCallback(async () => {
         try {
             const res = await fetch("/api/register/status");
             const data = await res.json();
@@ -48,7 +44,12 @@ export default function RegisterPage() {
             frontendLogger.error('[Register]', 'Failed to check registration status', { error });
             setAllowRegistration(true); // 默认允许
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+        checkRegistrationStatus();
+    }, [checkRegistrationStatus]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

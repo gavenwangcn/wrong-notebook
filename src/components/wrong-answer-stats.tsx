@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
@@ -40,11 +40,7 @@ export function WrongAnswerStats() {
     const [loading, setLoading] = useState(true);
     const { t } = useLanguage();
 
-    useEffect(() => {
-        fetchAnalytics();
-    }, []);
-
-    const fetchAnalytics = async () => {
+    const fetchAnalytics = useCallback(async () => {
         try {
             const data = await apiClient.get<AnalyticsData>("/api/analytics");
             setData(data);
@@ -53,7 +49,12 @@ export function WrongAnswerStats() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+        fetchAnalytics();
+    }, [fetchAnalytics]);
 
     if (loading) {
         return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -28,9 +28,12 @@ export function RenameNotebookDialog({ open, onOpenChange, currentName, onRename
     const [loading, setLoading] = useState(false);
     const { t } = useLanguage();
 
-    useEffect(() => {
+    // 外部名称变化时（如重命名成功后）同步输入框：在渲染时比较，避免 effect 中多渲染一次
+    const [prevCurrentName, setPrevCurrentName] = useState(currentName);
+    if (currentName !== prevCurrentName) {
+        setPrevCurrentName(currentName);
         setName(currentName);
-    }, [currentName]);
+    }
 
     const handleRename = async () => {
         if (!name.trim()) {

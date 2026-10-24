@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -117,19 +117,7 @@ export function SettingsDialog() {
 
     const router = useRouter();
 
-    useEffect(() => {
-        if (open) {
-            fetchSettings();
-            fetchProfile();
-        }
-        // 获取版本号
-        fetch("/api/version")
-            .then((res) => res.json())
-            .then((data) => setVersion(data.version))
-            .catch(() => {});
-    }, [open]);
-
-    const fetchSettings = async () => {
+    const fetchSettings = useCallback(async () => {
         setLoading(true);
         try {
             const data = await apiClient.get<AppConfig>("/api/settings");
@@ -139,9 +127,9 @@ export function SettingsDialog() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         setProfileLoading(true);
         try {
             const data = await apiClient.get<UserProfile>("/api/user");
@@ -157,7 +145,20 @@ export function SettingsDialog() {
         } finally {
             setProfileLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+            fetchSettings();
+            fetchProfile();
+        }
+        // 获取版本号
+        fetch("/api/version")
+            .then((res) => res.json())
+            .then((data) => setVersion(data.version))
+            .catch(() => {});
+    }, [open, fetchSettings, fetchProfile]);
 
     // 验证 OpenAI 实例必填字段
     const validateOpenAIInstances = (): string | null => {
@@ -586,13 +587,6 @@ export function SettingsDialog() {
             }
         }));
     };
-
-    // 同步 selectedInstanceId 与 config
-    useEffect(() => {
-        if (config.openai?.activeInstanceId && !selectedInstanceId) {
-            setSelectedInstanceId(config.openai.activeInstanceId);
-        }
-    }, [config.openai?.activeInstanceId, selectedInstanceId]);
 
     const updatePrompts = (type: 'analyze' | 'similar', value: string) => {
         setConfig(prev => ({

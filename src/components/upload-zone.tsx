@@ -8,6 +8,7 @@ import { UploadCloud, Loader2, Monitor, ClipboardPaste } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { toast } from "@/lib/feedback";
+import { useIsClient } from "@/lib/use-is-client";
 
 // 添加 CaptureController 类型声明
 declare global {
@@ -30,11 +31,10 @@ interface UploadZoneProps {
 export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
     const { t } = useLanguage();
     const [isScreenshotting, setIsScreenshotting] = useState(false);
-    const [isClient, setIsClient] = useState(false);
     // 确保只在客户端渲染屏幕截图功能
-    useEffect(() => {
-        setIsClient(true);
+    const isClient = useIsClient();
 
+    useEffect(() => {
         // 请求通知权限
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();

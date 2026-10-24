@@ -191,7 +191,6 @@ export function MasteryPanel({ errorItemId, onMasteryStatusChange }: MasteryPane
                                             )}
                                             {record.originalImageUrl && (
                                                 // 作答图片可能来自上传的数据 URL，按原始比例显示。
-                                                // eslint-disable-next-line @next/next/no-img-element
                                                 <img src={record.originalImageUrl} alt={t.editor.wrongAnswerText} className="max-h-96 max-w-full rounded object-contain" />
                                             )}
                                             {record.answerText && (

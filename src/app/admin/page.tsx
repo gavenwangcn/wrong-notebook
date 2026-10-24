@@ -354,6 +354,7 @@ export default function AdminPage() {
             router.push("/")
             return
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
         fetchData()
     }, [session, status, router, fetchData])
 

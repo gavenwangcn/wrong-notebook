@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
@@ -33,19 +33,32 @@ export function UserManagement() {
     const [allowRegistration, setAllowRegistration] = useState(true);
     const [savingRegistration, setSavingRegistration] = useState(false);
 
-    useEffect(() => {
-        fetchUsers();
-        fetchConfig();
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await apiClient.get<AdminUser[]>("/api/admin/users");
+            setUsers(data);
+        } catch (error) {
+            frontendLogger.error('[UserManagement]', 'Failed to fetch users', { error });
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const fetchConfig = async () => {
+    const fetchConfig = useCallback(async () => {
         try {
             const data = await apiClient.get<AppConfig>("/api/settings");
             setAllowRegistration(data.allowRegistration !== false);
         } catch (error) {
             frontendLogger.error('[UserManagement]', 'Failed to fetch config', { error });
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+        fetchUsers();
+        fetchConfig();
+    }, [fetchUsers, fetchConfig]);
 
     const handleToggleRegistration = async (checked: boolean) => {
         setSavingRegistration(true);
@@ -57,18 +70,6 @@ export function UserManagement() {
             toast.error(t.common.error);
         } finally {
             setSavingRegistration(false);
-        }
-    };
-
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const data = await apiClient.get<AdminUser[]>("/api/admin/users");
-            setUsers(data);
-        } catch (error) {
-            frontendLogger.error('[UserManagement]', 'Failed to fetch users', { error });
-        } finally {
-            setLoading(false);
         }
     };
 

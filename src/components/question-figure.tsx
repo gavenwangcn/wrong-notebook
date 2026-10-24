@@ -18,7 +18,6 @@ export function QuestionFigure({ svg, className }: QuestionFigureProps) {
     if (!svg) return null;
     return (
         <figure className={cn("question-figure my-3", className)}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- data URI 的 SVG，无需图片优化 */}
             <img
                 src={figureSvgToDataUri(svg)}
                 alt={t.figure.alt}

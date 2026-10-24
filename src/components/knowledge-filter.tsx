@@ -74,14 +74,18 @@ export function KnowledgeFilter({
     // 可用的年级学期选项 (根据用户信息过滤)
     const [availableGrades, setAvailableGrades] = useState<string[]>([]);
 
-    // Sync with props
-    useEffect(() => {
+    // Sync with props：在渲染时比较上一次的值，避免 effect 中多渲染一次
+    const [prevInitialGrade, setPrevInitialGrade] = useState(initialGrade);
+    if (initialGrade !== prevInitialGrade) {
+        setPrevInitialGrade(initialGrade);
         if (initialGrade !== undefined) setGradeSemester(initialGrade);
-    }, [initialGrade]);
+    }
 
-    useEffect(() => {
+    const [prevInitialTag, setPrevInitialTag] = useState(initialTag);
+    if (initialTag !== prevInitialTag) {
+        setPrevInitialTag(initialTag);
         if (initialTag !== undefined) setTag(initialTag || "");
-    }, [initialTag]);
+    }
 
     // 计算用户当前年级 (返回原始年级数值，不进行范围截断，以便判断由初升高等情况)
     const calculateCurrentGrade = useCallback((educationStage: string, enrollmentYear: number): number => {

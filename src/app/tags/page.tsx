@@ -115,6 +115,7 @@ export default function TagsPage() {
 
     useEffect(() => {
         // 初始加载
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
         fetchStats();
         fetchCustomTags();
         // 默认加载数学标签

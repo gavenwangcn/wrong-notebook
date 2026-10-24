@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { useIsClient } from "@/lib/use-is-client";
 
 export type ProgressStatus = 'compressing' | 'uploading' | 'analyzing' | 'processing' | 'saving' | 'idle';
 
@@ -34,11 +35,7 @@ function formatElapsedTime(seconds: number): string {
 
 export function ProgressFeedback({ status, message, className }: ProgressFeedbackProps) {
     // 确保只在客户端挂载完成后才渲染遮罩层，防止 SSR/Hydration 问题
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    const isMounted = useIsClient();
 
     // 只有在客户端挂载完成且 status 不为 idle 时才渲染
     if (!isMounted || status === 'idle') return null;

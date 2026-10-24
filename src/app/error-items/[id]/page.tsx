@@ -105,6 +105,19 @@ export default function ErrorDetailPage() {
     const [showReferenceImage, setShowReferenceImage] = useState(false);
     const [showOwnImage, setShowOwnImage] = useState(false);
 
+    const fetchItem = useCallback(async (id: string) => {
+        try {
+            const data = await apiClient.get<ErrorItemDetail>(`/api/error-items/${id}`);
+            setItem(data);
+        } catch (error) {
+            frontendLogger.error('[ErrorDetail]', 'Failed to fetch error item', { error });
+            toast.error(t.common?.messages?.loadFailed || 'Failed to load item');
+            router.push("/notebooks");
+        } finally {
+            setLoading(false);
+        }
+    }, [router, t]);
+
     useEffect(() => {
         // Fetch user info for education stage
         apiClient.get<UserProfile>("/api/user")
@@ -118,25 +131,13 @@ export default function ErrorDetailPage() {
             .catch(err => frontendLogger.error('[ErrorDetail]', 'Failed to fetch user info', { error: err }));
 
         if (params.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
             fetchItem(params.id as string);
         }
-    }, [params.id]);
+    }, [params.id, fetchItem]);
 
     // 复习状态由举一反三记录和掌握概率决定，随掌握面板的数据更新
     const [masteryStatus, setMasteryStatus] = useState<MasteryStatus | null>(null);
-
-    const fetchItem = async (id: string) => {
-        try {
-            const data = await apiClient.get<ErrorItemDetail>(`/api/error-items/${id}`);
-            setItem(data);
-        } catch (error) {
-            frontendLogger.error('[ErrorDetail]', 'Failed to fetch error item', { error });
-            toast.error(t.common?.messages?.loadFailed || 'Failed to load item');
-            router.push("/notebooks");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleAnalyzeGeogebra = async () => {
         if (!item) return;

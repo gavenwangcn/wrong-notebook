@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -31,13 +31,7 @@ export default function NotebookDetailPage() {
     // 批量重新生成知识点后递增，用于刷新题目列表
     const [listVersion, setListVersion] = useState(0);
 
-    useEffect(() => {
-        if (params.id) {
-            fetchNotebook(params.id as string);
-        }
-    }, [params.id]);
-
-    const fetchNotebook = async (id: string) => {
+    const fetchNotebook = useCallback(async (id: string) => {
         try {
             const data = await apiClient.get<Notebook>(`/api/notebooks/${id}`);
             setNotebook(data);
@@ -48,7 +42,14 @@ export default function NotebookDetailPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [router, t]);
+
+    useEffect(() => {
+        if (params.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- 数据请求：进入页面或条件变化时加载，请求前后更新加载状态和结果
+            fetchNotebook(params.id as string);
+        }
+    }, [params.id, fetchNotebook]);
 
     const handleRename = async (name: string) => {
         if (!notebook) return;
