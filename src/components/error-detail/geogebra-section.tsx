@@ -1,0 +1,75 @@
+"use client";
+
+import { useState } from "react";
+import { Box, Loader2 } from "lucide-react";
+import { GeogebraDemo } from "@/components/geogebra-demo";
+import { Button } from "@/components/ui/button";
+import { apiClient } from "@/lib/api-client";
+import { getApiErrorMessage, getErrorMessage } from "@/lib/error-message";
+import { frontendLogger } from "@/lib/frontend-logger";
+import type { UpdateErrorItem } from "./types";
+
+interface GeogebraSectionProps {
+    errorItemId: string;
+    commands?: string | null;
+    onUpdate: UpdateErrorItem;
+}
+
+/** GeoGebra 动态演示：已有命令时显示演示，否则提供由 AI 生成的入口 */
+export function GeogebraSection({ errorItemId, commands, onUpdate }: GeogebraSectionProps) {
+    const [analyzing, setAnalyzing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleAnalyze = async () => {
+        setAnalyzing(true);
+        setError(null);
+        try {
+            const result = await apiClient.post<{ suitable: boolean; commands: string[]; description: string }>(`/api/error-items/${errorItemId}/geogebra`, {});
+            if (result.suitable && result.commands.length > 0) {
+                onUpdate({ geogebraCommands: JSON.stringify(result.commands) });
+            } else {
+                setError(result.description || "该题目不适合用 GeoGebra 演示");
+            }
+        } catch (err) {
+            frontendLogger.error('[ErrorDetail]', 'GeoGebra analysis failed', { error: err });
+            const msg = getApiErrorMessage(err) || getErrorMessage(err);
+            if (msg.includes("AI_AUTH_ERROR")) {
+                setError("AI 认证失败，请检查设置");
+            } else if (msg.includes("AI_CONNECTION")) {
+                setError("AI 连接失败，请检查网络");
+            } else {
+                setError("分析失败，请稍后重试");
+            }
+        } finally {
+            setAnalyzing(false);
+        }
+    };
+
+    const handleSaveCommands = async (next: string) => {
+        await apiClient.put(`/api/error-items/${errorItemId}`, { geogebraCommands: next });
+        onUpdate({ geogebraCommands: next });
+    };
+
+    // 失败时抛出，由 GeogebraDemo 提示
+    const handleDelete = async () => {
+        await apiClient.delete(`/api/error-items/${errorItemId}/geogebra`);
+        onUpdate({ geogebraCommands: null });
+    };
+
+    if (commands) {
+        return <GeogebraDemo commands={commands} height={700} showToolBar={true} showAlgebraInput={false} showMenuBar={false} onRegenerate={handleAnalyze} onSaveCommands={handleSaveCommands} onDelete={handleDelete} />;
+    }
+
+    return (
+        <div className="rounded-lg border border-dashed p-4">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Box className="h-4 w-4" /><span>GeoGebra 动态演示</span></div>
+                <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={analyzing}>
+                    {analyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />AI 分析中...</> : <><Box className="mr-2 h-4 w-4" />生成演示</>}
+                </Button>
+            </div>
+            {error && <p className="text-xs text-muted-foreground mt-2">{error}</p>}
+            <p className="text-xs text-muted-foreground mt-2">AI 将判断本题是否可以用 GeoGebra 进行动态演示，如适合则自动生成交互式图形</p>
+        </div>
+    );
+}
