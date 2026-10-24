@@ -43,7 +43,7 @@ npm run dev                 # http://localhost:3000，默认管理员 admin@loca
    npm run test:integration
    ```
 
-   涉及页面流程的改动请运行 `npm run test:e2e`，完整检查可运行 `bash scripts/ci.sh`。
+   CI 会运行 `npm run lint`，出现任何错误或警告都会失败。涉及页面流程的改动请运行 `npm run test:e2e`，完整检查可运行 `bash scripts/ci.sh`。
 6. 发起 Pull Request，说明改动内容、原因和测试方式；界面改动请附截图。PR 须通过 CI（含 E2E）后才能合并。
 
 ## 依赖与安全检查
