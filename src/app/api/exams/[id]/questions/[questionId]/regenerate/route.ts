@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, conflict, validationError, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { EXAM_REGENERATE_MODES, regenerateExamQuestion } from "@/lib/exam";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:exams:regenerate');
 
@@ -32,6 +33,9 @@ export async function POST(
         if (!parsed.success) {
             return validationError("Invalid regenerate request", parsed.error.issues);
         }
+
+        const limited = await consumeAiQuota(user, 'exam');
+        if (limited) return limited;
 
         const updated = await regenerateExamQuestion(id, questionId, user.id, parsed.data.mode, parsed.data.language || 'zh');
         return NextResponse.json(updated);

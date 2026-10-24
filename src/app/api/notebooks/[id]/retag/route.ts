@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { getRetagJob, startRetagJob } from "@/lib/retag";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:notebooks:retag');
 
@@ -55,6 +56,9 @@ export async function POST(
         if (!(await findOwnNotebook(id, user.id))) {
             return notFound("Notebook not found");
         }
+        const limited = await consumeAiQuota(user, 'retag');
+        if (limited) return limited;
+
         return NextResponse.json(await startRetagJob(user.id, id), { status: 202 });
     } catch (error) {
         logger.error({ error }, 'Error starting retag job');

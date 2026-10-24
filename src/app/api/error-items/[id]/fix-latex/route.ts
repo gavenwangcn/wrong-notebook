@@ -8,6 +8,7 @@ import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { countLatexIssues, findLatexIssuesByField, isAcceptableLatexFix, LATEX_FIELDS } from "@/lib/latex-check";
 import type { LatexField } from "@/lib/latex-check";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:fix-latex');
 
@@ -49,6 +50,9 @@ export async function POST(
                 issues: issuesBefore[field]!.map((issue) => `${issue.snippet}：${issue.message}`),
             };
         }
+
+        const limited = await consumeAiQuota(user, 'latex');
+        if (limited) return limited;
 
         const fixed = await trackBackgroundTask(
             { userId: user.id, kind: 'fix_latex', subject: describeQuestion(item), link: `/error-items/${id}` },

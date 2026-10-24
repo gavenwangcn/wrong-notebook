@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/date-time";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
     Table,
@@ -32,6 +33,8 @@ export function UserManagement() {
     const [loading, setLoading] = useState(true);
     const [allowRegistration, setAllowRegistration] = useState(false);
     const [savingRegistration, setSavingRegistration] = useState(false);
+    const [aiDailyLimit, setAiDailyLimit] = useState("0");
+    const [savingLimit, setSavingLimit] = useState(false);
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -49,6 +52,7 @@ export function UserManagement() {
         try {
             const data = await apiClient.get<AppConfig>("/api/settings");
             setAllowRegistration(data.allowRegistration === true);
+            setAiDailyLimit(String(data.aiDailyLimit ?? 0));
         } catch (error) {
             frontendLogger.error('[UserManagement]', 'Failed to fetch config', { error });
         }
@@ -70,6 +74,23 @@ export function UserManagement() {
             toast.error(t.common.error);
         } finally {
             setSavingRegistration(false);
+        }
+    };
+
+    const parsedLimit = Number(aiDailyLimit);
+    const limitValid = aiDailyLimit.trim() !== "" && Number.isInteger(parsedLimit) && parsedLimit >= 0;
+
+    const handleSaveLimit = async () => {
+        if (!limitValid) return;
+        setSavingLimit(true);
+        try {
+            await apiClient.post("/api/settings", { aiDailyLimit: parsedLimit });
+            toast.success(t.admin.aiDailyLimitSaved);
+        } catch (error) {
+            frontendLogger.error('[UserManagement]', 'Failed to update AI daily limit', { error });
+            toast.error(t.common.error);
+        } finally {
+            setSavingLimit(false);
         }
     };
 
@@ -128,6 +149,31 @@ export function UserManagement() {
                 </div>
             </div>
 
+            {/* 每日 AI 次数 */}
+            <div className="flex flex-col gap-3 p-4 border rounded-lg bg-muted/30 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-0.5">
+                    <Label htmlFor="ai-daily-limit" className="text-base">{t.admin.aiDailyLimit}</Label>
+                    <p className="text-sm text-muted-foreground">{t.admin.aiDailyLimitDesc}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                    <Input
+                        id="ai-daily-limit"
+                        type="number"
+                        min={0}
+                        step={1}
+                        inputMode="numeric"
+                        value={aiDailyLimit}
+                        onChange={(e) => setAiDailyLimit(e.target.value)}
+                        aria-invalid={!limitValid}
+                        className="w-24"
+                    />
+                    <Button size="sm" onClick={handleSaveLimit} disabled={savingLimit || !limitValid}>
+                        {savingLimit && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {t.common.save}
+                    </Button>
+                </div>
+            </div>
+
             {/* 移动端卡片视图 */}
             <div className="sm:hidden space-y-3">
                 {users.map((user) => (
@@ -143,7 +189,7 @@ export function UserManagement() {
                         </div>
                         <div className="flex justify-between text-sm">
                             <div className="text-muted-foreground">
-                                {t.admin.errors}: {user._count.errorItems} | {t.admin.practiceCount}: {user._count.practiceRecords}
+                                {t.admin.errors}: {user._count.errorItems} | {t.admin.practiceCount}: {user._count.practiceRecords} | {t.admin.aiUsageToday}: {user.aiUsageToday}
                             </div>
                             <Badge variant={user.isActive ? "default" : "destructive"} className="text-xs">
                                 {user.isActive ? t.admin.active : t.admin.disabled}
@@ -211,6 +257,9 @@ export function UserManagement() {
                                     </div>
                                     <div className="text-sm">
                                         {t.admin.practiceCount}: {user._count.practiceRecords}
+                                    </div>
+                                    <div className="text-sm">
+                                        {t.admin.aiUsageToday}: {user.aiUsageToday}
                                     </div>
                                 </TableCell>
                                 <TableCell>

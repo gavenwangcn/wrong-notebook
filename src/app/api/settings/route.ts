@@ -42,6 +42,9 @@ export async function POST(req: Request) {
             if (!isValidTimeZone(body.timeZone)) return badRequest('INVALID_TIME_ZONE');
             body.timeZone = body.timeZone.trim();
         }
+        if (body.aiDailyLimit !== undefined && !(Number.isInteger(body.aiDailyLimit) && body.aiDailyLimit >= 0)) {
+            return badRequest('INVALID_AI_DAILY_LIMIT');
+        }
         const currentConfig = getAppConfig();
 
         // Don't save masked keys if they somehow get sent back (for Gemini)

@@ -35,6 +35,7 @@ model User {
   practiceRecords PracticeRecord[]
   customTags KnowledgeTag[] // User's custom tags
   examPapers ExamPaper[]
+  aiUsages   AiUsage[]
 }
 
 // 统一知识点标签表 (支持无限层级)
@@ -222,4 +223,15 @@ model ExamQuestion {
   practiceRecords PracticeRecord[]
 
   @@index([paperId, order])
+}
+
+// 用户发起的 AI 调用记录，用于每日额度和用量统计（不含后台自动的掌握概率评估）
+model AiUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String   // analyze | reanswer | practice | grade | figure | latex | geogebra | animation | exam | retag
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

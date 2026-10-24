@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
 import type { CandidateTags } from "@/lib/ai";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:reanswer');
 
@@ -51,6 +52,9 @@ export async function POST(req: Request) {
                 candidateTags = await getNotebookCandidateTags(resolveNotebookScope(notebook));
             }
         }
+
+        const limited = await consumeAiQuota(session.user, 'reanswer');
+        if (limited) return limited;
 
         const aiService = getAIService();
 

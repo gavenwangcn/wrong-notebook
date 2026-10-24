@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 import { parseLastPractice } from "@/lib/last-practice";
 import { createLogger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:practice:grade');
 
@@ -42,6 +43,9 @@ export async function POST(req: Request) {
         if (!practice) {
             return notFound("Practice question not found");
         }
+
+        const limited = await consumeAiQuota(session.user, 'grade');
+        if (limited) return limited;
 
         const result = await getAIService().gradeAnswer({
             questionText: practice.questionText,

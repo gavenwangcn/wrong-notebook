@@ -6,6 +6,7 @@ import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-err
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:reanswer');
 
@@ -52,6 +53,9 @@ export async function POST(
         const image = item.originalImageUrl?.startsWith('data:') ? item.originalImageUrl : undefined;
 
         const questionText = item.questionText;
+        const limited = await consumeAiQuota(user, 'reanswer');
+        if (limited) return limited;
+
         const result = await trackBackgroundTask(
             { userId: user.id, kind: 'reanswer', subject: describeQuestion(item), link: `/error-items/${id}` },
             () => getAIService().reanswerQuestion(questionText, language, subject, image, item.gradeSemester)

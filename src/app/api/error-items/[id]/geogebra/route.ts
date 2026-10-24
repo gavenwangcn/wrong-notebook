@@ -6,6 +6,7 @@ import { unauthorized, forbidden, notFound, internalError } from "@/lib/api-erro
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { getAIService } from "@/lib/ai";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:geogebra');
 
@@ -64,6 +65,9 @@ export async function POST(
                 description: "题目文本为空，无法分析",
             });
         }
+
+        const limited = await consumeAiQuota(user, 'geogebra');
+        if (limited) return limited;
 
         const aiService = getAIService();
 

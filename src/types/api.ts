@@ -148,6 +148,8 @@ type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
 export interface AppConfig extends VendorConfigs {
     aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
     allowRegistration?: boolean;
+    /** 普通用户每天可发起的 AI 调用次数，0 表示不限制；管理员不受限制 */
+    aiDailyLimit?: number;
     timeZone?: string;
     openai?: {
         instances?: OpenAIInstance[];
@@ -214,6 +216,8 @@ export interface AdminUser extends UserProfile {
         errorItems: number;
         practiceRecords: number;
     };
+    /** 今日发起的 AI 调用次数 */
+    aiUsageToday: number;
 }
 
 export interface AdminDashboardData {

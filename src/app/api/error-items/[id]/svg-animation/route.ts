@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:svg-animation');
 
@@ -55,6 +56,9 @@ export async function POST(req: Request, { params }: RouteContext) {
 
         const questionText = item.questionText;
         // 页面关闭后服务端仍会继续生成并保存，后台任务弹框中可查看进度
+        const limited = await consumeAiQuota(user, 'animation');
+        if (limited) return limited;
+
         const svgAnimation = await trackBackgroundTask(
             { userId: user.id, kind: 'svg_animation', subject: describeQuestion(item), link: `/error-items/${id}` },
             async () => {

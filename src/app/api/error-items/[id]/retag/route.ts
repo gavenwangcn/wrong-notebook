@@ -5,6 +5,7 @@ import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-err
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { previewRetagErrorItem, retagErrorItem } from "@/lib/retag";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:retag');
 
@@ -30,6 +31,9 @@ export async function POST(
         if (!item || item.userId !== user.id) {
             return notFound("Item not found");
         }
+        const limited = await consumeAiQuota(user, 'retag');
+        if (limited) return limited;
+
         const result = await trackBackgroundTask(
             { userId: user.id, kind: 'retag', subject: describeQuestion(item), link: `/error-items/${id}` },
             () => body.preview === true ? previewRetagErrorItem(id, user.id) : retagErrorItem(id, user.id)

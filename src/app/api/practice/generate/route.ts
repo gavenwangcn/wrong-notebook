@@ -8,6 +8,7 @@ import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { parseLastPractice, serializeLastPractice } from "@/lib/last-practice";
 import type { LastPractice } from "@/lib/last-practice";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:practice:generate');
 
@@ -71,6 +72,9 @@ export async function POST(req: Request) {
         } catch {
             tags = [];
         }
+
+        const limited = await consumeAiQuota(session.user, 'practice');
+        if (limited) return limited;
 
         const aiService = getAIService();
         const similarQuestion = await trackBackgroundTask(

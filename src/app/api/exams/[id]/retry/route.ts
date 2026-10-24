@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { generateExamPaper } from "@/lib/exam";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:exams:retry');
 
@@ -33,6 +34,9 @@ export async function POST(
 
         const body = retrySchema.safeParse(await req.json().catch(() => ({})));
         await prisma.examPaper.update({ where: { id }, data: { status: 'generating' } });
+        const limited = await consumeAiQuota(user, 'exam');
+        if (limited) return limited;
+
         void generateExamPaper(id, body.success ? body.data.language || 'zh' : 'zh');
 
         return NextResponse.json({ success: true });

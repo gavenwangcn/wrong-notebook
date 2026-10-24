@@ -5,6 +5,7 @@ import { unauthorized } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
 import { getAIService } from "@/lib/ai";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:geogebra-analyze');
 
@@ -30,6 +31,9 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+
+        const limited = await consumeAiQuota(session.user, 'geogebra');
+        if (limited) return limited;
 
         const aiService = getAIService();
         const result = await trackBackgroundTask(

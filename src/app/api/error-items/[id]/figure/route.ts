@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { unauthorized, notFound, badRequest, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
 import { describeQuestion, trackBackgroundTask } from "@/lib/background-tasks";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:error-items:figure');
 
@@ -37,6 +38,9 @@ export async function POST(
         if (!match) {
             return badRequest("NO_ORIGINAL_IMAGE");
         }
+
+        const limited = await consumeAiQuota(user, 'figure');
+        if (limited) return limited;
 
         const updated = await trackBackgroundTask(
             { userId: user.id, kind: 'figure', subject: describeQuestion(item), link: `/error-items/${id}` },

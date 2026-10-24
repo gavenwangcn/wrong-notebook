@@ -40,6 +40,15 @@ Admins open the dashboard from "Settings → User Management" to see usage stati
 
 New sign-ups are off by default, so strangers cannot register and use up your AI quota when the service is reachable from the internet. To create accounts for family members, an admin turns on "Allow New Registrations" under "Settings → User Management" and turns it off again once the accounts exist. The environment variable `ALLOW_REGISTRATION=true` changes the default; a switch saved on the web page takes precedence. Instances that saved settings on the web page before upgrading keep their existing switch.
 
+### Daily AI limit
+
+To keep children from using up your API quota by regenerating explanations and questions, admins can set "Daily AI Limit per User" under "Settings → User Management". The user list also shows how many AI actions each person has used today.
+
+- Counted actions are the AI features a user starts: recognizing questions, re-solving, generating and grading practice questions, figures, LaTeX fixes, GeoGebra, animated explanations, re-tagging and exam papers. Each action counts once; a whole exam paper or re-tagging a whole notebook also counts once. An answer that matches the reference exactly is marked without the AI and does not count.
+- Mastery evaluation that runs automatically in the background is not counted.
+- 0 means unlimited (the default); admins are not limited. The environment variable `AI_DAILY_LIMIT` sets the default; a value saved on the web page takes precedence.
+- Counts reset at midnight in the application time zone. Once the limit is reached, AI features show "You have used up today's AI allowance".
+
 The default admin is only for initializing a fresh install. Upgrades of existing instances should keep the original accounts and must not re-run admin seeding.
 
 ## Background tasks and progress

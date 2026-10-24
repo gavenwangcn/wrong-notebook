@@ -25,6 +25,8 @@ type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
 export interface AppConfig extends VendorConfigs {
     aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
     allowRegistration?: boolean;
+    /** 普通用户每天可发起的 AI 调用次数，0 表示不限制；管理员不受限制 */
+    aiDailyLimit?: number;
     timeZone?: string;
     openai?: {
         instances?: OpenAIInstance[];
@@ -101,10 +103,17 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
     };
 }
 
+/** 每日额度只接受非负整数，其余取值视为不限制 */
+export function parseDailyLimit(value: unknown): number {
+    const limit = typeof value === 'number' ? value : Number(value);
+    return Number.isInteger(limit) && limit > 0 ? limit : 0;
+}
+
 const DEFAULT_CONFIG: AppConfig = {
     aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'minimax',
     // 默认关闭注册，避免公网部署时陌生人注册并消耗 AI 额度；管理员可在用户管理中开启
     allowRegistration: process.env.ALLOW_REGISTRATION === 'true',
+    aiDailyLimit: parseDailyLimit(process.env.AI_DAILY_LIMIT),
     timeZone: DEFAULT_TIME_ZONE,
     openai: {
         instances: process.env.OPENAI_API_KEY ? [{

@@ -60,6 +60,23 @@ describe('config module', () => {
             expect(getAppConfig().allowRegistration).toBe(expected);
         });
 
+        it.each([
+            ['20', 20],
+            ['0', 0],
+            ['-5', 0],
+            ['2.5', 0],
+            ['abc', 0],
+            [undefined, 0],
+        ])('AI_DAILY_LIMIT=%s 时默认每日 AI 次数为 %s', async (value, expected) => {
+            if (value === undefined) delete process.env.AI_DAILY_LIMIT;
+            else process.env.AI_DAILY_LIMIT = value;
+            mockNoConfigFile();
+
+            const { getAppConfig } = await import('@/lib/config');
+
+            expect(getAppConfig().aiDailyLimit).toBe(expected);
+        });
+
         it('配置文件中保存的注册开关优先于环境变量', async () => {
             process.env.ALLOW_REGISTRATION = 'false';
             vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ allowRegistration: true }));

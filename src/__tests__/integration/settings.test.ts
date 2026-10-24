@@ -312,6 +312,23 @@ describe('/api/settings', () => {
             );
         });
 
+        it('保存每日 AI 次数，拒绝负数和小数', async () => {
+            const post = (aiDailyLimit: unknown) => POST(new Request('http://localhost/api/settings', {
+                method: 'POST',
+                body: JSON.stringify({ aiDailyLimit }),
+                headers: { 'Content-Type': 'application/json' },
+            }));
+
+            expect((await post(30)).status).toBe(200);
+            expect(mocks.mockUpdateAppConfig).toHaveBeenCalledWith(expect.objectContaining({ aiDailyLimit: 30 }));
+
+            mocks.mockUpdateAppConfig.mockClear();
+            for (const invalid of [-1, 2.5, '10']) {
+                expect((await post(invalid)).status).toBe(400);
+            }
+            expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
+        });
+
         it('应该成功更新注册开关', async () => {
             const request = new Request('http://localhost/api/settings', {
                 method: 'POST',

@@ -13,6 +13,7 @@ import { createLogger } from "@/lib/logger";
 import { trackBackgroundTask } from "@/lib/background-tasks";
 import { getAppTimeZone } from "@/lib/config";
 import { getErrorMessage } from "@/lib/error-message";
+import { consumeAiQuota } from "@/lib/ai-quota";
 
 const logger = createLogger('api:analyze');
 
@@ -100,6 +101,9 @@ export async function POST(req: Request) {
 
 
         logger.info({ userGrade, userGradeSemester, subject: subjectChinese }, 'Calling AI service for image analysis');
+        const limited = await consumeAiQuota(session.user, 'analyze');
+        if (limited) return limited;
+
         const aiService = getAIService();
         const analysisResult = await trackBackgroundTask(
             { userId: session.user.id, kind: 'analyze', subject: notebookName },
