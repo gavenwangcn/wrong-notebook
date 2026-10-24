@@ -2,296 +2,50 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { UploadZone } from "@/components/upload-zone";
+import { Camera, Sparkles } from "lucide-react";
+import { BatchImportPanel } from "@/components/batch-import-panel";
 import { CorrectionEditor } from "@/components/correction-editor";
 import { ImageCropper } from "@/components/image-cropper";
-import { ParsedQuestion } from "@/lib/ai";
-import { apiClient } from "@/lib/api-client";
-import { AnalyzeResponse, Notebook, AppConfig } from "@/types/api";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { usePageTitle } from "@/lib/page-title";
-import { processImageFile } from "@/lib/image-utils";
-import { Camera, Sparkles } from "lucide-react";
+import { ImportResultBanner } from "@/components/import-result-banner";
+import { TextInputZone } from "@/components/text-input-zone";
+import { UploadZone } from "@/components/upload-zone";
 import { PageHeader } from "@/components/ui/page-header";
 import { ProgressFeedback } from "@/components/ui/progress-feedback";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import type { ProgressStatus } from "@/components/ui/progress-feedback";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
-import { TextInputZone } from "@/components/text-input-zone";
-import { ImportResultBanner } from "@/components/import-result-banner";
-import { BatchImportPanel } from "@/components/batch-import-panel";
-import { fetchConfirmBeforeImport, saveParsedQuestion } from "@/lib/question-import";
-import type { ImportedQuestion } from "@/lib/question-import";
-import { toast } from "@/lib/feedback";
-import { getErrorMessage } from "@/lib/error-message";
-import { getAnalysisErrorMessage } from "@/lib/analysis-error";
-import { normalizeMistakeStatus } from "@/lib/mistake-status";
+import { usePageTitle } from "@/lib/page-title";
+import { useQuestionImport } from "@/lib/use-question-import";
+import type { Notebook } from "@/types/api";
 
 export default function AddErrorPage() {
     const params = useParams();
     const router = useRouter();
     const notebookId = params.id as string;
-    const [step, setStep] = useState<"upload" | "review">("upload");
-    const [analysisStep, setAnalysisStep] = useState<ProgressStatus>('idle');
-    const [parsedData, setParsedData] = useState<ParsedQuestion | null>(null);
-    const [currentImage, setCurrentImage] = useState<string | null>(null);
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     const [notebook, setNotebook] = useState<Notebook | null>(null);
     usePageTitle(t.notebooks.title, notebook?.name, t.pageTitle.addError);
-    const [config, setConfig] = useState<AppConfig | null>(null);
-
     // Input mode: "image" for photo upload, "text" for manual text input
     const [inputMode, setInputMode] = useState<"image" | "text">("image");
 
-    // Cropper state
-    const [croppingImage, setCroppingImage] = useState<string | null>(null);
-    const [isCropperOpen, setIsCropperOpen] = useState(false);
-
-    // 免确认导入：偏好、最近一次导入结果、批量框选的题目图片
-    const [confirmBeforeImport, setConfirmBeforeImport] = useState(false);
-    const [lastImported, setLastImported] = useState<ImportedQuestion | null>(null);
-    const [batchBlobs, setBatchBlobs] = useState<Blob[] | null>(null);
-
-    // Timeout Config
-    const aiTimeout = config?.timeouts?.analyze || 180000;
-    const safetyTimeout = aiTimeout + 10000;
-
-    // Cleanup Blob URL to prevent memory leak
-    useEffect(() => {
-        return () => {
-            if (croppingImage) {
-                URL.revokeObjectURL(croppingImage);
-            }
-        };
-    }, [croppingImage]);
+    // 本页的题目都放入当前错题本
+    const flow = useQuestionImport({
+        logPrefix: '[AddErrorItem]',
+        analyzeSubjectId: notebookId,
+        importSubjectId: notebookId,
+        textNotebook: { id: notebookId, name: notebook?.name || "" },
+        fixedSubjectId: notebookId,
+    });
 
     useEffect(() => {
-        // Fetch notebook info
         apiClient.get<Notebook>(`/api/notebooks/${notebookId}`)
             .then(data => setNotebook(data))
             .catch(err => {
                 frontendLogger.error('[AddErrorItem]', 'Failed to fetch notebook', { error: err });
                 router.push("/notebooks");
             });
-
-        fetchConfirmBeforeImport().then(setConfirmBeforeImport);
-
-        // Fetch settings for timeouts
-        apiClient.get<AppConfig>("/api/settings")
-            .then(data => {
-                setConfig(data);
-                if (data.timeouts?.analyze) {
-                    frontendLogger.info('[Config]', 'Loaded timeout settings', {
-                        analyze: data.timeouts.analyze
-                    });
-                }
-            })
-            .catch(err => frontendLogger.error('[AddErrorItem]', 'Failed to fetch config', { error: err }));
     }, [notebookId, router]);
-
-    // 保留按阶段计时的超时兜底，进度估值和已用时间由提示组件统一维护。
-    useEffect(() => {
-        if (analysisStep === 'idle') return;
-        const timeout = setTimeout(() => {
-            frontendLogger.warn('[Progress]', '处理超时，关闭进度提示', { analysisStep, safetyTimeout });
-            setAnalysisStep('idle');
-        }, safetyTimeout);
-        return () => clearTimeout(timeout);
-    }, [analysisStep, safetyTimeout]);
-
-    const handleBatchCropComplete = (blobs: Blob[]) => {
-        setIsCropperOpen(false);
-        setLastImported(null);
-        setBatchBlobs(blobs);
-    };
-
-    const onImageSelect = (file: File) => {
-        setLastImported(null);
-        const imageUrl = URL.createObjectURL(file);
-        setCroppingImage(imageUrl);
-        setIsCropperOpen(true);
-    };
-
-    const handleCropComplete = async (croppedBlob: Blob) => {
-        setIsCropperOpen(false);
-        const file = new File([croppedBlob], "cropped-image.jpg", { type: "image/jpeg" });
-        handleAnalyze(file);
-    };
-
-    const handleAnalyze = async (file: File) => {
-        const startTime = Date.now();
-        frontendLogger.info('[AddAnalyze]', 'Starting analysis flow', {
-            timeoutSettings: {
-                apiTimeout: aiTimeout,
-                safetyTimeout
-            }
-        });
-
-        try {
-            frontendLogger.info('[AddAnalyze]', 'Step 1/5: Compressing image');
-            setAnalysisStep('compressing');
-            const base64Image = await processImageFile(file);
-            setCurrentImage(base64Image);
-            frontendLogger.info('[AddAnalyze]', 'Image compressed successfully', {
-                size: base64Image.length
-            });
-
-            frontendLogger.info('[AddAnalyze]', 'Step 2/5: Calling API endpoint /api/analyze');
-            setAnalysisStep('analyzing');
-            const apiStartTime = Date.now();
-            const data = await apiClient.post<AnalyzeResponse>("/api/analyze", {
-                imageBase64: base64Image,
-                language: language,
-                subjectId: notebookId
-            }, { timeout: aiTimeout }); // Use configured timeout
-            const apiDuration = Date.now() - apiStartTime;
-            frontendLogger.info('[AddAnalyze]', 'API response received, validating data', {
-                apiDuration
-            });
-
-            // Validate response data
-            if (!data || typeof data !== 'object') {
-                frontendLogger.error('[AddAnalyze]', 'Validation failed - invalid response data', {
-                    data
-                });
-                throw new Error('Invalid API response: data is null or not an object');
-            }
-            frontendLogger.info('[AddAnalyze]', 'Response data validated successfully');
-
-            frontendLogger.info('[AddAnalyze]', '开始处理 AI 返回结果');
-            setAnalysisStep('processing');
-
-            // 未开启人工确认时直接入库
-            if (!confirmBeforeImport) {
-                setAnalysisStep('saving');
-                const imported = await saveParsedQuestion(data, { subjectId: notebookId, imageUrl: base64Image });
-                setLastImported(imported);
-                setCurrentImage(null);
-                frontendLogger.info('[AddAnalyze]', 'Imported without review', { id: imported.id });
-                return;
-            }
-
-            frontendLogger.info('[AddAnalyze]', 'Step 4/5: Setting parsed data into state');
-            const dataSize = JSON.stringify(data).length;
-            const setDataStart = Date.now();
-            setParsedData(data);
-            const setDataDuration = Date.now() - setDataStart;
-            frontendLogger.info('[AddAnalyze]', 'Parsed data set successfully', {
-                dataSize,
-                setDataDuration
-            });
-
-            frontendLogger.info('[AddAnalyze]', 'Step 5/5: Switching to review page');
-            const setStepStart = Date.now();
-            setStep("review");
-            const setStepDuration = Date.now() - setStepStart;
-            frontendLogger.info('[AddAnalyze]', 'Step switched to review', {
-                setStepDuration
-            });
-            const totalDuration = Date.now() - startTime;
-            frontendLogger.info('[AddAnalyze]', 'Analysis completed successfully', {
-                totalDuration
-            });
-        } catch (error) {
-            const errorDuration = Date.now() - startTime;
-            frontendLogger.error('[AddError]', 'Analysis failed', {
-                errorDuration,
-                error: getErrorMessage(error)
-            });
-
-            toast.error(getAnalysisErrorMessage(error, t));
-        } finally {
-            // Always reset analysis state, even if setState throws
-            frontendLogger.info('[AddAnalyze]', 'Finally: Resetting analysis state to idle');
-            setAnalysisStep('idle');
-            frontendLogger.info('[AddAnalyze]', 'Analysis state reset complete');
-        }
-    };
-
-    const handleTextSubmit = async (questionText: string) => {
-        const startTime = Date.now();
-        frontendLogger.info('[AddTextSubmit]', 'Starting text-based analysis', { textLength: questionText.length });
-
-        try {
-            setAnalysisStep('analyzing');
-
-            const result = await apiClient.post<{
-                answerText: string;
-                analysis: string;
-                knowledgePoints: string[];
-                wrongAnswerText: string;
-                mistakeAnalysis: string;
-                mistakeStatus: string;
-                difficultyStars?: number | null;
-                subject?: string;
-            }>("/api/reanswer", {
-                questionText,
-                language,
-                subject: notebook?.name || undefined,
-                subjectId: notebookId,
-            }, { timeout: aiTimeout });
-
-            setAnalysisStep('processing');
-
-            const parsed: ParsedQuestion = {
-                questionText,
-                answerText: result.answerText,
-                analysis: result.analysis,
-                knowledgePoints: result.knowledgePoints || [],
-                wrongAnswerText: result.wrongAnswerText || "",
-                mistakeAnalysis: result.mistakeAnalysis || "",
-                mistakeStatus: normalizeMistakeStatus(result.mistakeStatus),
-                subject: (result.subject || "其他") as ParsedQuestion["subject"],
-                requiresImage: false,
-                difficultyStars: result.difficultyStars ?? null,
-            };
-
-            if (!confirmBeforeImport) {
-                setAnalysisStep('saving');
-                const imported = await saveParsedQuestion(parsed, { subjectId: notebookId, imageUrl: null });
-                setLastImported(imported);
-                return;
-            }
-
-            setCurrentImage(null);
-            setParsedData(parsed);
-            setStep("review");
-
-            const totalDuration = Date.now() - startTime;
-            frontendLogger.info('[AddTextSubmit]', 'Text analysis completed', { totalDuration });
-        } catch (error) {
-            const errorDuration = Date.now() - startTime;
-            frontendLogger.error('[AddTextSubmit]', 'Analysis failed', {
-                errorDuration,
-                error: getErrorMessage(error)
-            });
-
-            toast.error(getAnalysisErrorMessage(error, t));
-        } finally {
-            setAnalysisStep('idle');
-        }
-    };
-
-    const handleSave = async (finalData: ParsedQuestion & { subjectId?: string; gradeSemester?: string; paperLevel?: string }): Promise<void> => {
-        try {
-            const result = await apiClient.post<{ id: string; duplicate?: boolean }>("/api/error-items", {
-                ...finalData,
-                originalImageUrl: currentImage || "",
-                subjectId: notebookId,
-            });
-
-            // 检查是否是重复提交（后端去重返回）
-            if (result.duplicate) {
-                frontendLogger.info('[AddSave]', 'Duplicate submission detected, using existing record');
-            }
-
-            toast.success(result.duplicate ? t.importFlow.duplicate : t.common.messages.saveSuccess);
-            router.push(result.duplicate ? `/error-items/${result.id}` : `/notebooks/${notebookId}`);
-        } catch (error) {
-            frontendLogger.error('[AddSave]', 'Save failed', { error: error instanceof Error ? error.message : String(error) });
-            toast.error(t.common.messages?.saveFailed || 'Save failed');
-        }
-    };
 
     if (!notebook) {
         return (
@@ -303,17 +57,16 @@ export default function AddErrorPage() {
 
     return (
         <main className="min-h-screen">
-            <ProgressFeedback status={analysisStep} />
+            <ProgressFeedback status={flow.analysisStep} />
 
-            <div className={`mx-auto space-y-6 px-4 py-6 md:px-8 md:py-8 ${step === "review" ? "max-w-6xl" : "max-w-4xl"}`}>
+            <div className={`mx-auto space-y-6 px-4 py-6 md:px-8 md:py-8 ${flow.step === "review" ? "max-w-6xl" : "max-w-4xl"}`}>
                 <PageHeader
                     backHref={`/notebooks/${notebookId}`}
                     title={t.app.addError}
-                    description={notebook?.name}
+                    description={notebook.name}
                 />
 
-                {/* Main Content */}
-                {step === "upload" && (
+                {flow.step === "upload" && (
                     <div className="space-y-4">
                         <SegmentedControl
                             options={[
@@ -324,47 +77,47 @@ export default function AddErrorPage() {
                             onChange={setInputMode}
                         />
 
-                        {lastImported && (
-                            <ImportResultBanner imported={lastImported} onDismiss={() => setLastImported(null)} />
+                        {flow.lastImported && (
+                            <ImportResultBanner imported={flow.lastImported} onDismiss={flow.dismissImported} />
                         )}
 
-                        {batchBlobs ? (
+                        {flow.batchBlobs ? (
                             <BatchImportPanel
-                                blobs={batchBlobs}
+                                blobs={flow.batchBlobs}
                                 subjectId={notebookId}
-                                timeout={aiTimeout}
-                                onClose={() => setBatchBlobs(null)}
+                                timeout={flow.aiTimeout}
+                                onClose={flow.closeBatch}
                             />
                         ) : inputMode === "image" ? (
-                            <UploadZone onImageSelect={onImageSelect} isAnalyzing={analysisStep !== 'idle'} />
+                            <UploadZone onImageSelect={flow.selectImage} isAnalyzing={flow.isBusy} />
                         ) : (
                             <TextInputZone
-                                onSubmit={handleTextSubmit}
-                                isAnalyzing={analysisStep !== 'idle'}
-                                defaultNotebookName={notebook?.name}
+                                onSubmit={flow.submitText}
+                                isAnalyzing={flow.isBusy}
+                                defaultNotebookName={notebook.name}
                             />
                         )}
                     </div>
                 )}
 
-                {step === "review" && parsedData && (
+                {flow.step === "review" && flow.parsedData && (
                     <CorrectionEditor
-                        initialData={parsedData}
-                        imagePreview={currentImage}
-                        onSave={handleSave}
-                        onCancel={() => setStep("upload")}
+                        initialData={flow.parsedData}
+                        imagePreview={flow.currentImage}
+                        onSave={flow.saveReviewed}
+                        onCancel={flow.cancelReview}
                         initialSubjectId={notebookId}
-                        aiTimeout={aiTimeout}
+                        aiTimeout={flow.aiTimeout}
                     />
                 )}
             </div>
 
             <ImageCropper
-                imageSrc={croppingImage || ""}
-                open={isCropperOpen}
-                onClose={() => setIsCropperOpen(false)}
-                onCropComplete={handleCropComplete}
-                onMultiCropComplete={handleBatchCropComplete}
+                imageSrc={flow.croppingImage || ""}
+                open={flow.isCropperOpen}
+                onClose={flow.closeCropper}
+                onCropComplete={flow.cropComplete}
+                onMultiCropComplete={flow.startBatch}
             />
         </main>
     );
