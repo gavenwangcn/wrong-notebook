@@ -7,6 +7,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGri
 import { Loader2, TrendingUp, CheckCircle, BookOpen } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { AnalyticsData } from "@/types/api";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -41,7 +42,7 @@ export function WrongAnswerStats() {
             const data = await apiClient.get<AnalyticsData>("/api/analytics");
             setData(data);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[WrongAnswerStats]', 'Failed to fetch analytics', { error });
         } finally {
             setLoading(false);
         }

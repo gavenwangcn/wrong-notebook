@@ -81,7 +81,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
         // Fetch notebooks for mapping
         apiClient.get<Notebook[]>("/api/notebooks")
             .then(setNotebooks)
-            .catch(err => console.error("Failed to fetch notebooks:", err));
+            .catch(err => frontendLogger.error('[CorrectionEditor]', 'Failed to fetch notebooks', { error: err }));
 
         apiClient.get<UserProfile>("/api/user")
             .then(user => {
@@ -92,7 +92,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                     setEducationStage(user.educationStage);
                 }
             })
-            .catch(err => console.error("Failed to fetch user info for grade calculation:", err));
+            .catch(err => frontendLogger.error('[CorrectionEditor]', 'Failed to fetch user info for grade calculation', { error: err }));
     }, [language, timeZone]);
 
     // 重新解题函数
@@ -114,9 +114,9 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
             });
 
             if (requestBody.imageBase64) {
-                console.log("[Reanswer] Sending image + text (Image available for mistake analysis)");
+                frontendLogger.info('[Reanswer]', 'Sending image + text (image available for mistake analysis)');
             } else {
-                console.log("[Reanswer] Sending text only (No image available)");
+                frontendLogger.info('[Reanswer]', 'Sending text only (no image available)');
             }
 
             frontendLogger.info('[Reanswer]', 'Sending request', { timeout: aiTimeout });
@@ -140,7 +140,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
 
             toast.success(t.editor.reanswerSuccess || '✅ Answer and analysis updated!');
         } catch (error: unknown) {
-            console.error("Reanswer failed:", error);
+            frontendLogger.error('[CorrectionEditor]', 'Reanswer failed', { error });
             const apiError = error as { data?: { message?: string } };
             const msg = apiError.data?.message || '';
 
@@ -199,7 +199,7 @@ export function CorrectionEditor({ initialData, onSave, onCancel, imagePreview, 
                 setGeogebraError(result.description || "该题目不适合用 GeoGebra 演示");
             }
         } catch (error: any) {
-            console.error("GeoGebra analysis failed:", error);
+            frontendLogger.error('[CorrectionEditor]', 'GeoGebra analysis failed', { error });
             setGeogebraError("分析失败，请稍后重试");
         } finally {
             setIsAnalyzingGeogebra(false);

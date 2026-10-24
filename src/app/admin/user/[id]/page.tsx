@@ -8,6 +8,7 @@ import { usePageTitle } from "@/lib/page-title";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { Loader2, ArrowLeft, User, BookOpen, PenTool, Layers, Calendar, Tag, CheckCircle, Clock, AlertCircle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,7 @@ export default function AdminUserDetailPage() {
             const result = await apiClient.get<AdminUserDetail>(`/api/admin/users/${userId}/detail`)
             setData(result)
         } catch (error) {
-            console.error("Failed to fetch user detail", error)
+            frontendLogger.error('[AdminUserDetail]', 'Failed to fetch user detail', { error })
         } finally {
             setLoading(false)
         }

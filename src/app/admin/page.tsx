@@ -8,6 +8,7 @@ import { usePageTitle } from "@/lib/page-title";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { formatDateTime } from "@/lib/date-time";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { Loader2, Users, BookOpen, PenTool, Layers, TrendingUp, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, Eye, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -341,7 +342,7 @@ export default function AdminPage() {
             const result = await apiClient.get<AdminDashboardData>("/api/admin/dashboard")
             setData(result)
         } catch (error) {
-            console.error("Failed to fetch dashboard data", error)
+            frontendLogger.error('[AdminDashboard]', 'Failed to fetch dashboard data', { error })
         } finally {
             setLoading(false)
         }

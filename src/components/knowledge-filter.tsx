@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface TagTreeNode {
     id: string;
@@ -167,11 +168,11 @@ export function KnowledgeFilter({
                     const data = await apiClient.get<{ tags: TagTreeNode[] }>(`/api/tags?subject=${subject}`);
                     setTagTree(data.tags);
                 } catch (e) {
-                    console.warn(`Failed to fetch tags for subject ${subject}`, e);
+                    frontendLogger.warn('[KnowledgeFilter]', 'Failed to fetch tags for subject', { subject, error: e });
                     setTagTree([]);
                 }
             } catch (error) {
-                console.error("Failed to load filter data:", error);
+                frontendLogger.error('[KnowledgeFilter]', 'Failed to load filter data', { error });
             } finally {
                 setLoading(false);
             }

@@ -3,7 +3,10 @@
  * This module provides centralized prompt management
  */
 
+import { createLogger } from '../logger';
 import type { CandidateTags, GradeLevel } from './types';
+
+const logger = createLogger('ai:prompts');
 
 /**
  * 将 gradeSemester 字符串转换为年级数字（用于标签过滤）
@@ -409,7 +412,7 @@ export function getMathTagsForGrade(
   }
 
   // 如果没有预获取标签，返回空数组（AI 将自由标注）
-  console.warn('[prompts] No prefetched tags provided, AI will tag freely');
+  logger.warn('No prefetched tags provided, AI will tag freely');
   return [];
 }
 

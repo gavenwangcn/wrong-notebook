@@ -71,7 +71,7 @@ function HomeContent() {
         // Fetch notebooks for auto-selection
         apiClient.get<Notebook[]>("/api/notebooks")
             .then(data => setNotebooks(data))
-            .catch(err => console.error("Failed to fetch notebooks:", err));
+            .catch(err => frontendLogger.error('[Home]', 'Failed to fetch notebooks', { error: err }));
 
         fetchConfirmBeforeImport().then(setConfirmBeforeImport);
 
@@ -85,7 +85,7 @@ function HomeContent() {
                     });
                 }
             })
-            .catch(err => console.error("Failed to fetch config:", err));
+            .catch(err => frontendLogger.error('[Home]', 'Failed to fetch config', { error: err }));
     }, []);
 
     // 保留按阶段计时的超时兜底，进度估值和已用时间由提示组件统一维护。

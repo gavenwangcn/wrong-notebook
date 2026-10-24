@@ -11,6 +11,7 @@ import { ErrorItem, PaginatedResponse } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { PRINT_PREVIEW_PAGE_SIZE } from "@/lib/constants/pagination";
+import { frontendLogger } from "@/lib/frontend-logger";
 import {
     getPrintPreviewCountLabel,
     getPrintPreviewEmptyState,
@@ -43,7 +44,7 @@ function PrintPreviewContent() {
             setItems(response.items);
             setSelectedIds(new Set(response.items.map((item) => item.id)));
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[PrintPreview]', 'Failed to fetch items', { error });
         } finally {
             setLoading(false);
         }

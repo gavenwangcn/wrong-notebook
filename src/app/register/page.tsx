@@ -15,6 +15,7 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { RegisterRequest } from "@/types/api";
 import { toast } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 export default function RegisterPage() {
     const { timeZone } = useTimeZone();
@@ -43,7 +44,7 @@ export default function RegisterPage() {
             const data = await res.json();
             setAllowRegistration(data.allowRegistration);
         } catch (error) {
-            console.error("Failed to check registration status", error);
+            frontendLogger.error('[Register]', 'Failed to check registration status', { error });
             setAllowRegistration(true); // 默认允许
         }
     };

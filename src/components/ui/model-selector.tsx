@@ -17,6 +17,7 @@ import { AIModel, ModelsResponse } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { isVendorProvider, VENDOR_PRESETS } from "@/lib/ai/vendor-presets";
 import type { VendorProviderId } from "@/lib/ai/vendor-presets";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface ModelSelectorProps {
     provider: 'openai' | 'gemini' | 'anthropic' | VendorProviderId;
@@ -70,7 +71,7 @@ export function ModelSelector({ provider, apiKey, baseUrl, currentModel, onModel
                 setUseCustom(true);
             }
         } catch (err: any) {
-            console.error("Failed to fetch models:", err);
+            frontendLogger.error('[ModelSelector]', 'Failed to fetch models', { error: err });
             const errorMsg = err?.message || (t.modelSelector?.fetchFailed || "Failed to fetch models");
             setError(errorMsg + (t.modelSelector?.enterManually || ", please enter manually"));
             setUseCustom(true);

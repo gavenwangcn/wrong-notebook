@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { Notebook } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -30,7 +31,7 @@ export function NotebookSelector({ value, onChange, className }: NotebookSelecto
                 const data = await apiClient.get<Notebook[]>("/api/notebooks");
                 setNotebooks(data);
             } catch (error) {
-                console.error("Failed to fetch notebooks:", error);
+                frontendLogger.error('[NotebookSelector]', 'Failed to fetch notebooks', { error });
             } finally {
                 setLoading(false);
             }

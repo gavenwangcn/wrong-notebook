@@ -31,6 +31,15 @@ const FLUSH_DELAY_MS = 1000;
 /** 缓冲区最大条目数，超过自动刷新 */
 const MAX_BUFFER_SIZE = 20;
 
+/** Error 对象经 JSON 序列化后为空对象，发送前转成名称与消息 */
+function serializeContext(context?: Record<string, unknown>): Record<string, unknown> | undefined {
+  if (!context) return context;
+  return Object.fromEntries(Object.entries(context).map(([key, value]) => [
+    key,
+    value instanceof Error ? { name: value.name, message: value.message } : value,
+  ]));
+}
+
 class FrontendLogger {
   private buffer: LogEntry[] = [];
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -45,7 +54,7 @@ class FrontendLogger {
       level,
       prefix,
       message,
-      context,
+      context: serializeContext(context),
       timestamp: new Date().toISOString(),
       url: typeof window !== 'undefined' ? window.location.href : '',
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',

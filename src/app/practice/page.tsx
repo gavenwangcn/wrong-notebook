@@ -54,7 +54,7 @@ function PracticeContent() {
                     });
                 }
             })
-            .catch(err => console.error(err));
+            .catch(err => frontendLogger.error('[Practice]', 'Failed to fetch config', { error: err }));
     }, []);
 
     const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "harder">("medium");
@@ -118,7 +118,7 @@ function PracticeContent() {
             setGeneratedAt(data.generatedAt ?? null);
             setQuestionVersion(v => v + 1);
         } catch (error: any) {
-            console.error(error);
+            frontendLogger.error('[Practice]', 'Failed to generate practice question', { error });
             const msg = error.data?.message || "";
 
             let errorMessage = t.practice.errors?.default || "Failed to generate";

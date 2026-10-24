@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface RenameNotebookDialogProps {
     open: boolean;
@@ -42,7 +43,7 @@ export function RenameNotebookDialog({ open, onOpenChange, currentName, onRename
             await onRename(name.trim());
             onOpenChange(false);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[RenameNotebook]', 'Failed to rename notebook', { error });
         } finally {
             setLoading(false);
         }

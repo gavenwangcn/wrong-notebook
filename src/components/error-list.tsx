@@ -35,6 +35,7 @@ import { isShortId } from "@/lib/short-id-format";
 import { locateByShortId } from "@/lib/short-id-client";
 import { toast, confirmDialog } from "@/lib/feedback";
 import type { MasteryStatus } from "@/lib/mastery-status";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -170,7 +171,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             setSelectedIds(new Set());
             fetchItems();
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorList]', 'Batch delete failed', { error });
             toast.error(t.common?.messages?.deleteFailed || "Delete failed");
         } finally {
             setIsDeleting(false);
@@ -232,7 +233,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             setTotal(response.total);
             setTotalPages(response.totalPages);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorList]', 'Failed to fetch error items', { error });
         } finally {
             setLoading(false);
         }

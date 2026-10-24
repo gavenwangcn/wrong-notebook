@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiClient } from "@/lib/api-client";
 import { TagStats, TagStatsResponse } from "@/types/api";
 import { toast, confirmDialog } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 // 标签树节点类型
 interface TagTreeNode {
@@ -77,7 +78,7 @@ export default function TagsPage() {
             const data = await apiClient.get<{ tags: TagTreeNode[] }>(`/api/tags?subject=${subject}`);
             setTagsBySubject(prev => ({ ...prev, [subject]: data.tags }));
         } catch (error) {
-            console.error(`Failed to fetch ${subject} tags:`, error);
+            frontendLogger.error('[Tags]', 'Failed to fetch tags', { subject, error });
         }
     }, []);
 
@@ -95,7 +96,7 @@ export default function TagsPage() {
             }
             setCustomTags(allCustom);
         } catch (error) {
-            console.error("Failed to fetch custom tags:", error);
+            frontendLogger.error('[Tags]', 'Failed to fetch custom tags', { error });
         }
     }, []);
 
@@ -105,7 +106,7 @@ export default function TagsPage() {
             const data = await apiClient.get<TagStatsResponse>("/api/tags/stats");
             setStats(data.stats);
         } catch (error) {
-            console.error("Failed to fetch tag stats:", error);
+            frontendLogger.error('[Tags]', 'Failed to fetch tag stats', { error });
         } finally {
             setLoading(false);
         }
@@ -131,7 +132,7 @@ export default function TagsPage() {
                 setGradeOptions(grades);
                 setNewTagGrade(""); // 重置选择
             } catch (error) {
-                console.error("Failed to fetch grades:", error);
+                frontendLogger.error('[Tags]', 'Failed to fetch grades', { error });
                 setGradeOptions([]);
             }
         };
@@ -179,7 +180,7 @@ export default function TagsPage() {
             await fetchCustomTags();
             await fetchTags(subject);
         } catch (error) {
-            console.error("Failed to delete tag:", error);
+            frontendLogger.error('[Tags]', 'Failed to delete tag', { error });
             toast.error("Failed to delete tag");
         }
     };

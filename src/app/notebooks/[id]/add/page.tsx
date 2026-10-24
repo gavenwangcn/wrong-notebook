@@ -67,7 +67,7 @@ export default function AddErrorPage() {
         apiClient.get<Notebook>(`/api/notebooks/${notebookId}`)
             .then(data => setNotebook(data))
             .catch(err => {
-                console.error("Failed to fetch notebook:", err);
+                frontendLogger.error('[AddErrorItem]', 'Failed to fetch notebook', { error: err });
                 router.push("/notebooks");
             });
 
@@ -83,7 +83,7 @@ export default function AddErrorPage() {
                     });
                 }
             })
-            .catch(err => console.error("Failed to fetch config:", err));
+            .catch(err => frontendLogger.error('[AddErrorItem]', 'Failed to fetch config', { error: err }));
     }, [notebookId, router]);
 
     // 保留按阶段计时的超时兜底，进度估值和已用时间由提示组件统一维护。

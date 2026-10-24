@@ -116,7 +116,7 @@ export default function ErrorDetailPage() {
                 setGeogebraEnabled(!!user?.enableGeogebra);
                 setSvgAnimationEnabled(user?.enableSvgAnimation !== false);
             })
-            .catch(err => console.error("Failed to fetch user info:", err));
+            .catch(err => frontendLogger.error('[ErrorDetail]', 'Failed to fetch user info', { error: err }));
 
         if (params.id) {
             fetchItem(params.id as string);
@@ -131,7 +131,7 @@ export default function ErrorDetailPage() {
             const data = await apiClient.get<ErrorItemDetail>(`/api/error-items/${id}`);
             setItem(data);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to fetch error item', { error });
             toast.error(t.common?.messages?.loadFailed || 'Failed to load item');
             router.push("/notebooks");
         } finally {
@@ -156,7 +156,7 @@ export default function ErrorDetailPage() {
                 setGeogebraError(result.description || "该题目不适合用 GeoGebra 演示");
             }
         } catch (error: any) {
-            console.error("GeoGebra analysis failed:", error);
+            frontendLogger.error('[ErrorDetail]', 'GeoGebra analysis failed', { error });
             const msg = error?.data?.message || error?.message || "";
             if (msg.includes("AI_AUTH_ERROR")) {
                 setGeogebraError("AI 认证失败，请检查设置");
@@ -229,7 +229,7 @@ export default function ErrorDetailPage() {
                 router.push('/notebooks');
             }
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to delete error item', { error });
             toast.error(t.common?.messages?.deleteFailed || 'Delete failed');
         }
     };
@@ -275,7 +275,7 @@ export default function ErrorDetailPage() {
             await fetchItem(params.id as string);
             toast.success(t.common?.messages?.tagUpdateSuccess || 'Tags updated successfully!');
         } catch (error) {
-            console.error("[Frontend] Error updating:", error);
+            frontendLogger.error('[ErrorDetail]', 'Error updating', { error });
             toast.error(t.common?.messages?.updateFailed || 'Update failed');
         }
     };
@@ -306,7 +306,7 @@ export default function ErrorDetailPage() {
             fetchItem(params.id as string);
             toast.success(t.common?.messages?.metaUpdateSuccess || 'Metadata updated successfully!');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save metadata', { error });
             toast.error(t.common?.messages?.updateFailed || 'Update failed');
         }
     };
@@ -348,7 +348,7 @@ export default function ErrorDetailPage() {
             if (item) setItem({ ...item, questionText: questionInput });
             toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save question', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
@@ -373,7 +373,7 @@ export default function ErrorDetailPage() {
             if (item) setItem({ ...item, answerText: answerInput });
             toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save answer', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
@@ -398,7 +398,7 @@ export default function ErrorDetailPage() {
             if (item) setItem({ ...item, analysis: analysisInput });
             toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save analysis', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
@@ -429,7 +429,7 @@ export default function ErrorDetailPage() {
             setItem((current) => current && { ...current, wrongAnswerText: wrongAnswerInput, mistakeStatus: normalizedStatus });
             toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save wrong answer', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
@@ -455,7 +455,7 @@ export default function ErrorDetailPage() {
             setItem((current) => current && { ...current, mistakeAnalysis: mistakeAnalysisInput });
             toast.success(t.common?.messages?.saveSuccess || 'Saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save mistake analysis', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };
@@ -474,7 +474,7 @@ export default function ErrorDetailPage() {
             setIsEditingNotes(false);
             toast.success(t.common?.messages?.noteSaveSuccess || 'Notes saved successfully');
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[ErrorDetail]', 'Failed to save notes', { error });
             toast.error(t.common?.messages?.saveFailed || 'Save failed');
         }
     };

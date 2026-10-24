@@ -18,6 +18,7 @@ import { apiClient } from "@/lib/api-client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { toast, confirmDialog } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 export default function NotebooksPage() {
     const router = useRouter();
@@ -37,7 +38,7 @@ export default function NotebooksPage() {
             const data = await apiClient.get<Notebook[]>("/api/notebooks");
             setNotebooks(data);
         } catch (error) {
-            console.error("Failed to fetch notebooks:", error);
+            frontendLogger.error('[Notebooks]', 'Failed to fetch notebooks', { error });
         } finally {
             setLoading(false);
         }
@@ -48,7 +49,7 @@ export default function NotebooksPage() {
             await apiClient.post("/api/notebooks", input);
             await fetchNotebooks();
         } catch (error: any) {
-            console.error(error);
+            frontendLogger.error('[Notebooks]', 'Failed to create notebook', { error });
             const message = error.data?.message || t.notebooks?.createError || "Failed to create";
             toast.error(message);
         }
@@ -72,7 +73,7 @@ export default function NotebooksPage() {
             await apiClient.delete(`/api/notebooks/${id}`);
             await fetchNotebooks();
         } catch (error: any) {
-            console.error(error);
+            frontendLogger.error('[Notebooks]', 'Failed to delete notebook', { error });
             const message = error.data?.message || t.notebooks?.deleteError || "Failed to delete";
             toast.error(message);
         }

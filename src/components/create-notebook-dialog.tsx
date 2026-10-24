@@ -18,6 +18,7 @@ import { useNotebookScopeLabels } from "@/components/notebook-scope-label";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DEFAULT_NOTEBOOK_STAGE, NOTEBOOK_STAGES, STAGE_SUBJECTS, type NotebookStage, type NotebookSubject } from "@/lib/notebook-scope";
 import { toast } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 export interface CreateNotebookInput {
     name: string;
@@ -59,7 +60,7 @@ export function CreateNotebookDialog({ open, onOpenChange, onCreate }: CreateNot
             setName("");
             onOpenChange(false);
         } catch (error) {
-            console.error(error);
+            frontendLogger.error('[CreateNotebook]', 'Failed to create notebook', { error });
         } finally {
             setLoading(false);
         }

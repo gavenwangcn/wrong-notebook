@@ -1,5 +1,6 @@
 import { remark } from 'remark';
 import stripMarkdown from 'strip-markdown';
+import { frontendLogger } from "@/lib/frontend-logger";
 
 /**
  * Clean markdown content to plain text.
@@ -56,7 +57,7 @@ export function cleanMarkdown(content: string): string {
 
         return text;
     } catch (error) {
-        console.error("Failed to strip markdown:", error);
+        frontendLogger.error('[Markdown]', 'Failed to strip markdown', { error });
         // Fallback to original content if stripping fails
         return content;
     }

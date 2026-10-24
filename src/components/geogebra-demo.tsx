@@ -5,6 +5,7 @@ import { Loader2, Maximize2, Minimize2, RotateCcw, RefreshCw, Trash2 } from "luc
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast, confirmDialog } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface GeogebraDemoProps {
     commands: string;
@@ -115,11 +116,11 @@ function runCommands(api: any, cmds: string[]) {
                 if (sanitized && !/[<>'"]/.test(sanitized)) {
                     api.evalCommand(sanitized);
                 } else {
-                    console.warn(`[GGB] Blocked potentially unsafe command: ${cmd.substring(0, 50)}`);
+                    frontendLogger.warn('[GGB]', 'Blocked potentially unsafe command', { command: cmd.substring(0, 50) });
                 }
             }
         } catch (e) {
-            console.warn(`[GGB] Failed: ${cmd}`, e);
+            frontendLogger.warn('[GGB]', 'Command failed', { command: cmd, error: e });
         }
     }
 }
@@ -197,11 +198,11 @@ export function GeogebraDemo({
                 // deployggb.js auto-resolves the codebase — do NOT call setHTML5Codebase
                 applet.inject(id);
             } catch (e) {
-                console.error("[GGB] Init failed:", e);
+                frontendLogger.error('[GGB]', 'Init failed', { error: e });
                 if (!dead) { setError("GeoGebra 初始化失败"); setLoading(false); }
             }
         }).catch((e) => {
-            console.error("[GGB] Script load failed:", e);
+            frontendLogger.error('[GGB]', 'Script load failed', { error: e });
             if (!dead) { setError("无法加载 GeoGebra 组件"); setLoading(false); }
         });
 
@@ -214,7 +215,7 @@ export function GeogebraDemo({
                     api.remove();
                 }
             } catch (e) {
-                console.warn('[GGB] Cleanup failed:', e);
+                frontendLogger.warn('[GGB]', 'Cleanup failed', { error: e });
             }
             apiRef.current = null;
             // Clear injected DOM
@@ -246,7 +247,7 @@ export function GeogebraDemo({
         try {
             api.resetConstruction();
             setTimeout(() => { if (apiRef.current) runCommands(apiRef.current, cmds); }, 300);
-        } catch (e) { console.warn("[GGB] Reset failed", e); }
+        } catch (e) { frontendLogger.warn('[GGB]', 'Reset failed', { error: e }); }
     }, [cmds]);
 
     // ── Regenerate ──────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ import { apiClient } from "@/lib/api-client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { toast } from "@/lib/feedback";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 export default function NotebookDetailPage() {
     const params = useParams();
@@ -41,7 +42,7 @@ export default function NotebookDetailPage() {
             const data = await apiClient.get<Notebook>(`/api/notebooks/${id}`);
             setNotebook(data);
         } catch (error) {
-            console.error("Failed to fetch notebook:", error);
+            frontendLogger.error('[NotebookDetail]', 'Failed to fetch notebook', { error });
             toast.error(t.notebooks?.notFound || "Notebook not found");
             router.push("/notebooks");
         } finally {

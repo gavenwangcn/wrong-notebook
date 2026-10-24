@@ -10,6 +10,7 @@ import { RegionSelector } from "@/components/region-selector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cropImageRegions } from "@/lib/image-crop";
 import type { ImageRegion } from "@/lib/image-crop";
+import { frontendLogger } from "@/lib/frontend-logger";
 
 interface ImageCropperProps {
     imageSrc: string;
@@ -38,7 +39,7 @@ export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiC
             onMultiCropComplete(await cropImageRegions(multiImgRef.current, regions));
             setRegions([]);
         } catch (e) {
-            console.error(e);
+            frontendLogger.error('[ImageCropper]', 'Multi-image crop failed', { error: e });
         }
     };
 
@@ -95,7 +96,7 @@ export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiC
                     onCropComplete(croppedBlob);
                 }
             } catch (e) {
-                console.error(e);
+                frontendLogger.error('[ImageCropper]', 'Crop failed', { error: e });
             }
         } else {
             // If no crop, just return original? Or force crop?
@@ -111,7 +112,7 @@ export function ImageCropper({ imageSrc, open, onClose, onCropComplete, onMultiC
                     const blob = await res.blob();
                     onCropComplete(blob);
                 } catch (e) {
-                    console.error(e);
+                    frontendLogger.error('[ImageCropper]', 'Failed to load original image', { error: e });
                 }
             }
         }

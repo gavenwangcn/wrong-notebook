@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
 import { Loader2, TrendingUp, BookOpen, Target } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { PracticeStatsData } from "@/types/api";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -60,7 +61,7 @@ export function PracticeStats() {
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Failed to fetch stats:", err);
+                frontendLogger.error('[PracticeStats]', 'Failed to fetch stats', { error: err });
                 setLoading(false);
             });
     }, []);

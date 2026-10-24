@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { apiClient } from "@/lib/api-client";
+import { frontendLogger } from "@/lib/frontend-logger";
 import { TagSuggestionsResponse } from "@/types/api";
 
 interface TagInputProps {
@@ -57,7 +58,7 @@ export function TagInput({ value = [], onChange, placeholder = "Enter tags...", 
             setShowSuggestions(filtered.length > 0);
             setSelectedIndex(0);
         } catch (error) {
-            console.error("Failed to fetch suggestions:", error);
+            frontendLogger.error('[TagInput]', 'Failed to fetch suggestions', { error });
         }
     };
 

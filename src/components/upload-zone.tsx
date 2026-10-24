@@ -181,9 +181,9 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
             if (controller && (displaySurface === 'browser' || displaySurface === 'window')) {
                 try {
                     controller.setFocusBehavior('no-focus-change');  // 关键：不切换焦点到选中标签页
-                    console.log('✅ 已设置不切换焦点行为');
+                    frontendLogger.info('[UploadZone]', 'Screenshot focus behavior set to no-change', undefined, { sendToBackend: false });
                 } catch (e) {
-                    console.warn('⚠️ 无法设置焦点行为:', e);
+                    frontendLogger.warn('[UploadZone]', 'Unable to set screenshot focus behavior', { error: e });
                 }
             }
 
@@ -235,14 +235,14 @@ export function UploadZone({ onImageSelect, isAnalyzing }: UploadZoneProps) {
                         type: 'image/png'
                     });
                     onImageSelect(file);
-                    console.log('✅ 截图完成，当前页面未跳转');
+                    frontendLogger.info('[UploadZone]', 'Screenshot captured', undefined, { sendToBackend: false });
                 } else {
                     toast.error('截图转换失败');
                 }
             }, 'image/png', 1.0);
 
         } catch (error) {
-            console.error('Screenshot failed:', error);
+            frontendLogger.error('[UploadZone]', 'Screenshot failed', { error });
             if (error instanceof Error) {
                 if (error.name === 'NotAllowedError') {
                     toast.warning(t.upload.screenshotPermissionDenied);
