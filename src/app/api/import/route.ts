@@ -12,6 +12,8 @@ import { findDuplicateQuestion, recordDuplicateQuestion } from "@/lib/question-d
 import { parseDifficultyStars } from "@/lib/ai/schema";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
 import { sanitizeFigureSvg } from "@/lib/figure-svg";
+import { sanitizeSvgAnimation } from "@/lib/svg-animation";
+import { parseLastPractice } from "@/lib/last-practice";
 import { getDefaultPaperLevel } from "@/lib/paper-level";
 
 const logger = createLogger('api:import');
@@ -72,6 +74,15 @@ interface ImportData {
         difficultyStars?: number | null; // 旧版导出文件没有该字段
         hasFigure?: boolean;             // 旧版导出文件没有该字段
         figureSvg?: string | null;       // 旧版导出文件没有该字段
+        // 以下字段 version 2 起导入，version 1 文件中即使有也按同样规则处理
+        geogebraCommands?: string | null;
+        svgAnimation?: string | null;
+        svgAnimationEn?: string | null;
+        lastPractice?: string | null;
+        masteryProbability?: number | null;
+        masteryReason?: string | null;
+        masterySource?: string | null;
+        masteryEvaluatedAt?: string | null;
         createdAt: string;
         updatedAt: string;
         tags: Array<{ id: string; name: string; subject: string }>;
@@ -98,6 +109,7 @@ interface ImportData {
         wrongAnswerText?: string | null;
         mistakeAnalysis?: string | null;
         originalImageUrl?: string | null;
+        figureSvg?: string | null;
         source?: string;
         createdAt: string;
     }>;
@@ -108,6 +120,17 @@ function safeParseDate(dateStr: string | undefined | null): Date | undefined {
     if (!dateStr) return undefined;
     const d = new Date(dateStr);
     return isNaN(d.getTime()) ? undefined : d;
+}
+
+/** 掌握概率须在 [0, 1] 内，否则视为未评估 */
+function safeMasteryProbability(val: unknown): number | null {
+    return typeof val === 'number' && Number.isFinite(val) && val >= 0 && val <= 1 ? val : null;
+}
+
+/** 导入后重新序列化，格式不合法的暂存内容丢弃 */
+function safeLastPractice(raw: string | null | undefined): string | null {
+    const practice = parseLastPractice(raw);
+    return practice ? JSON.stringify(practice) : null;
 }
 
 /** Validate masteryLevel is an integer in range [0, 2] */
@@ -169,6 +192,8 @@ export async function POST(req: Request) {
             duplicateErrorItems: 0,
         };
         const masteryIds = new Set<string>();
+        // 已带掌握概率导入的新题无需重新评估
+        const evaluatedIds = new Set<string>();
 
         // 使用事务确保数据一致性
         task = startBackgroundTask({ userId: user.id, kind: 'data_import' });
@@ -282,6 +307,8 @@ export async function POST(req: Request) {
                 const keepShortId = isShortId(item.shortId)
                     && !(await tx.errorItem.findUnique({ where: { shortId: item.shortId }, select: { id: true } }));
                 const difficultyStars = parseDifficultyStars(item.difficultyStars);
+                const masteryProbability = safeMasteryProbability(item.masteryProbability);
+                const masteryEvaluatedAt = masteryProbability === null ? undefined : safeParseDate(item.masteryEvaluatedAt);
                 const created = await tx.errorItem.create({
                     data: {
                         shortId: keepShortId ? item.shortId : await generateUniqueShortId(tx),
@@ -305,10 +332,23 @@ export async function POST(req: Request) {
                         difficultyStars,
                         hasFigure: item.hasFigure === true || sanitizeFigureSvg(item.figureSvg) !== null,
                         figureSvg: sanitizeFigureSvg(item.figureSvg),
+                        geogebraCommands: typeof item.geogebraCommands === 'string' && item.geogebraCommands ? item.geogebraCommands : null,
+                        svgAnimation: sanitizeSvgAnimation(item.svgAnimation),
+                        svgAnimationEn: sanitizeSvgAnimation(item.svgAnimationEn),
+                        lastPractice: safeLastPractice(item.lastPractice),
+                        // 掌握概率与评估时间成对保留，缺任一项则导入后重新评估
+                        ...(masteryProbability !== null && masteryEvaluatedAt ? {
+                            masteryProbability,
+                            masteryReason: item.masteryReason ?? null,
+                            masterySource: item.masterySource === 'ai' || item.masterySource === 'rule' ? item.masterySource : null,
+                            masteryEvaluatedAt,
+                        } : {}),
                         createdAt: safeParseDate(item.createdAt),
+                        updatedAt: safeParseDate(item.updatedAt),
                     },
                 });
                 errorItemIdMap.set(item.id, created.id);
+                if (created.masteryEvaluatedAt) evaluatedIds.add(created.id);
                 stats.errorItemsCreated++;
 
                 // 关联 tags
@@ -383,13 +423,14 @@ export async function POST(req: Request) {
                             wrongAnswerText: record.wrongAnswerText,
                             mistakeAnalysis: record.mistakeAnalysis,
                             originalImageUrl: record.originalImageUrl,
+                            figureSvg: sanitizeFigureSvg(record.figureSvg),
                             source: ['practice', 'manual', 'exam', 'duplicate_import'].includes(record.source || '') ? record.source : 'practice',
                         } : {}),
                         createdAt: safeParseDate(record.createdAt),
                     },
                 });
                 stats.practiceRecordsCreated++;
-                if (errorItemId && result) masteryIds.add(errorItemId);
+                if (errorItemId && result && !evaluatedIds.has(errorItemId)) masteryIds.add(errorItemId);
             }
         }, {
             timeout: 60000,
