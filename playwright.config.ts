@@ -16,6 +16,8 @@ export default defineConfig({
         url: 'http://127.0.0.1:3000',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
+        // 注册默认关闭，注册流程用例需要开启
+        env: { ...process.env as Record<string, string>, ALLOW_REGISTRATION: 'true' },
     },
     projects: [
         {

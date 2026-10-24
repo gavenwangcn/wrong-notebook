@@ -103,7 +103,8 @@ function migrateOpenAIConfig(legacy: LegacyOpenAIConfig): AppConfig['openai'] {
 
 const DEFAULT_CONFIG: AppConfig = {
     aiProvider: (process.env.AI_PROVIDER as AppConfig['aiProvider']) || 'minimax',
-    allowRegistration: true,
+    // 默认关闭注册，避免公网部署时陌生人注册并消耗 AI 额度；管理员可在用户管理中开启
+    allowRegistration: process.env.ALLOW_REGISTRATION === 'true',
     timeZone: DEFAULT_TIME_ZONE,
     openai: {
         instances: process.env.OPENAI_API_KEY ? [{

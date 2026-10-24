@@ -43,8 +43,30 @@ describe('config module', () => {
             const config = getAppConfig();
 
             expect(config.aiProvider).toBe('minimax'); // 默认值
-            expect(config.allowRegistration).toBe(true);
+            expect(config.allowRegistration).toBe(false);
             expect(config.timeZone).toBe('Asia/Shanghai');
+        });
+
+        it.each([
+            ['true', true],
+            ['false', false],
+            ['1', false],
+        ])('ALLOW_REGISTRATION=%s 时默认注册开关为 %s', async (value, expected) => {
+            process.env.ALLOW_REGISTRATION = value;
+            mockNoConfigFile();
+
+            const { getAppConfig } = await import('@/lib/config');
+
+            expect(getAppConfig().allowRegistration).toBe(expected);
+        });
+
+        it('配置文件中保存的注册开关优先于环境变量', async () => {
+            process.env.ALLOW_REGISTRATION = 'false';
+            vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify({ allowRegistration: true }));
+
+            const { getAppConfig } = await import('@/lib/config');
+
+            expect(getAppConfig().allowRegistration).toBe(true);
         });
 
         it.each([undefined, null, 'invalid/zone'])('旧配置或无效时区 %s 回退为北京时间', async (timeZone) => {
@@ -116,7 +138,7 @@ describe('config module', () => {
             expect(config.aiProvider).toBe('openai');
             expect(config.openai?.instances?.[0]?.apiKey).toBe('sk-file-key');
             // 其他默认值应该保留
-            expect(config.allowRegistration).toBe(true);
+            expect(config.allowRegistration).toBe(false);
             expect(config.gemini).toBeDefined();
         });
 

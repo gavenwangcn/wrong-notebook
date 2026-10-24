@@ -143,7 +143,7 @@ Practice statistics show total practice, accuracy and active months, with distri
 - **⏳ Background tasks**: the button at the bottom right shows the progress of long-running jobs such as recognition, AI generation, bulk tagging and exam generation. Jobs keep running on the server after you leave the page.
 - **💾 Import and export**: export or import data backups in **Settings**, including notebooks, questions, practice and answer records, exams and personal preferences; account credentials and AI settings are not included.
 - **🕒 Application time zone**: Beijing time by default and changeable by administrators; dates and statistics follow the application time zone. See [TIME_ZONE.md](doc/TIME_ZONE.md) (Chinese).
-- **🔐 Multiple users and admin console**: sign-up and sign-in, with data isolated per user. Administrators open the admin console from **Settings → User Management** to view usage statistics and enable, disable or delete users.
+- **🔐 Multiple users and admin console**: sign-up and sign-in, with data isolated per user. New sign-ups are off by default and can be turned on under **Settings → User Management**. Administrators open the admin console from **Settings → User Management** to view usage statistics and enable, disable or delete users.
 - **🔌 Openclaw integration**: an external Openclaw agent can upload question images in bulk via `POST /api/openclaw/batch-upload`; see the environment variables below.
 
 ## 📸 Screenshot capture (HTTPS)
@@ -315,6 +315,7 @@ Data directories, default accounts and local builds are described in [INSTALL_PA
 | `LOG_LEVEL` | Log level | `debug` in development / `info` in production | `trace`, `debug`, `info`, `warn`, `error` or `fatal`; see [LOGGING_GUIDE.md](doc/LOGGING_GUIDE.md) (Chinese) |
 | `DEBUG_DB` | SQL logs | `false` | When `true`, logs database queries |
 | `HTTP_PROXY` / `HTTPS_PROXY` | Proxy | None | Proxy for requests to AI services |
+| `ALLOW_REGISTRATION` | Allow sign-ups | `false` | When `true`, registration is open by default; the switch saved by an admin under **Settings → User Management** takes precedence |
 
 **AI** (settings saved in the web UI take precedence over environment variables)
 

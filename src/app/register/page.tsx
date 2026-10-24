@@ -42,7 +42,7 @@ export default function RegisterPage() {
             setAllowRegistration(data.allowRegistration);
         } catch (error) {
             frontendLogger.error('[Register]', 'Failed to check registration status', { error });
-            setAllowRegistration(true); // 默认允许
+            setAllowRegistration(false); // 无法确认时按关闭处理，提交时服务端仍会校验
         }
     }, []);
 

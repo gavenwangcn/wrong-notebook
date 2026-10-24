@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     try {
         // 检查是否允许注册
         const config = getAppConfig();
-        if (config.allowRegistration === false) {
+        if (config.allowRegistration !== true) {
             return NextResponse.json(
                 { user: null, message: "Registration is currently disabled" },
                 { status: 403 }

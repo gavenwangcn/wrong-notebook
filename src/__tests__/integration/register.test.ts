@@ -168,6 +168,18 @@ describe('/api/register', () => {
             expect(response.status).toBe(500); // Zod validation error
         });
 
+        it('配置中未指定注册开关时按关闭处理，返回 403', async () => {
+            mocks.mockGetAppConfig.mockReturnValue({ aiProvider: 'gemini' });
+
+            const response = await POST(new Request('http://localhost/api/register', {
+                method: 'POST',
+                body: JSON.stringify(validUserData),
+                headers: { 'Content-Type': 'application/json' },
+            }));
+
+            expect(response.status).toBe(403);
+        });
+
         it('应该在注册禁用时返回 403', async () => {
             // 重新 mock getAppConfig
             mocks.mockGetAppConfig.mockReturnValue({
@@ -238,7 +250,7 @@ describe('/api/register', () => {
             expect(data.allowRegistration).toBe(false);
         });
 
-        it('应该默认允许注册（当配置中未指定时）', async () => {
+        it('配置中未指定时按关闭处理', async () => {
             mocks.mockGetAppConfig.mockReturnValue({
                 aiProvider: 'gemini',
                 // 没有 allowRegistration 字段
@@ -248,7 +260,7 @@ describe('/api/register', () => {
             const data = await response.json();
 
             expect(response.status).toBe(200);
-            expect(data.allowRegistration).toBe(true);
+            expect(data.allowRegistration).toBe(false);
         });
     });
 });

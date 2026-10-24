@@ -30,7 +30,7 @@ export function UserManagement() {
     const { t } = useLanguage();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
-    const [allowRegistration, setAllowRegistration] = useState(true);
+    const [allowRegistration, setAllowRegistration] = useState(false);
     const [savingRegistration, setSavingRegistration] = useState(false);
 
     const fetchUsers = useCallback(async () => {
@@ -48,7 +48,7 @@ export function UserManagement() {
     const fetchConfig = useCallback(async () => {
         try {
             const data = await apiClient.get<AppConfig>("/api/settings");
-            setAllowRegistration(data.allowRegistration !== false);
+            setAllowRegistration(data.allowRegistration === true);
         } catch (error) {
             frontendLogger.error('[UserManagement]', 'Failed to fetch config', { error });
         }
