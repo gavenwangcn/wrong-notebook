@@ -309,3 +309,14 @@ describe('Gemini Provider 修复 LaTeX', () => {
         expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
     });
 });
+
+describe('Gemini Provider 判题', () => {
+    it('解析代码块中的判定结果', async () => {
+        const provider = new GeminiProvider({ apiKey: 'test-key', model: 'gemini-2.0-flash' });
+        mockGenerateContent.mockResolvedValueOnce({ text: '```json\n{"correct": "true", "reason": "等价表达式"}\n```' });
+
+        const result = await provider.gradeAnswer({ questionText: '化简 2(x+1)', answerText: '2x + 2', userAnswer: '2+2x', language: 'zh' });
+
+        expect(result).toEqual({ correct: true, reason: '等价表达式' });
+    });
+});

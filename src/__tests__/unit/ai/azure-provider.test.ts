@@ -553,3 +553,15 @@ describe('Azure OpenAI Provider 修复 LaTeX', () => {
         expect(await provider.fixLatex(latexInput)).toEqual({ answerText: '$\\frac{1}{2}$' });
     });
 });
+
+describe('Azure OpenAI Provider 判题', () => {
+    it('使用部署名称并解析判定结果', async () => {
+        const provider = new AzureOpenAIProvider({ apiKey: 'test-key', endpoint: 'https://test.openai.azure.com', deploymentName: 'gpt-4o' });
+        mockAzureCompletionCreate.mockResolvedValueOnce({ choices: [{ message: { content: '判定：{"correct": true, "reason": "数值相等"}' } }] });
+
+        const result = await provider.gradeAnswer({ questionText: '1/2 等于多少', answerText: '0.5', userAnswer: '1/2' });
+
+        expect(result).toEqual({ correct: true, reason: '数值相等' });
+        expect(mockAzureCompletionCreate.mock.calls.at(-1)?.[0].model).toBe('gpt-4o');
+    });
+});

@@ -18,6 +18,7 @@ import { PracticeResultCard } from "@/components/practice-result-card";
 import { QuestionFigure } from "@/components/question-figure";
 import { frontendLogger } from "@/lib/frontend-logger";
 import type { LastPractice } from "@/lib/last-practice";
+import { matchAnswer } from "@/lib/answer-match";
 import { getApiErrorMessage } from "@/lib/error-message";
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,10 @@ function PracticeContent() {
     const [notes, setNotes] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    // AI 判题中；判定依据与失败状态用于在结果中说明
+    const [grading, setGrading] = useState(false);
+    const [gradeReason, setGradeReason] = useState<string | null>(null);
+    const [gradeFailed, setGradeFailed] = useState(false);
     // 生成当前题目时使用的难度（下拉框改动后不影响已生成题目的记录）
     const [generatedDifficulty, setGeneratedDifficulty] = useState<string>("medium");
     // 每生成一道新题递增，用于重置结果卡片
@@ -103,6 +108,8 @@ function PracticeContent() {
         setNotes("");
         setIsSubmitted(false);
         setIsCorrect(null);
+        setGradeReason(null);
+        setGradeFailed(false);
         setShowAnswer(false);
         try {
             const timeout = config?.timeouts?.analyze || 180000;
@@ -142,30 +149,34 @@ function PracticeContent() {
         }
     };
 
-    const submitAnswer = () => {
-        if (!userAnswer.trim() || !question) return;
+    // 本地能确定答案一致时直接判对；否则交给 AI 对照标准答案判定，失败时由用户自己选择结果
+    const submitAnswer = async () => {
+        if (!userAnswer.trim() || !question || !errorItemId) return;
 
         setIsSubmitted(true);
-
-        const normalize = (str: string) => str.trim().toLowerCase().replace(/[.,;!]/g, '');
-        const user = normalize(userAnswer);
-        const correct = normalize(question.answerText);
-
-        // Enhanced comparison logic
-        let isMatch = user === correct;
-
-        // Handle multiple choice (e.g. user enters "A" but answer is "A. some text")
-        if (!isMatch && /^[a-d]$/.test(user)) {
-            isMatch = correct.startsWith(user);
+        if (matchAnswer(userAnswer, question.answerText)) {
+            setIsCorrect(true);
+            setShowAnswer(true);
+            return;
         }
 
-        // Handle case where answer contains the user input (e.g. answer is "The answer is 5" and user enters "5")
-        if (!isMatch && correct.includes(user) && user.length > 1) {
-            isMatch = true;
+        setGrading(true);
+        try {
+            const graded = await apiClient.post<{ correct: boolean; reason: string }>("/api/practice/grade", {
+                errorItemId,
+                userAnswer,
+                language,
+            }, { timeout: config?.timeouts?.analyze || 180000 });
+            setIsCorrect(graded.correct);
+            setGradeReason(graded.reason);
+        } catch (error) {
+            frontendLogger.warn('[Practice]', 'Failed to grade answer', { error });
+            setIsCorrect(null);
+            setGradeFailed(true);
+        } finally {
+            setGrading(false);
+            setShowAnswer(true);
         }
-
-        setIsCorrect(isMatch);
-        setShowAnswer(true);
     };
 
     // 不作答直接看答案，由用户自己判定结果
@@ -348,7 +359,16 @@ function PracticeContent() {
                                 {t.practice.checkAnswer || "Check Answer"}
                             </Button>
                         </div>
-                    ) : isCorrect === null ? null : (
+                    ) : grading ? (
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground" role="status">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            {t.practice.grading}
+                        </div>
+                    ) : isCorrect === null ? (gradeFailed && (
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">
+                            {t.practice.gradeFailed}
+                        </p>
+                    )) : (
                         <Card className={isCorrect ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"}>
                             <CardContent className="pt-6">
                                 <div className="flex items-center gap-3 mb-4">
@@ -378,6 +398,11 @@ function PracticeContent() {
                                         </>
                                     )}
                                 </div>
+                                {gradeReason && (
+                                    <p className="text-sm text-muted-foreground">
+                                        {t.practice.aiGradeReason.replace("{reason}", gradeReason)}
+                                    </p>
+                                )}
                                 {notes && (
                                     <div className="mt-4 p-3 bg-white rounded-lg border">
                                         <p className="text-sm font-medium text-gray-600 mb-1">

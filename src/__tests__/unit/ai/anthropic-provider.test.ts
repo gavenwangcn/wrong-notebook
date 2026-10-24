@@ -233,3 +233,20 @@ describe('Anthropic Provider 修复 LaTeX', () => {
         expect(mocks.create.mock.calls.at(-1)?.[0].system).toContain('Expected }');
     });
 });
+
+describe('Anthropic Provider 判题', () => {
+    it('解析判定结果', async () => {
+        mocks.create.mockResolvedValue(message('{"correct": false, "reason": "缺少单位"}'));
+        const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
+
+        expect(await provider.gradeAnswer({ questionText: '求路程', answerText: '30 米', userAnswer: '30' })).toEqual({ correct: false, reason: '缺少单位' });
+        expect(mocks.create.mock.calls.at(-1)?.[0].system).toContain('【学生答案】\n30');
+    });
+
+    it('判定结果格式不对时报错，由调用方兜底', async () => {
+        mocks.create.mockResolvedValue(message('{"result": "对"}'));
+        const provider = new AnthropicProvider({ apiKey: 'sk-ant' });
+
+        await expect(provider.gradeAnswer({ questionText: 'q', answerText: 'a', userAnswer: 'b' })).rejects.toThrow();
+    });
+});

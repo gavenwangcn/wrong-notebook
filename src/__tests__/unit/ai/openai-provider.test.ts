@@ -422,3 +422,17 @@ describe('OpenAI Provider 修复 LaTeX', () => {
         expect(mockCompletionCreate.mock.calls.at(-1)?.[0].messages[0].content).toContain('Expected }');
     });
 });
+
+describe('OpenAI Provider 判题', () => {
+    it('解析判定结果，提示词包含学生答案和标准答案', async () => {
+        const provider = new OpenAIProvider({ apiKey: 'test-key', model: 'gpt-4o' });
+        mockCompletionCreate.mockResolvedValueOnce({ choices: [{ message: { content: '{"correct": false, "reason": "只答出一个解"}' } }] });
+
+        const result = await provider.gradeAnswer({ questionText: '解方程 x² = 1', answerText: 'x = 1 或 x = -1', userAnswer: 'x=1' });
+
+        expect(result).toEqual({ correct: false, reason: '只答出一个解' });
+        const prompt = mockCompletionCreate.mock.calls.at(-1)?.[0].messages[0].content as string;
+        expect(prompt).toContain('x = 1 或 x = -1');
+        expect(prompt).toContain('【学生答案】\nx=1');
+    });
+});

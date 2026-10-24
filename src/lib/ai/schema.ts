@@ -73,6 +73,18 @@ export function extractJsonObject(text: string): unknown {
     return JSON.parse(jsonStr);
 }
 
+export const AnswerGradingSchema = z.object({
+    correct: z.union([z.boolean(), z.enum(['true', 'false']).transform((value) => value === 'true')]),
+    reason: z.string().trim().min(1).max(500),
+});
+
+/**
+ * 解析 AI 判题回复
+ */
+export function parseAnswerGrading(text: string): { correct: boolean; reason: string } {
+    return AnswerGradingSchema.parse(extractJsonObject(text));
+}
+
 /**
  * 解析 AI 掌握概率评估回复，返回 0~1 的概率
  */

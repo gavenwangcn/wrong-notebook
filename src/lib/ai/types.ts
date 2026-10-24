@@ -51,6 +51,20 @@ export interface MasteryEvaluationInput {
     language?: 'zh' | 'en';
 }
 
+export interface AnswerGradingInput {
+    questionText: string;
+    answerText: string;
+    analysis?: string | null;
+    userAnswer: string;
+    language?: 'zh' | 'en';
+}
+
+export interface AnswerGradingResult {
+    correct: boolean;
+    /** 一句话说明判定依据 */
+    reason: string;
+}
+
 export interface MasteryEvaluationResult {
     probability: number; // 0~1
     reason: string;
@@ -89,6 +103,8 @@ export interface AIService {
     /** 生成 SVG 动画讲解（已净化），无有效 SVG 时返回 null；figureSvg 为题目配图，language 决定动画中文字的语言 */
     generateSvgAnimation(questionText: string, answerText: string, analysis: string, figureSvg?: string | null, language?: 'zh' | 'en'): Promise<string | null>;
     evaluateMastery(input: MasteryEvaluationInput): Promise<MasteryEvaluationResult>;
+    /** 对照标准答案判定学生答案是否正确 */
+    gradeAnswer(input: AnswerGradingInput): Promise<AnswerGradingResult>;
     /** 从标签库中选知识点，并评定难度星级 */
     suggestKnowledgeTags(input: TagSuggestionInput): Promise<TagSuggestionResult>;
 }
