@@ -15,7 +15,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'
 export function WrongAnswerStats() {
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {

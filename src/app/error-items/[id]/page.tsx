@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageLoading } from "@/components/ui/page-loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, Eye, EyeOff, ImageIcon, FileQuestion } from "lucide-react";
+import { ArrowLeft, RefreshCw, Trash2, Edit, Save, X, Box, Loader2, EyeOff, ImageIcon, FileQuestion } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -18,7 +18,7 @@ import { TagInput } from "@/components/tag-input";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiClient } from "@/lib/api-client";
-import { UserProfile, Notebook } from "@/types/api";
+import { UserProfile } from "@/types/api";
 import { inferSubjectFromName } from "@/lib/knowledge-tags";
 import { getMistakeStatusLabel, normalizeMistakeStatusForSave } from "@/lib/mistake-status";
 import { NotebookSelector } from "@/components/notebook-selector";
@@ -103,8 +103,6 @@ export default function ErrorDetailPage() {
     const [showQuestionImage, setShowQuestionImage] = useState(false);
     const [showReferenceImage, setShowReferenceImage] = useState(false);
     const [showOwnImage, setShowOwnImage] = useState(false);
-    const [showFloatingQuestion, setShowFloatingQuestion] = useState(false);
-    const questionRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Fetch user info for education stage
@@ -254,7 +252,7 @@ export default function ErrorDetailPage() {
                 try {
                     const tags = JSON.parse(item.knowledgePoints);
                     setTagsInput(tags);
-                } catch (e) {
+                } catch {
                     setTagsInput([]);
                 }
             } else {
@@ -479,21 +477,6 @@ export default function ErrorDetailPage() {
         }
     };
 
-    useEffect(() => {
-        const handleScroll = () => {
-            if (!questionRef.current) return;
-            const rect = questionRef.current.getBoundingClientRect();
-            if (rect.bottom < -50) {
-                setShowFloatingQuestion(true);
-            } else {
-                setShowFloatingQuestion(false);
-            }
-        };
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        handleScroll();
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
     if (loading) return <PageLoading label={t.common.loading} />;
     if (!item) return <EmptyState icon={FileQuestion} title={t.detail.notFound || "Item not found"} className="m-4 md:m-8" />;
 
@@ -505,7 +488,7 @@ export default function ErrorDetailPage() {
         try {
             const parsed = JSON.parse(item.knowledgePoints);
             tags = Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
+        } catch {
             tags = [];
         }
     }

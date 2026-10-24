@@ -45,7 +45,6 @@ export async function POST(req: Request) {
         const result = parsed.data.result
             ?? (parsed.data.isCorrect === true ? 'correct' : parsed.data.isCorrect === false ? 'wrong' : undefined);
 
-        // @ts-ignore
         const userId = session.user.id;
 
         // 关联原题时校验归属，防止写入他人的错题

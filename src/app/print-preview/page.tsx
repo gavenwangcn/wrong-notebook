@@ -209,7 +209,7 @@ function PrintPreviewContent() {
                     } else {
                         try {
                             tags = JSON.parse(item.knowledgePoints || "[]");
-                        } catch (e) {
+                        } catch {
                             tags = [];
                         }
                     }

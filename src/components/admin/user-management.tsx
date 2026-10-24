@@ -26,7 +26,7 @@ import { frontendLogger } from "@/lib/frontend-logger";
 export function UserManagement() {
     const { timeZone } = useTimeZone();
     const { data: session } = useSession();
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [allowRegistration, setAllowRegistration] = useState(true);

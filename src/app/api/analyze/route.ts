@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { calculateGradeNumber } from "@/lib/knowledge-tags";
 import { calculateGrade } from "@/lib/grade-calculator";
 import { prisma } from "@/lib/prisma";
-import { badRequest, internalError, createErrorResponse, ErrorCode } from "@/lib/api-errors";
+import { badRequest, createErrorResponse, ErrorCode } from "@/lib/api-errors";
 import type { CandidateTags, GradeLevel } from "@/lib/ai/types";
 import { getNotebookCandidateTags } from "@/lib/ai/tag-service";
 import { resolveNotebookScope, SUBJECT_DISPLAY_NAMES } from "@/lib/notebook-scope";
@@ -28,7 +28,8 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        let { imageBase64, mimeType, language, subjectId } = body;
+        const { language, subjectId } = body;
+        let { imageBase64, mimeType } = body;
 
         logger.debug({
             imageLength: imageBase64?.length,

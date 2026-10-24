@@ -20,7 +20,7 @@ import { frontendLogger } from "@/lib/frontend-logger";
 export default function RegisterPage() {
     const { timeZone } = useTimeZone();
     const router = useRouter();
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     usePageTitle(t.pageTitle.register);
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");

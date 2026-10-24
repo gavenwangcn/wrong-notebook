@@ -106,7 +106,7 @@ export const authOptions: NextAuthOptions = {
                 }
             }
         },
-        async jwt({ token, user, account, profile }) {
+        async jwt({ token, user }) {
             if (user) {
                 logger.debug({ userId: user.id }, 'JWT callback - Initial signin');
                 return {

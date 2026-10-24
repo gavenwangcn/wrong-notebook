@@ -164,7 +164,6 @@ describe('/api/settings', () => {
             });
 
             const response = await POST(request);
-            const data = await response.json();
 
             expect(response.status).toBe(200);
             expect(mocks.mockUpdateAppConfig).toHaveBeenCalledWith(

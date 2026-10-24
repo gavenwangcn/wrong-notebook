@@ -68,7 +68,7 @@ export async function POST(req: Request) {
         let tags: string[] = [];
         try {
             tags = JSON.parse(errorItemWithSubject.knowledgePoints || "[]");
-        } catch (e) {
+        } catch {
             tags = [];
         }
 

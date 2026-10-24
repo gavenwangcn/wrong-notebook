@@ -10,13 +10,6 @@ import { isGradeInStage, SUBJECT_DISPLAY_NAMES, type NotebookScope, type Noteboo
 
 const logger = createLogger('ai:tag-service');
 
-interface TagTreeNode {
-    id: string;
-    name: string;
-    parentId: string | null;
-    children?: TagTreeNode[];
-}
-
 /**
  * 从数据库获取指定年级的数学标签
  * @param grade - 年级 (1-6:小学, 7-9:初中, 10-12:高中) 或 null

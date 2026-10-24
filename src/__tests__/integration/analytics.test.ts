@@ -54,7 +54,7 @@ describe('/api/analytics', () => {
             mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
             try {
-                const response = await GET(new Request('http://localhost/api/analytics'));
+                const response = await GET();
                 expect(response.status).toBe(200);
                 expect((await response.json()).activityData.at(-1).date).toBe('10-19');
                 expect(mocks.mockPrismaErrorItem.count.mock.calls.at(-1)?.[0].where.createdAt).toEqual({
@@ -82,8 +82,7 @@ describe('/api/analytics', () => {
                 mocks.mockPrismaErrorItem.count.mockResolvedValueOnce(i + 1);
             }
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -104,8 +103,7 @@ describe('/api/analytics', () => {
                 { subject: { name: '化学' } },
             ]);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -126,8 +124,7 @@ describe('/api/analytics', () => {
                 { subject: { name: '数学' } },
             ]);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -141,8 +138,7 @@ describe('/api/analytics', () => {
             mocks.mockPrismaErrorItem.count.mockResolvedValue(5);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -155,8 +151,7 @@ describe('/api/analytics', () => {
             mocks.mockPrismaErrorItem.count.mockResolvedValue(0);
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -171,8 +166,7 @@ describe('/api/analytics', () => {
                 .mockResolvedValueOnce(50);  // masteredCount
             mocks.mockPrismaErrorItem.findMany.mockResolvedValue([]);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -182,8 +176,7 @@ describe('/api/analytics', () => {
         it('应该拒绝未登录用户', async () => {
             vi.mocked(getServerSession).mockResolvedValue(null);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(401);
@@ -196,8 +189,7 @@ describe('/api/analytics', () => {
                 expires: '2025-12-31',
             } as any);
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(401);
@@ -209,8 +201,7 @@ describe('/api/analytics', () => {
                 new Error('Database connection failed')
             );
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(500);
@@ -232,8 +223,7 @@ describe('/api/analytics', () => {
                 mocks.mockPrismaErrorItem.count.mockResolvedValueOnce(0);
             }
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);
@@ -255,8 +245,7 @@ describe('/api/analytics', () => {
                 mocks.mockPrismaErrorItem.count.mockResolvedValueOnce(0);
             }
 
-            const request = new Request('http://localhost/api/analytics');
-            const response = await GET(request);
+            const response = await GET();
             const data = await response.json();
 
             expect(response.status).toBe(200);

@@ -119,7 +119,6 @@ export async function PUT(
         }
         if (mistakeStatus !== undefined || wrongAnswerText !== undefined || mistakeAnalysis !== undefined) {
             const nextWrongAnswerText = wrongAnswerText !== undefined ? wrongAnswerText : errorItem.wrongAnswerText;
-            const nextMistakeAnalysis = mistakeAnalysis !== undefined ? mistakeAnalysis : errorItem.mistakeAnalysis;
             // 只改错因分析或错误解答时沿用原作答状态
             updateData.mistakeStatus = normalizeMistakeStatusForSave(
                 mistakeStatus !== undefined ? mistakeStatus : errorItem.mistakeStatus,

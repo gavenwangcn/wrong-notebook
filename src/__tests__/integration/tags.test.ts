@@ -195,6 +195,7 @@ describe('/api/tags', () => {
         const createMockTag = (name: string, subject = 'math', isSystem = true, hasChildren = false) => ({
             id: `tag-${name}`,
             name,
+            subject,
             parentId: null,
             userId: null,
             isSystem,

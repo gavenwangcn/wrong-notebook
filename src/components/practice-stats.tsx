@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { Loader2, TrendingUp, BookOpen, Target } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { frontendLogger } from "@/lib/frontend-logger";
@@ -50,7 +50,7 @@ const CustomTooltip = ({ active, payload, label, t }: any) => {
 };
 
 export function PracticeStats() {
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     const [stats, setStats] = useState<PracticeStatsData | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -80,8 +80,8 @@ export function PracticeStats() {
 
     // Helper to translate difficulty
     const getDifficultyLabel = (key: string) => {
-        // @ts-ignore
-        return t.practice?.difficulty?.[key] || key;
+        const labels: Record<string, string | undefined> = t.practice?.difficulty ?? {};
+        return labels[key] || key;
     };
 
     // Get unique difficulties for the bar chart

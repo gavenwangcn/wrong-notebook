@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body = await request.json() as Partial<BatchLogRequest> & FrontendLogEntry;
 
     // 支持批量日志格式 { logs: [...] } 和单条日志格式
     const logs: FrontendLogEntry[] = (Array.isArray(body.logs) ? body.logs : [body]).slice(0, MAX_LOGS_PER_REQUEST);

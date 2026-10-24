@@ -31,7 +31,7 @@ function VariableInfo({ name, description }: VariableInfoProps) {
 }
 
 export function PromptSettings({ config, onUpdate }: PromptSettingsProps) {
-    const { language, t } = useLanguage();
+    const { t } = useLanguage();
     const [analyzeTemplate, setAnalyzeTemplate] = useState("");
     const [similarTemplate, setSimilarTemplate] = useState("");
 

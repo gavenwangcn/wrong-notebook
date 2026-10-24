@@ -42,7 +42,7 @@ export async function GET() {
                             }
                         });
                     }
-                } catch (e) {
+                } catch {
                     logger.warn({ knowledgePoints: item.knowledgePoints }, 'Failed to parse knowledgePoints for item');
                 }
             }

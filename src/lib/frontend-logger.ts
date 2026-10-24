@@ -108,7 +108,7 @@ class FrontendLogger {
         // Silently fail - don't disrupt user experience
         console.warn('Failed to send logs to backend:', err);
       });
-    } catch (err) {
+    } catch {
       // Silently fail
     }
   }

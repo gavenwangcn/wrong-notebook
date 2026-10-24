@@ -13,7 +13,7 @@ import { usePageTitle } from "@/lib/page-title";
 
 export default function LoginPage() {
     const router = useRouter();
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     usePageTitle(t.pageTitle.login);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -38,7 +38,7 @@ export default function LoginPage() {
                 router.push("/");
                 router.refresh();
             }
-        } catch (error) {
+        } catch {
             setError(t.auth?.login?.error || 'An error occurred');
         } finally {
             setLoading(false);

@@ -26,7 +26,7 @@ interface TagAssociation {
     subject: string;
 }
 
-export async function POST(req: Request) {
+export async function POST() {
     const session = await getServerSession(authOptions);
 
     if (!session || !session.user) {
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
 
                 for (const assoc of itemAssociations) {
                     // 按名称+学科查找新标签
-                    let newTag = await tx.knowledgeTag.findFirst({
+                    const newTag = await tx.knowledgeTag.findFirst({
                         where: {
                             name: assoc.tagName,
                             subject: assoc.subject,
