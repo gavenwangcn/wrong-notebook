@@ -85,7 +85,8 @@ export default function ErrorDetailPage() {
     const [loading, setLoading] = useState(true);
     const [isEditingNotes, setIsEditingNotes] = useState(false);
     const [notesInput, setNotesInput] = useState("");
-    const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+    // 放大查看的图片地址，为空时不显示查看器
+    const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
     const [isEditingTags, setIsEditingTags] = useState(false);
     const [tagsInput, setTagsInput] = useState<string[]>([]);
     const [isEditingMetadata, setIsEditingMetadata] = useState(false);
@@ -584,7 +585,7 @@ export default function ErrorDetailPage() {
                                 />
                                 {item.originalImageUrl && <RegenerateFigureButton errorItemId={item.id} onDone={(figure) => setItem((current) => current && { ...current, ...figure })} />}
                             </div>
-                            {item.originalImageUrl && showQuestionImage && <div className="mt-4"><img src={item.originalImageUrl} alt={t.detail.originalProblem || "Original Problem"} className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}
+                            {item.originalImageUrl && showQuestionImage && <div className="mt-4"><img src={item.originalImageUrl} alt={t.detail.originalProblem || "Original Problem"} className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewerImageUrl(item.originalImageUrl)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}
                         </div>
                     </CardContent>
                 </Card>
@@ -598,7 +599,7 @@ export default function ErrorDetailPage() {
                             {isEditingAnswer ? (
                                 <div className="space-y-3"><MarkdownEditor value={answerInput} onChange={setAnswerInput} placeholder="Enter answer..." rows={5} className="w-full font-mono text-sm" /><div className="flex gap-2"><Button size="sm" onClick={saveAnswerHandler}><Save className="h-4 w-4 mr-1" />{t.common?.save || "Save"}</Button><Button size="sm" variant="outline" onClick={cancelEditingAnswer}><X className="h-4 w-4 mr-1" />{t.common?.cancel || "Cancel"}</Button></div></div>
                             ) : <MarkdownRenderer content={item.answerText} className="font-semibold" />}
-                            {item.referenceImageUrl && <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => setShowReferenceImage(!showReferenceImage)} className="flex items-center gap-2 text-muted-foreground">{showReferenceImage ? <><EyeOff className="h-4 w-4" />隐藏图片</> : <><ImageIcon className="h-4 w-4" />查看图片</>}</Button>{showReferenceImage && <div className="mt-4"><img src={item.referenceImageUrl} alt="参考图片" className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}</div>}
+                            {item.referenceImageUrl && <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => setShowReferenceImage(!showReferenceImage)} className="flex items-center gap-2 text-muted-foreground">{showReferenceImage ? <><EyeOff className="h-4 w-4" />隐藏图片</> : <><ImageIcon className="h-4 w-4" />查看图片</>}</Button>{showReferenceImage && <div className="mt-4"><img src={item.referenceImageUrl} alt="参考图片" className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewerImageUrl(item.referenceImageUrl ?? null)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}</div>}
                         </CardContent>
                     </Card>
                     <Card>
@@ -614,7 +615,7 @@ export default function ErrorDetailPage() {
                                 <div className="space-y-4">
                                     <Badge variant="secondary">{getMistakeStatusLabel(item.mistakeStatus, language)}</Badge>
                                     {item.wrongAnswerText ? <MarkdownRenderer content={item.wrongAnswerText} /> : <p className="text-sm text-muted-foreground italic">{t.detail?.noMistakeAnalysis || "暂无错误解答"}</p>}
-                                    {item.wrongAnswerImageUrl && <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => setShowOwnImage(!showOwnImage)} className="flex items-center gap-2 text-muted-foreground">{showOwnImage ? <><EyeOff className="h-4 w-4" />隐藏图片</> : <><ImageIcon className="h-4 w-4" />查看图片</>}</Button>{showOwnImage && <div className="mt-4"><img src={item.wrongAnswerImageUrl} alt="我的答案图片" className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setIsImageViewerOpen(true)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}</div>}
+                                    {item.wrongAnswerImageUrl && <div className="pt-3"><Button variant="ghost" size="sm" onClick={() => setShowOwnImage(!showOwnImage)} className="flex items-center gap-2 text-muted-foreground">{showOwnImage ? <><EyeOff className="h-4 w-4" />隐藏图片</> : <><ImageIcon className="h-4 w-4" />查看图片</>}</Button>{showOwnImage && <div className="mt-4"><img src={item.wrongAnswerImageUrl} alt="我的答案图片" className="w-full rounded-lg border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setViewerImageUrl(item.wrongAnswerImageUrl ?? null)} /><p className="text-xs text-muted-foreground mt-1 text-center">{t.detail?.clickToEnlarge || "Click to enlarge"}</p></div>}</div>}
                                 </div>
                             )}
                         </CardContent>
@@ -650,20 +651,20 @@ export default function ErrorDetailPage() {
 
             {/* Image Viewer Modal */}
             {
-                isImageViewerOpen && item?.originalImageUrl && (
+                viewerImageUrl && (
                     <div
                         className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
-                        onClick={() => setIsImageViewerOpen(false)}
+                        onClick={() => setViewerImageUrl(null)}
                     >
                         <div className="relative max-w-7xl max-h-full">
                             <button
                                 className="absolute -top-12 right-0 text-white hover:text-gray-300 text-lg font-semibold bg-black/50 px-4 py-2 rounded"
-                                onClick={() => setIsImageViewerOpen(false)}
+                                onClick={() => setViewerImageUrl(null)}
                             >
                                 {t.detail?.close || '✕ Close'}
                             </button>
                             <img
-                                src={item.originalImageUrl}
+                                src={viewerImageUrl}
                                 alt="Full size"
                                 className="max-w-full max-h-[90vh] object-contain rounded-lg"
                                 onClick={(e) => e.stopPropagation()}
