@@ -173,7 +173,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                     <FilterMenu mastery={masteryFilter} timeRange={timeFilter} onMasteryChange={setMasteryFilter} onTimeRangeChange={setTimeFilter} />
                     <Button variant="outline" size="sm" className="h-10" onClick={() => router.push(`/print-preview?${buildErrorListParams(filters).toString()}`)}>
                         <Printer className="mr-2 h-4 w-4" />
-                        {t.notebook?.exportPrint || "导出打印"}
+                        {t.notebook?.exportPrint || "Export for Print"}
                     </Button>
                     {!isSelectMode && (
                         <Button variant="outline" size="sm" className="h-10" onClick={toggleSelectMode}>
@@ -183,7 +183,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
                     )}
                     <Button variant={isSelectMode ? "secondary" : "outline"} size="sm" className="h-10" onClick={toggleSelectMode}>
                         <ListChecks className="mr-2 h-4 w-4" />
-                        {isSelectMode ? (t.notebook?.cancelSelect || "取消") : (t.notebook?.selectMode || "多选")}
+                        {isSelectMode ? (t.notebook?.cancelSelect || "Cancel") : (t.notebook?.selectMode || "Select")}
                     </Button>
                 </div>
             </div>

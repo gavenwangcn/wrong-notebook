@@ -81,9 +81,9 @@ function HomeContent() {
 
     const totalItems = notebooks.reduce((sum, n) => sum + (n._count?.errorItems || 0), 0);
     const inputModes = [
-        { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
-        { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "AI解题" },
-        { value: "direct" as const, icon: PenLine, label: t.app?.directInput || "直接录入" },
+        { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "Take Photo" },
+        { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "Manual Input" },
+        { value: "direct" as const, icon: PenLine, label: t.app?.directInput || "Manual Entry" },
     ];
 
     return (

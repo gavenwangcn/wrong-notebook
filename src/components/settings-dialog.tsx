@@ -39,10 +39,10 @@ function validateConfig(config: AppConfig, t: Translations): string | null {
     }
     if (config.aiProvider === 'openai') {
         for (const instance of config.openai?.instances || []) {
-            if (!instance.name?.trim()) return t.settings?.ai?.validationNameRequired || '实例名称不能为空';
-            if (!instance.apiKey?.trim()) return t.settings?.ai?.validationApiKeyRequired || 'API Key 不能为空';
-            if (!instance.baseUrl?.trim()) return t.settings?.ai?.validationBaseUrlRequired || 'Base URL 不能为空';
-            if (!instance.model?.trim()) return t.settings?.ai?.validationModelRequired || '模型名称不能为空';
+            if (!instance.name?.trim()) return t.settings?.ai?.validationNameRequired || "Instance name is required";
+            if (!instance.apiKey?.trim()) return t.settings?.ai?.validationApiKeyRequired || "API Key is required";
+            if (!instance.baseUrl?.trim()) return t.settings?.ai?.validationBaseUrlRequired || "Base URL is required";
+            if (!instance.model?.trim()) return t.settings?.ai?.validationModelRequired || "Model name is required";
         }
     }
     if (config.aiProvider === 'azure') {

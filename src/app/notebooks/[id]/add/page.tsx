@@ -70,8 +70,8 @@ export default function AddErrorPage() {
                     <div className="space-y-4">
                         <SegmentedControl
                             options={[
-                                { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "拍照上传" },
-                                { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "手动输入" },
+                                { value: "image" as const, icon: Camera, label: t.app?.uploadImage || "Take Photo" },
+                                { value: "text" as const, icon: Sparkles, label: t.app?.manualInput || "Manual Input" },
                             ]}
                             value={inputMode}
                             onChange={setInputMode}

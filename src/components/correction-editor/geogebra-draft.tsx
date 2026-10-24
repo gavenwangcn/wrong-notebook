@@ -22,11 +22,11 @@ export function GeogebraDraft({ data, onChange }: GeogebraDraftProps) {
 
     const handleAnalyze = async () => {
         if (!data.questionText.trim()) {
-            toast.warning(t.editor.enterQuestionFirst || '请先输入题目文本');
+            toast.warning(t.editor.enterQuestionFirst || "Please enter question text first");
             return;
         }
         if (!data.answerText.trim()) {
-            toast.warning('请先生成或输入答案');
+            toast.warning(t.geogebra.answerRequired);
             return;
         }
 
@@ -45,11 +45,11 @@ export function GeogebraDraft({ data, onChange }: GeogebraDraftProps) {
             if (result.suitable && result.commands?.length > 0) {
                 onChange({ geogebraCommands: JSON.stringify(result.commands) });
             } else {
-                setError(result.description || "该题目不适合用 GeoGebra 演示");
+                setError(result.description || t.geogebra.notSuitable);
             }
         } catch (err) {
             frontendLogger.error('[CorrectionEditor]', 'GeoGebra analysis failed', { error: err });
-            setError("分析失败，请稍后重试");
+            setError(t.geogebra.analyzeFailed);
         } finally {
             setAnalyzing(false);
         }
@@ -65,14 +65,14 @@ export function GeogebraDraft({ data, onChange }: GeogebraDraftProps) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Box className="h-4 w-4" />
-                    <span>GeoGebra 动态演示</span>
+                    <span>{t.geogebra.title}</span>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={analyzing}>
-                    {analyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />AI 分析中...</> : <><Box className="mr-2 h-4 w-4" />生成演示</>}
+                    {analyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t.geogebra.analyzing}</> : <><Box className="mr-2 h-4 w-4" />{t.geogebra.generate}</>}
                 </Button>
             </div>
             {error && <p className="text-xs text-muted-foreground mt-2">{error}</p>}
-            <p className="text-xs text-muted-foreground mt-2">AI 将判断本题是否可以用 GeoGebra 进行动态演示</p>
+            <p className="text-xs text-muted-foreground mt-2">{t.geogebra.hint}</p>
         </div>
     );
 }

@@ -31,21 +31,21 @@ export function WrongAnswerCard({ item, saveFields, onEnlarge }: WrongAnswerCard
 
     return (
         <Card>
-            <CardHeader><SectionHeader title={<CardTitle>{t.editor?.wrongAnswerText || "我的答案"}</CardTitle>} actions={!field.editing && <EditButton onClick={field.start} />} /></CardHeader>
+            <CardHeader><SectionHeader title={<CardTitle>{t.editor?.wrongAnswerText || "Wrong Answer / Work"}</CardTitle>} actions={!field.editing && <EditButton onClick={field.start} />} /></CardHeader>
             <CardContent className="space-y-4">
                 {field.editing ? (
                     <div className="space-y-4">
-                        <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.mistakeStatus || "作答状态"}</label><Select value={field.value.status} onValueChange={(status) => field.setValue({ ...field.value, status })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_attempted">{t.editor?.mistakeStatuses?.notAttempted || "不会做"}</SelectItem><SelectItem value="wrong_attempt">{t.editor?.mistakeStatuses?.wrongAttempt || "做错了"}</SelectItem><SelectItem value="unknown">{t.editor?.mistakeStatuses?.unknown || "未判断"}</SelectItem></SelectContent></Select></div>
-                        <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.wrongAnswerText || "错误解答原文"}</label><MarkdownEditor value={field.value.text} onChange={text => field.setValue({ text, status: text.trim() ? "wrong_attempt" : field.value.status })} rows={5} className="w-full font-mono text-sm" /></div>
+                        <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.mistakeStatus || "Attempt Status"}</label><Select value={field.value.status} onValueChange={(status) => field.setValue({ ...field.value, status })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="not_attempted">{t.editor?.mistakeStatuses?.notAttempted || "Not attempted"}</SelectItem><SelectItem value="wrong_attempt">{t.editor?.mistakeStatuses?.wrongAttempt || "Wrong attempt"}</SelectItem><SelectItem value="unknown">{t.editor?.mistakeStatuses?.unknown || "Unknown"}</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><label className="text-sm text-muted-foreground">{t.editor?.wrongAnswerText || "Wrong Answer / Work"}</label><MarkdownEditor value={field.value.text} onChange={text => field.setValue({ text, status: text.trim() ? "wrong_attempt" : field.value.status })} rows={5} className="w-full font-mono text-sm" /></div>
                         <SaveCancelButtons onSave={field.submit} onCancel={field.cancel} />
                     </div>
                 ) : (
                     <div className="space-y-4">
                         <Badge variant="secondary">{getMistakeStatusLabel(item.mistakeStatus, language)}</Badge>
-                        {item.wrongAnswerText ? <MarkdownRenderer content={item.wrongAnswerText} /> : <p className="text-sm text-muted-foreground italic">{t.detail?.noMistakeAnalysis || "暂无错误解答"}</p>}
+                        {item.wrongAnswerText ? <MarkdownRenderer content={item.wrongAnswerText} /> : <p className="text-sm text-muted-foreground italic">{t.detail?.noMistakeAnalysis || "No mistake analysis yet."}</p>}
                         {item.wrongAnswerImageUrl && (
                             <div className="pt-3">
-                                <ToggleImage src={item.wrongAnswerImageUrl} alt="我的答案图片" showLabel="查看图片" hideLabel="隐藏图片" visible={showImage} onVisibleChange={setShowImage} onEnlarge={onEnlarge} />
+                                <ToggleImage src={item.wrongAnswerImageUrl} alt={t.detail.wrongAnswerImageAlt} showLabel={t.detail.viewImage} hideLabel={t.detail.hideImage} visible={showImage} onVisibleChange={setShowImage} onEnlarge={onEnlarge} />
                             </div>
                         )}
                     </div>

@@ -186,7 +186,7 @@ function PracticeContent() {
             <div className="flex justify-between items-center mb-4">
                 <Button variant="ghost" onClick={() => router.back()}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    {t.common?.back || "返回"}
+                    {t.common?.back || "Back"}
                 </Button>
             </div>
             <div className="text-center space-y-4">
@@ -305,19 +305,19 @@ function PracticeContent() {
                     <Card className="border-blue-200">
                         <CardHeader>
                             <CardTitle className="text-blue-600">
-                                {t.app.yourAnswer || "你的答案"}
+                                {t.app.yourAnswer || "Your Answer"}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Input
-                                placeholder={t.app.answerPlaceholder || "输入你的答案..."}
+                                placeholder={t.app.answerPlaceholder || "Enter your answer..."}
                                 value={userAnswer}
                                 onChange={(e) => setUserAnswer(e.target.value)}
                                 disabled={isSubmitted}
                                 className="text-lg"
                             />
                             <Textarea
-                                placeholder={t.app.notesPlaceholder || "记录解题思路（可选）..."}
+                                placeholder={t.app.notesPlaceholder || "Record your thinking process (optional)..."}
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 disabled={isSubmitted}
@@ -336,7 +336,7 @@ function PracticeContent() {
                                 className="w-full md:w-auto"
                             >
                                 <Send className="mr-2 h-4 w-4" />
-                                {t.app.submitAnswer || "提交答案"}
+                                {t.app.submitAnswer || "Submit Answer"}
                             </Button>
                             <Button
                                 size="lg"
@@ -345,7 +345,7 @@ function PracticeContent() {
                                 className="w-full md:w-auto"
                             >
                                 <Eye className="mr-2 h-4 w-4" />
-                                {t.practice.checkAnswer || "查看答案"}
+                                {t.practice.checkAnswer || "Check Answer"}
                             </Button>
                         </div>
                     ) : isCorrect === null ? null : (
@@ -357,10 +357,10 @@ function PracticeContent() {
                                             <CheckCircle className="h-8 w-8 text-green-600" />
                                             <div>
                                                 <h3 className="text-xl font-bold text-green-600">
-                                                    {t.practice.correct || "回答正确！"}
+                                                    {t.practice.correct || "Correct!"}
                                                 </h3>
                                                 <p className="text-green-700">
-                                                    {t.practice.correctMessage || "太棒了，继续保持！"}
+                                                    {t.practice.correctMessage || "Great job, keep it up!"}
                                                 </p>
                                             </div>
                                         </>
@@ -369,10 +369,10 @@ function PracticeContent() {
                                             <XCircle className="h-8 w-8 text-red-600" />
                                             <div>
                                                 <h3 className="text-xl font-bold text-red-600">
-                                                    {t.practice.incorrect || "答案有误"}
+                                                    {t.practice.incorrect || "Incorrect"}
                                                 </h3>
                                                 <p className="text-red-700">
-                                                    {t.practice.incorrectMessage || "再看看解析，加油！"}
+                                                    {t.practice.incorrectMessage || "Review the analysis and try again!"}
                                                 </p>
                                             </div>
                                         </>
@@ -381,7 +381,7 @@ function PracticeContent() {
                                 {notes && (
                                     <div className="mt-4 p-3 bg-white rounded-lg border">
                                         <p className="text-sm font-medium text-gray-600 mb-1">
-                                            {t.practice.yourNotes || "你的笔记："}
+                                            {t.practice.yourNotes || "Your Notes:"}
                                         </p>
                                         <p className="text-gray-700 whitespace-pre-wrap">{notes}</p>
                                     </div>

@@ -20,28 +20,28 @@ import type { Translations } from "@/lib/translations";
 function OverviewCards({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const cards = [
         {
-            title: t.admin?.dashboard?.totalUsers || "总用户数",
+            title: t.admin?.dashboard?.totalUsers || "Total Users",
             value: data.overview.totalUsers,
             icon: Users,
             color: "text-blue-500",
             bgColor: "bg-blue-50 dark:bg-blue-950/30",
         },
         {
-            title: t.admin?.dashboard?.totalErrors || "总错题数",
+            title: t.admin?.dashboard?.totalErrors || "Total Errors",
             value: data.overview.totalErrorItems,
             icon: BookOpen,
             color: "text-red-500",
             bgColor: "bg-red-50 dark:bg-red-950/30",
         },
         {
-            title: t.admin?.dashboard?.totalPractice || "总练习数",
+            title: t.admin?.dashboard?.totalPractice || "Total Practice",
             value: data.overview.totalPracticeRecords,
             icon: PenTool,
             color: "text-green-500",
             bgColor: "bg-green-50 dark:bg-green-950/30",
         },
         {
-            title: t.admin?.dashboard?.totalNotebooks || "总错题本数",
+            title: t.admin?.dashboard?.totalNotebooks || "Total Notebooks",
             value: data.overview.totalSubjects,
             icon: Layers,
             color: "text-purple-500",
@@ -76,7 +76,7 @@ function DailyTrendChart({ data, t }: { data: AdminDashboardData; t: Translation
             <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-orange-500" />
-                    {t.admin?.dashboard?.recentTrend || "最近 7 天录入趋势"}
+                    {t.admin?.dashboard?.recentTrend || "Recent 7-Day Trend"}
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -115,13 +115,13 @@ function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: Tr
             <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                     <BarChart3 className="h-4 w-4 text-blue-500" />
-                    {t.admin?.dashboard?.subjectDistribution || "学科错题分布"}
+                    {t.admin?.dashboard?.subjectDistribution || "Subject Distribution"}
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 {total === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
-                        {t.admin?.dashboard?.noData || "暂无数据"}
+                        {t.admin?.dashboard?.noData || "No Data"}
                     </p>
                 ) : (
                     <div className="space-y-3">
@@ -152,9 +152,9 @@ function SubjectDistributionChart({ data, t }: { data: AdminDashboardData; t: Tr
 function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: Translations }) {
     const total = data.masteryDistribution.new + data.masteryDistribution.reviewing + data.masteryDistribution.mastered
     const items = [
-        { key: "new", label: t.admin?.dashboard?.masteryNew || "待复习", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
-        { key: "reviewing", label: t.admin?.dashboard?.masteryReviewing || "复习中", count: data.masteryDistribution.reviewing, icon: Clock, color: "text-yellow-500", bg: "bg-yellow-500" },
-        { key: "mastered", label: t.admin?.dashboard?.masteryMastered || "已掌握", count: data.masteryDistribution.mastered, icon: CheckCircle, color: "text-green-500", bg: "bg-green-500" },
+        { key: "new", label: t.admin?.dashboard?.masteryNew || "To Review", count: data.masteryDistribution.new, icon: AlertCircle, color: "text-red-500", bg: "bg-red-500" },
+        { key: "reviewing", label: t.admin?.dashboard?.masteryReviewing || "Reviewing", count: data.masteryDistribution.reviewing, icon: Clock, color: "text-yellow-500", bg: "bg-yellow-500" },
+        { key: "mastered", label: t.admin?.dashboard?.masteryMastered || "Mastered", count: data.masteryDistribution.mastered, icon: CheckCircle, color: "text-green-500", bg: "bg-green-500" },
     ]
 
     return (
@@ -162,13 +162,13 @@ function MasteryDistributionCard({ data, t }: { data: AdminDashboardData; t: Tra
             <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
-                    {t.admin?.dashboard?.masteryDistribution || "掌握度分布"}
+                    {t.admin?.dashboard?.masteryDistribution || "Mastery Distribution"}
                 </CardTitle>
             </CardHeader>
             <CardContent>
                 {total === 0 ? (
                     <p className="text-sm text-muted-foreground py-8 text-center">
-                        {t.admin?.dashboard?.noData || "暂无数据"}
+                        {t.admin?.dashboard?.noData || "No Data"}
                     </p>
                 ) : (
                     <div className="space-y-3">
@@ -211,14 +211,14 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                 <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                         <tr>
-                            <th className="text-left p-3 font-medium">{t.admin?.dashboard?.userName || "用户名"}</th>
-                            <th className="text-left p-3 font-medium">{t.admin?.dashboard?.email || "邮箱"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.notebooks || "错题本"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.errors || "错题"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.practice || "练习"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.status || "状态"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.registeredAt || "注册时间"}</th>
-                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.actions || "操作"}</th>
+                            <th className="text-left p-3 font-medium">{t.admin?.dashboard?.userName || "Username"}</th>
+                            <th className="text-left p-3 font-medium">{t.admin?.dashboard?.email || "Email"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.notebooks || "Notebooks"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.errors || "Errors"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.practice || "Practice"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.status || "Status"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.registeredAt || "Registered At"}</th>
+                            <th className="text-center p-3 font-medium">{t.admin?.dashboard?.actions || "Actions"}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -228,7 +228,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium">{user.name || "N/A"}</span>
                                         {user.role === "admin" && (
-                                            <Badge variant="default" className="text-xs">{t.admin?.admin || "管理员"}</Badge>
+                                            <Badge variant="default" className="text-xs">{t.admin?.admin || "Admin"}</Badge>
                                         )}
                                     </div>
                                 </td>
@@ -238,7 +238,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                 <td className="p-3 text-center">{user.practiceCount}</td>
                                 <td className="p-3 text-center">
                                     <Badge variant={user.isActive ? "default" : "destructive"} className="text-xs">
-                                        {user.isActive ? (t.admin?.active || "启用") : (t.admin?.disabled || "禁用")}
+                                        {user.isActive ? (t.admin?.active || "Active") : (t.admin?.disabled || "Disabled")}
                                     </Badge>
                                 </td>
                                 <td className="p-3 text-center text-muted-foreground text-xs">
@@ -249,7 +249,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => onViewDetail(user.id)}
-                                        title={t.admin?.dashboard?.viewDetail || "查看详情"}
+                                        title={t.admin?.dashboard?.viewDetail || "View Detail"}
                                     >
                                         <Eye className="h-4 w-4" />
                                     </Button>
@@ -273,14 +273,14 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium">{user.name || "N/A"}</span>
                                         {user.role === "admin" && (
-                                            <Badge variant="default" className="text-xs">{t.admin?.admin || "管理员"}</Badge>
+                                            <Badge variant="default" className="text-xs">{t.admin?.admin || "Admin"}</Badge>
                                         )}
                                     </div>
                                     <div className="text-sm text-muted-foreground">{user.email}</div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Badge variant={user.isActive ? "default" : "destructive"} className="text-xs">
-                                        {user.isActive ? (t.admin?.active || "启用") : (t.admin?.disabled || "禁用")}
+                                        {user.isActive ? (t.admin?.active || "Active") : (t.admin?.disabled || "Disabled")}
                                     </Badge>
                                     {expandedId === user.id ? (
                                         <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -293,15 +293,15 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                 <div className="mt-3 pt-3 border-t grid grid-cols-3 gap-3 text-center">
                                     <div>
                                         <div className="text-lg font-bold">{user.notebookCount}</div>
-                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.notebooks || "错题本"}</div>
+                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.notebooks || "Notebooks"}</div>
                                     </div>
                                     <div>
                                         <div className="text-lg font-bold text-red-500">{user.errorCount}</div>
-                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.errors || "错题"}</div>
+                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.errors || "Errors"}</div>
                                     </div>
                                     <div>
                                         <div className="text-lg font-bold text-green-500">{user.practiceCount}</div>
-                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.practice || "练习"}</div>
+                                        <div className="text-xs text-muted-foreground">{t.admin?.dashboard?.practice || "Practice"}</div>
                                     </div>
                                 </div>
                             )}
@@ -316,7 +316,7 @@ function UserTable({ users, onViewDetail }: { users: AdminUserStats[]; onViewDet
                                         onClick={() => onViewDetail(user.id)}
                                     >
                                         <Eye className="h-4 w-4 mr-1" />
-                                        {t.admin?.dashboard?.viewDetail || "查看详情"}
+                                        {t.admin?.dashboard?.viewDetail || "View Detail"}
                                     </Button>
                                 </div>
                             )}
@@ -369,8 +369,8 @@ export default function AdminPage() {
     if (!data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <p className="text-muted-foreground">{t.common?.error || "加载失败"}</p>
-                <Button onClick={fetchData}>{t.admin?.dashboard?.retry || "重试"}</Button>
+                <p className="text-muted-foreground">{t.common?.error || "Error"}</p>
+                <Button onClick={fetchData}>{t.admin?.dashboard?.retry || "Retry"}</Button>
             </div>
         )
     }
@@ -378,8 +378,8 @@ export default function AdminPage() {
     return (
         <div className="max-w-6xl mx-auto space-y-6 px-4 py-6 md:px-8 md:py-8">
             <PageHeader
-                title={t.admin?.dashboard?.title || "管理员仪表盘"}
-                description={t.admin?.dashboard?.subtitle || "查看全站用户和错题统计"}
+                title={t.admin?.dashboard?.title || "Admin Dashboard"}
+                description={t.admin?.dashboard?.subtitle || "View all users and error statistics"}
             />
 
             {/* Overview Cards */}
@@ -399,10 +399,10 @@ export default function AdminPage() {
                 <CardHeader className="pb-2">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <Users className="h-5 w-5 text-blue-500" />
-                        {t.admin?.dashboard?.userList || "用户列表"}
+                        {t.admin?.dashboard?.userList || "User List"}
                     </CardTitle>
                     <CardDescription>
-                        {t.admin?.dashboard?.userListDesc || "所有注册用户的错题录入情况"}
+                        {t.admin?.dashboard?.userListDesc || "All registered users and their error entry status"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -183,7 +183,7 @@ export default function ErrorDetailPage() {
                     >
                         {item.referenceImageUrl && (
                             <div className="pt-3">
-                                <ToggleImage src={item.referenceImageUrl} alt="参考图片" showLabel="查看图片" hideLabel="隐藏图片" visible={showReferenceImage} onVisibleChange={setShowReferenceImage} onEnlarge={setViewerImageUrl} />
+                                <ToggleImage src={item.referenceImageUrl} alt={t.detail.referenceImageAlt} showLabel={t.detail.viewImage} hideLabel={t.detail.hideImage} visible={showReferenceImage} onVisibleChange={setShowReferenceImage} onEnlarge={setViewerImageUrl} />
                             </div>
                         )}
                     </MarkdownFieldCard>
@@ -200,13 +200,13 @@ export default function ErrorDetailPage() {
                         placeholder="Enter analysis..."
                     />
                     <MarkdownFieldCard
-                        title={t.detail?.mistakeAnalysis || "错因分析"}
+                        title={t.detail?.mistakeAnalysis || "Mistake Analysis"}
                         value={item.mistakeAnalysis}
                         onSave={(mistakeAnalysis) => saveFields({ mistakeAnalysis })}
                         logLabel="mistake analysis"
                         rows={8}
-                        editorLabel={t.editor?.mistakeAnalysis || "错因分析"}
-                        emptyText={t.detail?.noMistakeAnalysis || "暂无错因分析"}
+                        editorLabel={t.editor?.mistakeAnalysis || "Mistake Cause Analysis"}
+                        emptyText={t.detail?.noMistakeAnalysis || "No mistake analysis yet."}
                     />
                 </div>
 

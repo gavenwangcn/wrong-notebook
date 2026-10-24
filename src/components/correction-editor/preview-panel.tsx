@@ -28,9 +28,9 @@ function PreviewCard({ title, children, className }: { title: string; children: 
 export function PreviewPanel({ data, children }: PreviewPanelProps) {
     const { t } = useLanguage();
     const statusLabels = {
-        wrong_attempt: t.editor.mistakeStatuses?.wrongAttempt || "做错了",
-        not_attempted: t.editor.mistakeStatuses?.notAttempted || "不会做",
-        unknown: t.editor.mistakeStatuses?.unknown || "未判断",
+        wrong_attempt: t.editor.mistakeStatuses?.wrongAttempt || "Wrong attempt",
+        not_attempted: t.editor.mistakeStatuses?.notAttempted || "Not attempted",
+        unknown: t.editor.mistakeStatuses?.unknown || "Unknown",
     };
 
     return (
@@ -50,19 +50,19 @@ export function PreviewPanel({ data, children }: PreviewPanelProps) {
                 <MarkdownRenderer content={data.analysis} />
             </PreviewCard>
 
-            <PreviewCard title={t.editor.preview?.mistakeAnalysis || "错因分析预览"} className="space-y-3 text-sm">
+            <PreviewCard title={t.editor.preview?.mistakeAnalysis || "Mistake Analysis Preview"} className="space-y-3 text-sm">
                 <div className="text-muted-foreground">
-                    {t.editor.mistakeStatus || "作答状态"}：{statusLabels[data.mistakeStatus as keyof typeof statusLabels] ?? statusLabels.unknown}
+                    {t.editor.mistakeStatus || "Attempt Status"}：{statusLabels[data.mistakeStatus as keyof typeof statusLabels] ?? statusLabels.unknown}
                 </div>
                 {data.wrongAnswerText && (
                     <div>
-                        <div className="font-medium mb-1">{t.editor.wrongAnswerText || "错误解答原文"}</div>
+                        <div className="font-medium mb-1">{t.editor.wrongAnswerText || "Wrong Answer / Work"}</div>
                         <MarkdownRenderer content={data.wrongAnswerText} />
                     </div>
                 )}
                 {data.mistakeAnalysis && (
                     <div>
-                        <div className="font-medium mb-1">{t.editor.mistakeAnalysis || "错因分析"}</div>
+                        <div className="font-medium mb-1">{t.editor.mistakeAnalysis || "Mistake Cause Analysis"}</div>
                         <MarkdownRenderer content={data.mistakeAnalysis} />
                     </div>
                 )}

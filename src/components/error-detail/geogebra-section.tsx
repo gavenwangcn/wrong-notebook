@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Box, Loader2 } from "lucide-react";
 import { GeogebraDemo } from "@/components/geogebra-demo";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { apiClient } from "@/lib/api-client";
 import { getApiErrorMessage, getErrorMessage } from "@/lib/error-message";
 import { frontendLogger } from "@/lib/frontend-logger";
@@ -17,6 +18,7 @@ interface GeogebraSectionProps {
 
 /** GeoGebra 动态演示：已有命令时显示演示，否则提供由 AI 生成的入口 */
 export function GeogebraSection({ errorItemId, commands, onUpdate }: GeogebraSectionProps) {
+    const { t } = useLanguage();
     const [analyzing, setAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -28,17 +30,17 @@ export function GeogebraSection({ errorItemId, commands, onUpdate }: GeogebraSec
             if (result.suitable && result.commands.length > 0) {
                 onUpdate({ geogebraCommands: JSON.stringify(result.commands) });
             } else {
-                setError(result.description || "该题目不适合用 GeoGebra 演示");
+                setError(result.description || t.geogebra.notSuitable);
             }
         } catch (err) {
             frontendLogger.error('[ErrorDetail]', 'GeoGebra analysis failed', { error: err });
             const msg = getApiErrorMessage(err) || getErrorMessage(err);
             if (msg.includes("AI_AUTH_ERROR")) {
-                setError("AI 认证失败，请检查设置");
+                setError(t.geogebra.authFailed);
             } else if (msg.includes("AI_CONNECTION")) {
-                setError("AI 连接失败，请检查网络");
+                setError(t.geogebra.connectionFailed);
             } else {
-                setError("分析失败，请稍后重试");
+                setError(t.geogebra.analyzeFailed);
             }
         } finally {
             setAnalyzing(false);
@@ -63,13 +65,13 @@ export function GeogebraSection({ errorItemId, commands, onUpdate }: GeogebraSec
     return (
         <div className="rounded-lg border border-dashed p-4">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Box className="h-4 w-4" /><span>GeoGebra 动态演示</span></div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground"><Box className="h-4 w-4" /><span>{t.geogebra.title}</span></div>
                 <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={analyzing}>
-                    {analyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />AI 分析中...</> : <><Box className="mr-2 h-4 w-4" />生成演示</>}
+                    {analyzing ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t.geogebra.analyzing}</> : <><Box className="mr-2 h-4 w-4" />{t.geogebra.generate}</>}
                 </Button>
             </div>
             {error && <p className="text-xs text-muted-foreground mt-2">{error}</p>}
-            <p className="text-xs text-muted-foreground mt-2">AI 将判断本题是否可以用 GeoGebra 进行动态演示，如适合则自动生成交互式图形</p>
+            <p className="text-xs text-muted-foreground mt-2">{t.geogebra.hint}</p>
         </div>
     );
 }

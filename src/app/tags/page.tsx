@@ -301,7 +301,7 @@ export default function TagsPage() {
                                         </div>
                                     ) : tags.filter(t => t.isSystem).length === 0 ? (
                                         <div className="text-center py-4 text-muted-foreground">
-                                            {t.tags?.stats?.empty || "暂无系统标签"}
+                                            {t.tags?.stats?.empty || "No tag usage records yet"}
                                         </div>
                                     ) : (
                                         tags.filter(t => t.isSystem).map(node => renderTreeNode(node))
@@ -340,10 +340,10 @@ export default function TagsPage() {
 
                             <Select value={newTagGrade} onValueChange={setNewTagGrade}>
                                 <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder={t.tags?.custom?.selectGrade || "选择年级"} />
+                                    <SelectValue placeholder={t.tags?.custom?.selectGrade || "Select Grade"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">{t.tags?.custom?.noGrade || "不选择年级"}</SelectItem>
+                                    <SelectItem value="none">{t.tags?.custom?.noGrade || "No Grade"}</SelectItem>
                                     {gradeOptions.map((grade) => (
                                         <SelectItem key={grade.id} value={grade.id}>{grade.name}</SelectItem>
                                     ))}
@@ -402,7 +402,7 @@ export default function TagsPage() {
                                                 <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1 mb-2">{groupName}</h4>
                                             )}
                                             {groupName === "通用" && groupKeys.length > 1 && (
-                                                <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1 mb-2">其他</h4>
+                                                <h4 className="text-sm font-semibold text-muted-foreground border-b pb-1 mb-2">{t.tags?.otherGroup || "Other"}</h4>
                                             )}
                                             <div className="flex flex-wrap gap-2">
                                                 {groupedByParent[groupName].map((tag) => (

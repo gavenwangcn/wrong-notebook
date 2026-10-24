@@ -195,7 +195,7 @@ export function GeogebraDemo({
         loadGeoGebraScript().then(() => {
             if (dead) return;
             const GGBApplet = window.GGBApplet;
-            if (!GGBApplet) { setError("GeoGebra 未正确加载"); setLoading(false); return; }
+            if (!GGBApplet) { setError(t.geogebra.notLoaded); setLoading(false); return; }
 
             if (!host) return;
 
@@ -226,11 +226,11 @@ export function GeogebraDemo({
                 applet.inject(id);
             } catch (e) {
                 frontendLogger.error('[GGB]', 'Init failed', { error: e });
-                if (!dead) { setError("GeoGebra 初始化失败"); setLoading(false); }
+                if (!dead) { setError(t.geogebra.initFailed); setLoading(false); }
             }
         }).catch((e) => {
             frontendLogger.error('[GGB]', 'Script load failed', { error: e });
-            if (!dead) { setError("无法加载 GeoGebra 组件"); setLoading(false); }
+            if (!dead) { setError(t.geogebra.scriptFailed); setLoading(false); }
         });
 
         return () => {
@@ -301,18 +301,18 @@ export function GeogebraDemo({
             <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
                 <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-muted-foreground">
-                        GeoGebra 动态演示
+                        {t.geogebra.title}
                     </span>
                     {loading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                 </div>
                 <div className="flex items-center gap-1">
                     {onRegenerate && (
                         <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1"
-                            onClick={handleRegenerate} title="重新生成" disabled={regenerating || loading}>
+                            onClick={handleRegenerate} title={t.geogebra.regenerate} disabled={regenerating || loading}>
                             {regenerating
                                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 : <RefreshCw className="h-3.5 w-3.5" />}
-                            <span>重新生成</span>
+                            <span>{t.geogebra.regenerate}</span>
                         </Button>
                     )}
                     {onDelete && (
@@ -325,12 +325,12 @@ export function GeogebraDemo({
                         </Button>
                     )}
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
-                        onClick={handleReset} title="重置" disabled={loading}>
+                        onClick={handleReset} title={t.geogebra.reset} disabled={loading}>
                         <RotateCcw className="h-3.5 w-3.5" />
                     </Button>
                     <Button variant="ghost" size="sm" className="h-7 w-7 p-0"
                         onClick={() => setExpanded((v) => !v)}
-                        title={expanded ? "缩小" : "放大"}>
+                        title={expanded ? t.geogebra.shrink : t.geogebra.enlarge}>
                         {expanded
                             ? <Minimize2 className="h-3.5 w-3.5" />
                             : <Maximize2 className="h-3.5 w-3.5" />}
@@ -353,7 +353,7 @@ export function GeogebraDemo({
                 >
                     <div className="flex flex-col items-center gap-2">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="text-sm text-muted-foreground">加载 GeoGebra...</span>
+                        <span className="text-sm text-muted-foreground">{t.geogebra.loading}</span>
                     </div>
                 </div>
             )}

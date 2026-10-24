@@ -63,7 +63,7 @@ export function AiConnectionTest({ config, saving, saveButton }: AiConnectionTes
             <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={handleTest} disabled={testing || saving} className="flex-1">
                     {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                    {testing ? (t.settings?.ai?.testing || "测试中...") : (t.settings?.ai?.testConnection || "测试连接")}
+                    {testing ? (t.settings?.ai?.testing || "Testing...") : (t.settings?.ai?.testConnection || "Test Connection")}
                 </Button>
                 {saveButton}
             </div>
@@ -74,31 +74,31 @@ export function AiConnectionTest({ config, saving, saveButton }: AiConnectionTes
                         {result.success ? (
                             <>
                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                <span className="text-green-700">{t.settings?.ai?.testSuccess || "连接成功"}</span>
+                                <span className="text-green-700">{t.settings?.ai?.testSuccess || "Connection Successful"}</span>
                                 {result.modelInfo && <span className="text-green-600 text-xs">({result.modelInfo})</span>}
                             </>
                         ) : (
                             <>
                                 <XCircle className="h-4 w-4 text-red-600" />
-                                <span className="text-red-700">{t.settings?.ai?.testFailed || "连接失败"}</span>
+                                <span className="text-red-700">{t.settings?.ai?.testFailed || "Connection Failed"}</span>
                             </>
                         )}
                     </div>
                     {result.success && (
                         <div className="space-y-1 text-xs">
                             <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">{t.settings?.ai?.textSupport || "文本生成"}:</span>
-                                <span className="text-green-600">✓ {t.settings?.ai?.supported || "支持"}</span>
+                                <span className="text-muted-foreground">{t.settings?.ai?.textSupport || "Text Generation"}:</span>
+                                <span className="text-green-600">✓ {t.settings?.ai?.supported || "Supported"}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">{t.settings?.ai?.visionSupport || "图像识别/多模态"}:</span>
+                                <span className="text-muted-foreground">{t.settings?.ai?.visionSupport || "Vision/Multimodal"}:</span>
                                 {result.visionSupport ? (
-                                    <span className="text-green-600">✓ {t.settings?.ai?.supported || "支持"}</span>
+                                    <span className="text-green-600">✓ {t.settings?.ai?.supported || "Supported"}</span>
                                 ) : (
-                                    <span className="text-amber-600">✗ {result.visionError ? errorText(result.visionError) : (t.settings?.ai?.notSupported || "不支持")}</span>
+                                    <span className="text-amber-600">✗ {result.visionError ? errorText(result.visionError) : (t.settings?.ai?.notSupported || "Not Supported")}</span>
                                 )}
                             </div>
-                            <p className="text-muted-foreground/60 text-[10px] pl-1">* 由于网络问题，可能测试结果不准确</p>
+                            <p className="text-muted-foreground/60 text-[10px] pl-1">{t.settings?.ai?.testNetworkNote}</p>
                         </div>
                     )}
                     {!result.success && result.textError && (
