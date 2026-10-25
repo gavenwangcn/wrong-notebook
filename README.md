@@ -18,6 +18,8 @@
 
 📦 **多平台安装**：Docker 镜像（amd64 / arm64）· npm（`npm i -g wrong-notebook`）· Windows · macOS · Linux · 飞牛OS · 安卓手机 / 平板（单机版内置服务端，或连接服务器的客户端），安装包见 [Releases](https://github.com/margrop/wrong-notebook/releases)，安装方式见[快速开始](#-快速开始)。
 
+🆓 **免费的 MiniMax 账号就能用**：选择「MiniMax Code OAuth」渠道，用 MiniMax Code 账号网页登录即可调用 `MiniMax-M3.1-Flash`，不需要购买 API Key。应用每天自动签到领取积分，识题、讲解等 AI 功能消耗的是账号的免费积分额度，详见 [MiniMax Code OAuth](#minimax-code-oauth)。
+
 > 本仓库 fork 自 [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook)，在其基础上增加了较多功能（见下文）。
 
 ## 🖼️ 功能预览
@@ -395,7 +397,13 @@ AI 配置可在网页中动态修改，无需重启服务器。
 
 #### MiniMax Code OAuth
 
-用 MiniMax Code 账号网页登录，不需要 API Key。在“设置 → AI 设置”中选择 MiniMax Code OAuth，点击“网页登录”，在打开的 MiniMax 页面完成授权即可；设置页会显示登录状态、剩余积分和今天是否已自动签到。模型默认 `MiniMax-M3.1-Flash`，也可选 `MiniMax-M3`、`MiniMax-M2.7` 等。
+**支持免费版 MiniMax 账号**：用 MiniMax Code 账号网页登录，不需要 API Key，也不需要开通付费套餐。
+
+- **每天自动签到**：登录后应用每天自动签到，领取 MiniMax Code 的签到积分（连续签到奖励更多），不用手动打开客户端。
+- **消耗免费积分**：识题、解析、举一反三、判题等 AI 调用消耗的是账号的免费积分额度；剩余积分随时可在设置页查看。
+- **默认模型 `MiniMax-M3.1-Flash`**：已实测可用，支持图片识别；也可选 `MiniMax-M3`、`MiniMax-M2.7` 等。
+
+使用方法：在“设置 → AI 设置”中选择 MiniMax Code OAuth，点击“网页登录”，在打开的 MiniMax 页面完成授权即可；设置页会显示登录状态、剩余积分和今天是否已自动签到。
 
 登录凭据保存在服务端配置目录的 `minimax-code.json`（与 `app-config.json` 同目录，不随数据备份导出），Access Token 到期前自动续期。登录后服务每小时检查一次，当天（北京时间）还没签到时自动领取 MiniMax Code 的签到积分，也可以在设置页关闭自动签到或手动立即签到。该渠道使用 MiniMax Code 桌面客户端的登录方式（OAuth 设备码授权），不是官方开放接口，MiniMax 可能随时调整或限制；请遵守 MiniMax 的服务条款。
 

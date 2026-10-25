@@ -18,6 +18,8 @@ An AI-powered notebook for the questions you got wrong. Snap a photo or type a q
 
 📦 **Install anywhere**: Docker image (amd64 / arm64) · npm (`npm i -g wrong-notebook`) · Windows · macOS · Linux · fnOS · Android phone / tablet (standalone with a built-in server, or a client for your server). Get the installers from [Releases](https://github.com/margrop/wrong-notebook/releases); see [Quick Start](#-quick-start) for instructions.
 
+🆓 **Works with a free MiniMax account**: choose the "MiniMax Code OAuth" channel and sign in with a MiniMax Code account in the browser to use `MiniMax-M3.1-Flash` without buying an API key. The app checks in every day to collect credits, and AI features such as recognition and explanations use the account's free credits. See [MiniMax Code OAuth](#minimax-code-oauth).
+
 > This repository is a fork of [wttwins/wrong-notebook](https://github.com/wttwins/wrong-notebook) with many additional features (listed below).
 
 > The app's built-in knowledge-point library follows the Chinese K-12 curriculum (primary, junior high and senior high school). The interface is available in Simplified Chinese and English.
@@ -397,7 +399,13 @@ These channels call each vendor's official OpenAI-compatible API, so only an API
 
 #### MiniMax Code OAuth
 
-Sign in with a MiniMax Code account in the browser; no API key is needed. In "Settings → AI Provider", choose MiniMax Code OAuth, click "Sign in with browser" and finish authorizing on the MiniMax page that opens. The settings page shows the login status, the remaining credits and whether today's check-in was done automatically. The model defaults to `MiniMax-M3.1-Flash`; `MiniMax-M3`, `MiniMax-M2.7` and others are also available.
+**Free MiniMax accounts are supported**: sign in with a MiniMax Code account in the browser. No API key or paid plan is needed.
+
+- **Automatic daily check-in**: once signed in, the app checks in every day and collects the MiniMax Code check-in credits (streaks earn more), so you don't need to open the client.
+- **Uses free credits**: AI calls such as recognition, explanations, similar-question practice and grading use the account's free credits. The remaining credits are shown on the settings page.
+- **Default model `MiniMax-M3.1-Flash`**: tested and working, with image input; `MiniMax-M3`, `MiniMax-M2.7` and others are also available.
+
+To set it up, choose MiniMax Code OAuth in "Settings → AI Provider", click "Sign in with browser" and finish authorizing on the MiniMax page that opens. The settings page shows the login status, the remaining credits and whether today's check-in was done automatically.
 
 The credentials are stored in `minimax-code.json` in the server's config directory (next to `app-config.json`, not included in data backups), and the access token is renewed automatically before it expires. Once signed in, the server checks every hour and collects the MiniMax Code daily check-in credits if today's check-in (Beijing time) has not been done yet. You can turn auto check-in off or check in right away on the settings page. This channel uses the sign-in of the MiniMax Code desktop client (OAuth device authorization) rather than an official open API, so MiniMax may change or restrict it at any time. Follow MiniMax's terms of service.
 
