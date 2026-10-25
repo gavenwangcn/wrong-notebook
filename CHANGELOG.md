@@ -3,6 +3,29 @@
 本文件记录各正式版的改动，由 `scripts/changelog.sh` 根据提交信息生成，请勿手动编辑。
 预览版（`v年.月.日-n`）的改动见 [GitHub Releases](https://github.com/margrop/wrong-notebook/releases)，并归入其后的正式版。
 
+## [2026.10.25](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.25) - 2026-10-25
+
+### ✨ 新功能
+- MiniMax Code 每日自动签到，设置页显示今天是否已自动签到
+- 新增 MiniMax Code OAuth 渠道，网页登录后调用 MiniMax-M3.1-Flash
+- 新增每人每日 AI 次数限制，用户管理显示今日用量
+- 新增今日复习，按艾宾浩斯间隔安排每道错题的复习
+- 数据导出导入包含用户偏好设置
+- 数据导出导入包含随机错题试卷、试卷题目及其作答记录
+- 暂存每道错题最近一次生成的举一反三题目与解答，再次进入直接显示
+
+### 🛠 修复
+- 新用户注册默认关闭，可用 ALLOW_REGISTRATION 修改默认值
+- 举一反三改为严格本地比对加 AI 判题，修复部分答案被误判为正确
+- 补齐写死在界面中的中文文案，缺省回退统一改为英文
+- 错题详情点击参考图片或我的答案图片时，放大显示的是题目原图
+- 行内代码被渲染成代码块样式，打断题目和解析的正文
+- Openclaw 批量上传校验图片 MIME 类型，仅接受 image/jpeg 与 image/png
+- 升级 Next.js 16.4.3 与 zod 4.6.7，修复依赖安全漏洞
+- 数据导入补齐 GeoGebra、SVG 动画、暂存练习和掌握概率等字段，导出格式升到第 2 版
+
+**完整变更**：https://github.com/margrop/wrong-notebook/compare/v2026.10.23...v2026.10.25
+
 ## [2026.10.23](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.23) - 2026-10-23
 
 ### ✨ 新功能
