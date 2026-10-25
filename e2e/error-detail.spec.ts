@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
+import { ADMIN_PASSWORD } from './helpers';
 
 async function login(page: Page) {
     await page.goto('/login');
     await page.getByLabel(/邮箱|Email/).fill('admin@localhost');
-    await page.getByLabel(/^密码$|^Password$/).fill('123456');
+    await page.getByLabel(/^密码$|^Password$/).fill(ADMIN_PASSWORD);
     await page.getByRole('button', { name: /登录|Login/ }).click();
     await page.waitForURL('**/', { timeout: 15000 });
 }

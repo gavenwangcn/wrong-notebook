@@ -173,6 +173,7 @@ jobs:
         run: |
           npx prisma db push
           npx prisma db seed
+          node scripts/prepare-e2e.js
 
       - name: Build application
         run: npm run build

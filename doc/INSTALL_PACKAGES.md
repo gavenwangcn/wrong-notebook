@@ -17,7 +17,7 @@
 
 除安卓客户端版外，所有安装包（含安卓单机版）运行同一个服务端（Next.js standalone 构建）和启动器 `packaging/runtime/launcher.js`，行为与 Docker 镜像一致：
 
-- 首次启动复制预置数据库（含默认管理员和系统标签），默认管理员为 `admin@localhost` / `123456`，登录后请立即修改密码。
+- 首次启动复制预置数据库（含默认管理员和系统标签），默认管理员为 `admin@localhost` / `123456`，首次登录会强制修改密码。
 - 每次启动执行 `prisma migrate deploy`，只做增量迁移，升级保留已有数据。
 - 数据库、`config/app-config.json` 和自动生成的 NextAuth 密钥都在数据目录，安装目录可以只读。
 
@@ -71,7 +71,7 @@ wrong-notebook --port 3000 --host 0.0.0.0 --data-dir ~/.wrong-notebook
 APK 内置 Node.js、Prisma 引擎和与其他安装包相同的服务端：
 
 1. 打开 App 时在本机启动服务端（只监听 `127.0.0.1`，其他设备无法访问）。首次启动或升级后需要先解压服务端并初始化数据库，会稍慢一些。
-2. 首次使用以默认管理员 `admin@localhost` / `123456` 登录，登录后请立即修改密码，并在「设置」中填写 AI 服务的 API Key。
+2. 首次使用以默认管理员 `admin@localhost` / `123456` 登录，按提示修改默认密码，再在「设置」中填写 AI 服务的 API Key。
 3. 数据库、配置和日志保存在 App 私有目录（`files/data`），卸载 App 会删除全部数据。数据中含 API Key 等敏感信息，两种 App 都不参与系统备份（`allowBackup=false`），卸载或换机前请在「设置」中导出备份，到新设备上再导入。
 
 App 切到后台后系统可能结束服务端进程，回到前台时会自动重新启动。

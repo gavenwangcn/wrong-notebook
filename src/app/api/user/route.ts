@@ -7,6 +7,7 @@ import { hash } from "bcryptjs";
 import type { Prisma } from "@prisma/client";
 import { unauthorized, notFound, badRequest, validationError, internalError } from "@/lib/api-errors";
 import { createLogger } from "@/lib/logger";
+import { isDefaultAdminPassword } from "@/lib/default-admin";
 
 const logger = createLogger('api:user');
 
@@ -104,6 +105,9 @@ export async function PATCH(req: Request) {
         if (password && password.length > 0) {
             if (password.length < 6) {
                 return badRequest("Password must be at least 6 characters");
+            }
+            if (isDefaultAdminPassword(session.user.role, password)) {
+                return badRequest("New password must not be the default password");
             }
             updateData.password = await hash(password, 10);
         }

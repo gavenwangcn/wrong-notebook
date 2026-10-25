@@ -31,6 +31,8 @@ npm run test:integration
 npm run test:e2e
 ```
 
+E2E 用例以非默认密码登录管理员（默认管理员会被强制改密）：运行前先执行 `node scripts/prepare-e2e.js`，它把 `admin@localhost` 的密码设为 `E2E_ADMIN_PASSWORD`（默认 `e2e-admin-pass`），并创建仍用默认密码的 `setup-admin@localhost`。本机 3000 端口被占用时，可另起开发服务器并用 `E2E_BASE_URL` 指定地址。
+
 CI 会运行 `npm run lint`，出现任何 ESLint 错误或警告都会失败。
 
 `npm run test:coverage` 统计 `src/lib` 与 `src/app/api` 的测试覆盖率，低于 `vitest.config.ts` 中的阈值时失败；CI 会在任务摘要中显示覆盖率并上传报告。

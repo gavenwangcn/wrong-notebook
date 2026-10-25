@@ -469,6 +469,27 @@ describe('/api/user', () => {
             expect(updateCall.data.password).toBe('hashed_newAdminPassword123');
         });
 
+        it('管理员不能把密码改回默认密码', async () => {
+            const { getServerSession } = await import('next-auth');
+            vi.mocked(getServerSession).mockResolvedValue({
+                user: { email: 'admin@localhost', name: 'Admin', role: 'admin' },
+                expires: '2025-12-31',
+            });
+
+            const request = new Request('http://localhost/api/user', {
+                method: 'PATCH',
+                body: JSON.stringify({ password: '123456' }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const response = await PATCH(request);
+            const data = await response.json();
+
+            expect(response.status).toBe(400);
+            expect(data.message).toBe('New password must not be the default password');
+            expect(mocks.mockPrismaUser.update).not.toHaveBeenCalled();
+        });
+
         it('普通用户可以修改密码', async () => {
             const { getServerSession } = await import('next-auth');
             vi.mocked(getServerSession).mockResolvedValue({

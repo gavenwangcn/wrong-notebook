@@ -57,7 +57,7 @@ Open <http://localhost:3000>. The default admin account is:
 | Email | `admin@localhost` |
 | Password | `123456` |
 
-Change the password right after the first sign-in, then configure the AI service. The default password only applies to fresh installs; upgrading an existing instance keeps its accounts and passwords.
+The first sign-in requires changing the default password (the new one cannot be `123456`); then configure the AI service. The default password only applies to fresh installs; upgrading an existing instance keeps its accounts and passwords.
 
 ## Add your first question
 

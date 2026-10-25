@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { acceptConfirmDialog } from './helpers';
+import { acceptConfirmDialog, ADMIN_PASSWORD } from './helpers';
 
 test.describe('Authentication Flow', () => {
 
@@ -83,7 +83,7 @@ test.describe('Authentication Flow', () => {
 
         // --- Login as Admin ---
         await page.locator('input[name="email"]').fill('admin@localhost');
-        await page.locator('input[name="password"]').fill('123456');
+        await page.locator('input[name="password"]').fill(ADMIN_PASSWORD);
         await page.locator('button[type="submit"]').click();
 
         // Verify Admin Login and Home Page

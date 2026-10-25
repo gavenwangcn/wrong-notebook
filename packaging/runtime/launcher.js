@@ -172,7 +172,7 @@ function prepare(options = {}) {
     if (!fs.existsSync(dbFile) || fs.statSync(dbFile).size === 0) {
         const seed = path.join(APP_DIR, 'prisma', 'seed.db');
         if (fs.existsSync(seed)) {
-            console.log('[wrong-notebook] 初始化数据库（默认管理员 admin@localhost / 123456，登录后请立即修改密码）');
+            console.log('[wrong-notebook] 初始化数据库（默认管理员 admin@localhost / 123456，首次登录须修改密码）');
             fs.copyFileSync(seed, dbFile);
         }
     }

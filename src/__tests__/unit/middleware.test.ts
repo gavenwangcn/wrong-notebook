@@ -122,6 +122,36 @@ describe('middleware', () => {
         });
     });
 
+    describe('默认密码强制修改', () => {
+        const flaggedToken = { id: 'admin-1', role: 'admin', mustChangePassword: true };
+
+        it('仍使用默认密码的管理员访问任意页面都应跳到 /setup', async () => {
+            vi.mocked(getToken).mockResolvedValue(flaggedToken as unknown as JWT);
+
+            for (const path of ['/', '/notebooks', '/admin', '/stats?tab=tags']) {
+                const response = await middleware(new NextRequest(`http://localhost:3000${path}`));
+                expect(response?.status).toBe(307);
+                expect(response?.headers.get('location')).toBe('http://localhost:3000/setup');
+            }
+        });
+
+        it('访问 /setup 本身不应再重定向', async () => {
+            vi.mocked(getToken).mockResolvedValue(flaggedToken as unknown as JWT);
+
+            const response = await middleware(new NextRequest('http://localhost:3000/setup'));
+
+            expect(response).toBeUndefined();
+        });
+
+        it('已改密码的管理员正常访问页面', async () => {
+            vi.mocked(getToken).mockResolvedValue({ ...flaggedToken, mustChangePassword: false } as unknown as JWT);
+
+            const response = await middleware(new NextRequest('http://localhost:3000/notebooks'));
+
+            expect(response).toBeUndefined();
+        });
+    });
+
     describe('错误处理', () => {
         it('Token 验证失败时应该继续请求而不是崩溃', async () => {
             vi.mocked(getToken).mockRejectedValue(new Error('Token validation failed'));

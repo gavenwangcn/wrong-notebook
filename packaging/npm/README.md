@@ -14,7 +14,7 @@ wrong-notebook                 # 默认监听 0.0.0.0:3000
 wrong-notebook --port 8080 --data-dir ~/wrong-notebook-data
 ```
 
-浏览器打开 <http://127.0.0.1:3000>。首次启动的默认管理员为 `admin@localhost` / `123456`，登录后请立即修改密码，并在「设置」中填写 AI 服务的 API Key。
+浏览器打开 <http://127.0.0.1:3000>。首次启动的默认管理员为 `admin@localhost` / `123456`，首次登录须先修改密码，再在「设置」中填写 AI 服务的 API Key。
 
 ## 数据目录
 

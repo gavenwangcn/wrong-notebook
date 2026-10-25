@@ -205,7 +205,7 @@ When served over HTTPS (or `localhost`), a service worker caches scripts, styles
    npm run dev
    ```
 
-   Open `http://localhost:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. **Change the password right after signing in.**
+   Open `http://localhost:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. You must change the default password on first sign-in.
 
 AI API keys can also be set in the web settings after signing in; see the AI model configuration section below.
 
@@ -250,7 +250,7 @@ See [Releases](https://github.com/margrop/wrong-notebook/releases) for available
    docker compose up -d
    ```
 
-3. **Sign in**: open `http://your-ip-or-domain:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. **Change the password right after signing in**, then enter your AI API key in the web settings.
+3. **Sign in**: open `http://your-ip-or-domain:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. You must change the default password on first sign-in, then enter your AI API key in the web settings.
 
 4. **Upgrade**: pull the new image and recreate the container. Data stays in the mounted directories; on startup only database migrations run.
 
@@ -300,7 +300,7 @@ wrong-notebook --port 3000
 | Android phone / tablet (standalone) | `WrongNotebook-Android-Phone-<version>.apk` (portrait), `WrongNotebook-Android-Tablet-<version>.apk` (rotates between portrait and landscape) |
 | Android phone / tablet (client) | `WrongNotebook-Android-Client-Phone-<version>.apk`, `WrongNotebook-Android-Client-Tablet-<version>.apk` |
 
-The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. The standalone Android app includes the server and works right after installation. Data stays on the device (uninstalling the app deletes it, and it is excluded from Android system backup because it contains API keys, so export a backup in Settings before uninstalling or switching phones); sign in with the default administrator `admin@localhost` / `123456` the first time. It needs a 64-bit ARM device with Android 8.0 or later. The Android client does not include the server: on first launch, enter the address of a deployed server (for example `http://192.168.1.10:3000`); you can change the server under Settings → About. It needs Android 7.0 or later. Both apps support taking photos for upload, saving exported files and system printing, and can be installed side by side.
+The npm package needs Node.js 22.15 or later and stores data in `~/.wrong-notebook` by default. The desktop app listens on `127.0.0.1` only; the fnOS package needs Node.js v24 from the fnOS app center and is served on port 39300. The standalone Android app includes the server and works right after installation. Data stays on the device (uninstalling the app deletes it, and it is excluded from Android system backup because it contains API keys, so export a backup in Settings before uninstalling or switching phones); sign in with the default administrator `admin@localhost` / `123456` the first time and change the password when prompted. It needs a 64-bit ARM device with Android 8.0 or later. The Android client does not include the server: on first launch, enter the address of a deployed server (for example `http://192.168.1.10:3000`); you can change the server under Settings → About. It needs Android 7.0 or later. Both apps support taking photos for upload, saving exported files and system printing, and can be installed side by side.
 
 Data directories, default accounts and local builds are described in [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md) (Chinese).
 
@@ -456,7 +456,7 @@ npm run test:unit           # Unit tests
 npm run test:integration    # Integration tests
 npm test                    # All Vitest tests
 npm run test:coverage       # Test coverage (fails below the minimum thresholds)
-npm run test:e2e            # Playwright E2E
+npm run test:e2e            # Playwright E2E (run node scripts/prepare-e2e.js first to set up test accounts)
 bash scripts/ci.sh          # Full CI (Node.js 22+, Python 3, includes production build)
 ```
 

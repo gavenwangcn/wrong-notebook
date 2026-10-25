@@ -203,7 +203,7 @@
    npm run dev
    ```
 
-   访问 `http://localhost:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。**登录后请尽快修改密码。**
+   访问 `http://localhost:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。首次登录会强制先修改默认密码。
 
 AI 的 API Key 等也可以在登录后通过网页设置填写，见下文「AI 模型配置」一节。
 
@@ -248,7 +248,7 @@ AI 的 API Key 等也可以在登录后通过网页设置填写，见下文「AI
    docker compose up -d
    ```
 
-3. **登录**：访问 `http://你的IP或域名:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。**登录后请尽快修改密码**，再在网页设置中填写 AI 的 API Key。
+3. **登录**：访问 `http://你的IP或域名:3000`，使用默认管理员账户登录：邮箱 `admin@localhost`，密码 `123456`。首次登录会强制先修改默认密码，再在网页设置中填写 AI 的 API Key。
 
 4. **升级**：拉取新镜像并重建容器，数据保留在挂载目录中，启动时只执行数据库迁移。
 
@@ -298,7 +298,7 @@ wrong-notebook --port 3000
 | 安卓手机 / 平板（单机版） | `WrongNotebook-Android-Phone-<版本>.apk`（竖屏）、`WrongNotebook-Android-Tablet-<版本>.apk`（横竖屏自动旋转） |
 | 安卓手机 / 平板（客户端） | `WrongNotebook-Android-Client-Phone-<版本>.apk`、`WrongNotebook-Android-Client-Tablet-<版本>.apk` |
 
-安卓单机版内置服务端，安装后直接使用，数据保存在本机（卸载 App 会删除数据；数据含 API Key，不参与系统备份，卸载或换机前请在设置中导出备份），首次以默认管理员 `admin@localhost` / `123456` 登录；需要 Android 8.0 及以上的 64 位 ARM 设备。客户端版不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），可在「设置 → 关于」中更换服务器，需要 Android 7.0 及以上。两种 App 都支持拍照上传、导出文件和系统打印，可以同时安装。
+安卓单机版内置服务端，安装后直接使用，数据保存在本机（卸载 App 会删除数据；数据含 API Key，不参与系统备份，卸载或换机前请在设置中导出备份），首次以默认管理员 `admin@localhost` / `123456` 登录并按提示修改密码；需要 Android 8.0 及以上的 64 位 ARM 设备。客户端版不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），可在「设置 → 关于」中更换服务器，需要 Android 7.0 及以上。两种 App 都支持拍照上传、导出文件和系统打印，可以同时安装。
 
 数据目录、默认账号、本地构建方法见 [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md)。
 
@@ -454,7 +454,7 @@ npm run test:unit           # 单元测试
 npm run test:integration    # 集成测试
 npm test                    # 全部 Vitest 测试
 npm run test:coverage       # 测试覆盖率（低于最低要求时失败）
-npm run test:e2e            # Playwright E2E
+npm run test:e2e            # Playwright E2E（先运行 node scripts/prepare-e2e.js 准备测试账号）
 bash scripts/ci.sh          # 完整 CI（Node.js 22+、Python 3，含生产构建）
 ```
 

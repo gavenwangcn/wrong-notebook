@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { compare } from "bcryptjs"
 import { createLogger } from "@/lib/logger"
+import { DEFAULT_ADMIN_PASSWORD, isDefaultAdminPassword } from "@/lib/default-admin"
 
 const logger = createLogger('auth');
 
@@ -77,6 +78,7 @@ export const authOptions: NextAuthOptions = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    mustChangePassword: isDefaultAdminPassword(user.role, credentials.password),
                 }
             }
         })
@@ -103,17 +105,26 @@ export const authOptions: NextAuthOptions = {
                     ...session.user,
                     id: token.id,
                     role: token.role,
+                    mustChangePassword: token.mustChangePassword === true,
                 }
             }
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger }) {
             if (user) {
                 logger.debug({ userId: user.id }, 'JWT callback - Initial signin');
                 return {
                     ...token,
                     id: user.id,
                     role: user.role,
+                    mustChangePassword: user.mustChangePassword === true,
                 }
+            }
+            // 客户端改完密码后调用 update()，以数据库中的密码为准重新判断，不信任客户端传值
+            if (trigger === "update" && token.mustChangePassword) {
+                const dbUser = await prisma.user.findUnique({ where: { id: token.id }, select: { password: true } })
+                const stillDefault = !!dbUser && await compare(DEFAULT_ADMIN_PASSWORD, dbUser.password)
+                logger.info({ userId: token.id, stillDefault }, 'JWT callback - Re-checked default password')
+                return { ...token, mustChangePassword: stillDefault }
             }
             logger.debug('JWT callback - Subsequent call');
             return token

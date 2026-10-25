@@ -48,6 +48,13 @@ export async function middleware(req: NextRequest) {
             );
         }
 
+        // 管理员仍使用默认密码时，所有页面都先跳到安装向导改密码
+        const isSetupPage = req.nextUrl.pathname.startsWith("/setup");
+        if (token?.mustChangePassword && !isSetupPage) {
+            logger.info({ userId: token.id, path: req.nextUrl.pathname }, 'Redirecting admin with default password to /setup');
+            return NextResponse.redirect(new URL("/setup", req.url));
+        }
+
         // Admin route protection: only allow users with admin role
         if (isAdminPage && token?.role !== "admin") {
             logger.warn({ userId: token?.id, path: req.nextUrl.pathname }, 'Non-admin user attempting to access admin area');

@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
 /** 登录、注册与打印页不显示导航 */
-const BARE_PATHS = [/^\/login/, /^\/register/, /^\/print-preview/, /^\/exams\/[^/]+\/print/];
+const BARE_PATHS = [/^\/login/, /^\/register/, /^\/setup/, /^\/print-preview/, /^\/exams\/[^/]+\/print/];
 
 type NavKey = "home" | "notebooks" | "review" | "stats" | "exams";
 
