@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef, useRef, useState } from "react";
+import type { CSSProperties, SyntheticEvent } from "react";
 import { X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { regionFromPoints } from "@/lib/image-crop";
@@ -10,14 +11,19 @@ interface RegionSelectorProps {
     imageSrc: string;
     regions: ImageRegion[];
     onChange: (regions: ImageRegion[]) => void;
+    /** 图片显示样式，缩放时由外部传入 */
+    imageStyle?: CSSProperties;
+    onImageLoad?: (event: SyntheticEvent<HTMLImageElement>) => void;
 }
+
+const DEFAULT_IMAGE_STYLE: CSSProperties = { maxHeight: "65vh", maxWidth: "100%", objectFit: "contain" };
 
 // 过小的框视为误触
 const MIN_REGION_SIZE = 0.02;
 
 /** 在图片上拖动画出多个矩形框，支持鼠标与触摸 */
 export const RegionSelector = forwardRef<HTMLImageElement, RegionSelectorProps>(function RegionSelector(
-    { imageSrc, regions, onChange },
+    { imageSrc, regions, onChange, imageStyle = DEFAULT_IMAGE_STYLE, onImageLoad },
     imageRef
 ) {
     const { t } = useLanguage();
@@ -65,7 +71,8 @@ export const RegionSelector = forwardRef<HTMLImageElement, RegionSelectorProps>(
                 src={imageSrc}
                 alt=""
                 draggable={false}
-                style={{ maxHeight: "65vh", maxWidth: "100%", objectFit: "contain" }}
+                style={imageStyle}
+                onLoad={onImageLoad}
                 className="block"
             />
             <div

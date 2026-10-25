@@ -33,7 +33,10 @@ export const translations = {
             confirmTitle: "Please confirm",
             cropper: {
                 title: "Crop Image",
-                hint: "💡 Drag to adjust crop area",
+                hint: "💡 Drag to adjust the crop area; scroll or pinch to zoom",
+                zoomIn: "Zoom in",
+                zoomOut: "Zoom out",
+                resetZoom: "Reset to 100%",
             },
             progress: {
                 compressing: "Preparing image...",
@@ -1195,7 +1198,10 @@ export const translations = {
             confirmTitle: "请确认",
             cropper: {
                 title: "裁剪图片",
-                hint: "💡 拖动选框调整裁剪区域",
+                hint: "💡 拖动选框调整裁剪区域，滚轮或双指可缩放图片",
+                zoomIn: "放大",
+                zoomOut: "缩小",
+                resetZoom: "还原为 100%",
             },
             progress: {
                 compressing: "正在准备图片...",
