@@ -1,5 +1,5 @@
 /** 与项目依赖版本一致的 KaTeX 样式，导出的 HTML 依赖它渲染公式 */
-export const KATEX_CSS_URL = "https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css";
+export const KATEX_CSS_URL = "https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css";
 
 /** 试卷打印样式：页面内与导出的独立 HTML 共用，不依赖 Tailwind */
 export const EXAM_PRINT_CSS = `
