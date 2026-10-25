@@ -13,8 +13,8 @@
   "private": true,
   "type": "commonjs",
   "devDependencies": {
-    "electron": "42.11.3",
-    "electron-builder": "25.1.8"
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
   },
   "build": {
     "appId": "io.github.margrop.wrongnotebook",
@@ -32,6 +32,13 @@
       {
         "from": "server",
         "to": "server",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "server/node_modules",
+        "to": "server/node_modules",
         "filter": [
           "**/*"
         ]
