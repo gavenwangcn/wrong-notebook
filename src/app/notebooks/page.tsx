@@ -10,14 +10,13 @@ import { ShortIdLocator } from "@/components/short-id-locator";
 import { BookOpen, Plus } from "lucide-react";
 import { NotebookCard } from "@/components/notebook-card";
 import { CreateNotebookDialog, type CreateNotebookInput } from "@/components/create-notebook-dialog";
-import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
 
 import { Notebook } from "@/types/api";
 import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
-import { toast, confirmDialog } from "@/lib/feedback";
+import { toast } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import { getApiErrorMessage } from "@/lib/error-message";
 
@@ -28,7 +27,6 @@ export default function NotebooksPage() {
     const [notebooks, setNotebooks] = useState<Notebook[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [renameTarget, setRenameTarget] = useState<Notebook | null>(null);
 
     const fetchNotebooks = useCallback(async () => {
         try {
@@ -53,30 +51,6 @@ export default function NotebooksPage() {
         } catch (error) {
             frontendLogger.error('[Notebooks]', 'Failed to create notebook', { error });
             const message = getApiErrorMessage(error) || t.notebooks?.createError || "Failed to create";
-            toast.error(message);
-        }
-    };
-
-    const handleRename = async (name: string) => {
-        if (!renameTarget) return;
-        await apiClient.put(`/api/notebooks/${renameTarget.id}`, { name });
-        setRenameTarget(null);
-        await fetchNotebooks();
-    };
-
-    const handleDelete = async (id: string, errorCount: number, name: string) => {
-        if (errorCount > 0) {
-            toast.warning(t.notebooks?.deleteNotEmpty || "Please clear all items in this notebook first.");
-            return;
-        }
-        if (!(await confirmDialog((t.notebooks?.deleteConfirm || "Are you sure?").replace("{name}", name), { destructive: true }))) return;
-
-        try {
-            await apiClient.delete(`/api/notebooks/${id}`);
-            await fetchNotebooks();
-        } catch (error) {
-            frontendLogger.error('[Notebooks]', 'Failed to delete notebook', { error });
-            const message = getApiErrorMessage(error) || t.notebooks?.deleteError || "Failed to delete";
             toast.error(message);
         }
     };
@@ -121,15 +95,12 @@ export default function NotebooksPage() {
                         {notebooks.map((notebook) => (
                             <NotebookCard
                                 key={notebook.id}
-                                id={notebook.id}
                                 name={notebook.name}
                                 stage={notebook.stage}
                                 subjectKey={notebook.subjectKey}
                                 errorCount={notebook._count?.errorItems || 0}
                                 onClick={() => handleNotebookClick(notebook.id)}
-                                onRename={() => setRenameTarget(notebook)}
-                                onDelete={() => handleDelete(notebook.id, notebook._count?.errorItems || 0, notebook.name)}
-                                itemLabel={t.notebooks?.items || "items"}
+                                itemLabel={t.notebooks.cardItems}
                             />
                         ))}
                     </div>
@@ -142,12 +113,6 @@ export default function NotebooksPage() {
                     onCreate={handleCreate}
                 />
 
-                <RenameNotebookDialog
-                    open={!!renameTarget}
-                    onOpenChange={(open) => { if (!open) setRenameTarget(null); }}
-                    currentName={renameTarget?.name || ""}
-                    onRename={handleRename}
-                />
             </div>
         </main>
     );

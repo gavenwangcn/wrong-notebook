@@ -227,6 +227,8 @@ export const translations = {
             deleteError: "Failed to delete",
             deleteNotEmpty: "Please clear all items in this notebook first.",
             items: "items",
+            /** 错题本列表卡片上题目数量的单位 */
+            cardItems: "items",
             notFound: "Notebook not found",
             totalErrors: "Total {count} wrong answers",
             addError: "Add Wrong Answer",
@@ -1387,6 +1389,8 @@ export const translations = {
             deleteError: "删除失败",
             deleteNotEmpty: "请先清空错题本中的所有题目，才能删除该错题本。",
             items: "道题目",
+            /** 错题本列表卡片上题目数量的单位 */
+            cardItems: "题",
             notFound: "错题本不存在",
             totalErrors: "共 {count} 道错题",
             addError: "添加错题",

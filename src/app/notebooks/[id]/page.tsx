@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageLoading } from "@/components/ui/page-loading";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { ErrorList } from "@/components/error-list";
 import { RenameNotebookDialog } from "@/components/rename-notebook-dialog";
@@ -17,7 +17,8 @@ import { apiClient } from "@/lib/api-client";
 
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
-import { toast } from "@/lib/feedback";
+import { confirmDialog, toast } from "@/lib/feedback";
+import { getApiErrorMessage } from "@/lib/error-message";
 import { frontendLogger } from "@/lib/frontend-logger";
 
 export default function NotebookDetailPage() {
@@ -57,6 +58,24 @@ export default function NotebookDetailPage() {
         setNotebook(updated);
     };
 
+    const handleDelete = async () => {
+        if (!notebook) return;
+        try {
+            // 列表中可能刚删过题目，先取最新题目数再判断
+            const latest = await apiClient.get<Notebook>(`/api/notebooks/${notebook.id}`);
+            if ((latest._count?.errorItems || 0) > 0) {
+                toast.warning(t.notebooks?.deleteNotEmpty || "Please clear all items in this notebook first.");
+                return;
+            }
+            if (!(await confirmDialog((t.notebooks?.deleteConfirm || "Are you sure?").replace("{name}", notebook.name), { destructive: true }))) return;
+            await apiClient.delete(`/api/notebooks/${notebook.id}`);
+            router.replace("/notebooks");
+        } catch (error) {
+            frontendLogger.error('[NotebookDetail]', 'Failed to delete notebook', { error });
+            toast.error(getApiErrorMessage(error) || t.notebooks?.deleteError || "Failed to delete");
+        }
+    };
+
     if (loading) {
         return <PageLoading label={t.common.loading} />;
     }
@@ -89,6 +108,16 @@ export default function NotebookDetailPage() {
                     }
                     actions={
                         <>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive hover:text-destructive"
+                                onClick={handleDelete}
+                                aria-label={t.common.delete}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                <span className="hidden sm:inline">{t.common.delete}</span>
+                            </Button>
                             <RetagNotebookButton notebookId={notebook.id} onFinished={() => setListVersion(v => v + 1)} />
                             <Link href={`/notebooks/${notebook.id}/add`}>
                                 <Button aria-label={t.notebooks?.addError || "Add Error"}>

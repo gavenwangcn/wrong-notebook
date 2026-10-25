@@ -147,18 +147,13 @@ test('Upload image, correct, save, and verify in notebook', async ({ page }) => 
     // 12. Verify Item Deleted
     await expect(page.getByText('试题：2 + 2 = ?')).not.toBeVisible();
 
-    // 13. Delete the Notebook
+    // 13. Delete the Notebook：列表不再有删除按钮，进入错题本详情页删除
     await page.goto('/notebooks');
-
-    // Locate the delete button specifically for the "数学" notebook
-    const notebookCard = page.locator('.group').filter({ hasText: '数学' }).first();
-
-    // Hover to reveal button
-    await notebookCard.hover();
-
-    // Click the delete button (Trash icon)
-    await notebookCard.getByRole('button').last().click();
+    await page.locator('.group').filter({ hasText: '数学' }).first().click();
+    await page.waitForURL(/\/notebooks\/[^/]+$/);
+    await page.getByRole('button', { name: /^(删除|Delete)$/ }).click();
     await acceptConfirmDialog(page);
+    await page.waitForURL(/\/notebooks$/);
 
     // 14. Verify Notebook Deleted
     await expect(page.getByText('数学', { exact: true })).not.toBeVisible({ timeout: 5000 });

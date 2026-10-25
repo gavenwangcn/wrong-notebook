@@ -1,21 +1,17 @@
 "use client";
 
-import { Atom, BookOpen, BookText, ChevronRight, FlaskConical, Globe, Landmark, Languages, Leaf, Pencil, Scale, Sigma, Trash2 } from "lucide-react";
+import { Atom, BookOpen, BookText, ChevronRight, FlaskConical, Globe, Landmark, Languages, Leaf, Scale, Sigma } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { NotebookScopeLabel } from "@/components/notebook-scope-label";
 import { resolveNotebookScope } from "@/lib/notebook-scope";
 import type { NotebookSubject } from "@/lib/notebook-scope";
 
 interface NotebookCardProps {
-    id: string;
     name: string;
     stage?: string | null;
     subjectKey?: string | null;
     errorCount: number;
     onClick: () => void;
-    onRename?: () => void;
-    onDelete?: (id: string) => void;
     itemLabel?: string;
 }
 
@@ -34,7 +30,7 @@ const SUBJECT_STYLE: Record<NotebookSubject, { icon: LucideIcon; className: stri
 
 const DEFAULT_STYLE = { icon: BookOpen, className: "bg-accent text-accent-foreground" };
 
-export function NotebookCard({ id, name, stage, subjectKey, errorCount, onClick, onRename, onDelete, itemLabel = "items" }: NotebookCardProps) {
+export function NotebookCard({ name, stage, subjectKey, errorCount, onClick, itemLabel = "items" }: NotebookCardProps) {
     const scope = resolveNotebookScope({ name, stage, subjectKey });
     const { icon: Icon, className: iconClass } = scope.subject ? SUBJECT_STYLE[scope.subject] : DEFAULT_STYLE;
 
@@ -62,35 +58,7 @@ export function NotebookCard({ id, name, stage, subjectKey, errorCount, onClick,
                 </p>
             </div>
 
-            {/* 触屏设备没有悬停，操作按钮常显；桌面端悬停时显示 */}
-            <div className="flex shrink-0 items-center opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-                {onRename && (
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="text-muted-foreground"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRename();
-                        }}
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                )}
-                {onDelete && (
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(id);
-                        }}
-                    >
-                        <Trash2 className={`h-4 w-4 ${errorCount > 0 ? "text-muted-foreground" : "text-destructive"}`} />
-                    </Button>
-                )}
-            </div>
-            <ChevronRight className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </div>
     );
 }
