@@ -60,7 +60,8 @@ export function ErrorItemCard({ item, selectMode, selected, onToggleSelect, sele
                 </div>
             )}
             <Link href={selectMode ? "#" : `/error-items/${item.id}`} onClick={(e) => selectMode && e.preventDefault()}>
-                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all hover:-translate-y-0.5 hover:shadow-md ${MASTERY_STATUS_BORDER[status]} ${selectMode && selected ? "ring-2 ring-primary" : "hover:border-primary/40"}`}>
+                {/* 悬浮只用中性色（浮起、加深阴影、灰底、加深上右下边框），左侧状态色条保持不变，避免与「复习中」的主色混淆 */}
+                <Card className={`h-full cursor-pointer gap-2 rounded-2xl border-l-4 pt-4 transition-all duration-200 hover:-translate-y-1 hover:bg-muted/60 hover:shadow-lg ${MASTERY_STATUS_BORDER[status]} ${selectMode && selected ? "ring-2 ring-primary" : "hover:border-y-foreground/25 hover:border-r-foreground/25"}`}>
                     <CardHeader className="pb-0">
                         <div className={`flex justify-between items-start ${selectMode ? "pl-7" : ""}`}>
                             <MasteryStatusBadge status={status} />
@@ -86,7 +87,7 @@ export function ErrorItemCard({ item, selectMode, selected, onToggleSelect, sele
                                 <Badge
                                     key={tag}
                                     variant={selectedTag === tag ? "default" : "outline"}
-                                    className="text-xs cursor-pointer hover:bg-primary/10 transition-colors"
+                                    className={`text-xs cursor-pointer transition-colors ${selectedTag === tag ? "" : "bg-background hover:border-foreground/40 hover:bg-foreground/10"}`}
                                     onClick={(e) => { e.preventDefault(); onTagClick(tag); }}
                                 >
                                     {tag}
