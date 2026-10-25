@@ -173,7 +173,7 @@ When served over HTTPS (or `localhost`), a service worker caches scripts, styles
 
 ### Option 1: Run from source
 
-1. **Requirements**: Node.js 22 or later and npm.
+1. **Requirements**: Node.js 22 or later (24 recommended) and npm.
 
 2. **Clone and install dependencies**:
 

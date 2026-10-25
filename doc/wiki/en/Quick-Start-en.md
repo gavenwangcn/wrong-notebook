@@ -4,7 +4,7 @@ For regular deployments the [Docker image](Deployment-en) is recommended. Follow
 
 ## Requirements
 
-- Node.js 22 or later, with npm.
+- Node.js 22 or later (24 recommended), with npm.
 - Git; Python 3 is also needed to run the full CI.
 - Network access to your chosen AI service, plus its API credentials.
 

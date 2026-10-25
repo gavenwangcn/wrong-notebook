@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 revision=$(git rev-parse --verify "${1:-HEAD}^{commit}")
 image="${IMAGE_REPOSITORY:-wrong-notebook}:$revision"
 
-args=(--build-arg "APP_REVISION=$revision" --build-arg "NODE_IMAGE=${NODE_IMAGE:-node:22-alpine}")
+args=(--build-arg "APP_REVISION=$revision" --build-arg "NODE_IMAGE=${NODE_IMAGE:-node:24-alpine}")
 # 版本号取自最近的 v 开头标签（如 v2026.10.20 或 v2026.10.20-3-gabc1234）；没有标签时不传，运行时回退到 package.json
 version=$(git describe --tags --match 'v[0-9]*' "$revision" 2>/dev/null || true)
 [[ -n $version ]] && args+=(--build-arg "APP_VERSION=$version")

@@ -11,7 +11,7 @@
 
 ## 开发环境
 
-需要 Node.js 22 及以上（见 `.nvmrc`）。
+需要 Node.js 22 及以上，推荐 24（见 `.nvmrc`，CI 与 Docker 镜像均使用 24）。
 
 ```bash
 npm ci

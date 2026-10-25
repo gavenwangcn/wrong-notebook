@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Resolve version
@@ -127,7 +127,7 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Resolve version
@@ -190,7 +190,7 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       - name: Resolve version
@@ -230,7 +230,7 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
 
       # Runner 镜像自带 Android SDK（ANDROID_HOME），缺少的平台和构建工具由 Android Gradle 插件自动下载
