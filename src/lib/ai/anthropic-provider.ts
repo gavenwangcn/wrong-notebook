@@ -112,20 +112,24 @@ export class AnthropicProvider implements AIService {
 
     constructor(config?: AIConfig) {
         const apiKey = config?.apiKey;
-        if (!apiKey) {
+        const authToken = config?.authToken;
+        if (!apiKey && !authToken) {
             throw new Error("AI_AUTH_ERROR: ANTHROPIC_API_KEY is required for Anthropic provider");
         }
 
         // SDK 会自动拼接 /v1/messages，这里去掉用户可能多填的 /v1 和末尾斜杠
         this.baseURL = trimTrailingSlashes(config?.baseUrl || DEFAULT_ANTHROPIC_BASE_URL).replace(/\/v1$/, '');
         this.model = config?.model || DEFAULT_ANTHROPIC_MODEL;
-        this.client = new Anthropic({ apiKey, baseURL: this.baseURL, timeout: REQUEST_TIMEOUT_MS });
+        // authToken 以 Authorization: Bearer 发送（OAuth 登录的渠道）；显式传 null，避免 SDK 读取环境变量里的 ANTHROPIC_API_KEY
+        this.client = apiKey
+            ? new Anthropic({ apiKey, baseURL: this.baseURL, timeout: REQUEST_TIMEOUT_MS })
+            : new Anthropic({ apiKey: null, authToken, baseURL: this.baseURL, timeout: REQUEST_TIMEOUT_MS });
 
         logger.info({
             provider: 'Anthropic',
             model: this.model,
             baseURL: this.baseURL,
-            apiKeyPrefix: apiKey.substring(0, 8) + '...'
+            apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'bearer'
         }, 'AI Provider initialized');
     }
 

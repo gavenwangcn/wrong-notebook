@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { requireAdmin } from "@/lib/auth-utils";
 import { getAppConfig, updateAppConfig } from "@/lib/config";
@@ -10,6 +11,10 @@ import { isValidTimeZone } from "@/lib/date-time";
 import { VENDOR_PROVIDER_IDS } from "@/lib/ai/vendor-presets";
 
 const logger = createLogger('api:settings');
+
+const minimaxCodeSchema = z.object({
+    model: z.string().trim().max(100).optional(),
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +49,12 @@ export async function POST(req: Request) {
         }
         if (body.aiDailyLimit !== undefined && !(Number.isInteger(body.aiDailyLimit) && body.aiDailyLimit >= 0)) {
             return badRequest('INVALID_AI_DAILY_LIMIT');
+        }
+        if (body.minimaxCode !== undefined) {
+            const parsed = minimaxCodeSchema.safeParse(body.minimaxCode);
+            if (!parsed.success) return badRequest('INVALID_MINIMAX_CODE_CONFIG');
+            // 只保存模型；登录凭据由服务端单独管理
+            body.minimaxCode = parsed.data;
         }
         const currentConfig = getAppConfig();
 

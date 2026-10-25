@@ -4,6 +4,7 @@ import { createLogger } from './logger';
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from './date-time';
 import { VENDOR_PROVIDER_IDS, VENDOR_PRESETS } from './ai/vendor-presets';
 import type { VendorConfig, VendorProviderId } from './ai/vendor-presets';
+import type { MiniMaxCodeConfig } from './minimax-code/constants';
 
 const logger = createLogger('config');
 
@@ -23,7 +24,7 @@ export interface OpenAIInstance {
 type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
 
 export interface AppConfig extends VendorConfigs {
-    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
+    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | 'minimax-code' | VendorProviderId;
     allowRegistration?: boolean;
     /** 普通用户每天可发起的 AI 调用次数，0 表示不限制；管理员不受限制 */
     aiDailyLimit?: number;
@@ -50,6 +51,8 @@ export interface AppConfig extends VendorConfigs {
         baseUrl?: string;
         model?: string;
     };
+    // MiniMax Code OAuth 渠道：模型与自动签到开关；登录凭据另存于 minimax-code.json
+    minimaxCode?: MiniMaxCodeConfig;
     prompts?: {
         analyze?: string;
         similar?: string;
@@ -142,6 +145,9 @@ const DEFAULT_CONFIG: AppConfig = {
         baseUrl: process.env.ANTHROPIC_BASE_URL,
         model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5',
     },
+    minimaxCode: {
+        model: process.env.MINIMAX_CODE_MODEL,
+    },
     ...Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => {
         const prefix = VENDOR_PRESETS[id].envPrefix;
         return [id, {
@@ -219,6 +225,7 @@ export function getAppConfig(): AppConfig {
                 gemini: { ...DEFAULT_CONFIG.gemini, ...userConfig.gemini },
                 azure: { ...DEFAULT_CONFIG.azure, ...userConfig.azure },
                 anthropic: { ...DEFAULT_CONFIG.anthropic, ...userConfig.anthropic },
+                minimaxCode: { ...DEFAULT_CONFIG.minimaxCode, ...userConfig.minimaxCode },
                 ...mergeVendorConfigs(DEFAULT_CONFIG, userConfig),
                 prompts: { ...DEFAULT_CONFIG.prompts, ...userConfig.prompts },
                 timeouts: { ...DEFAULT_CONFIG.timeouts, ...userConfig.timeouts },
@@ -247,6 +254,7 @@ export function updateAppConfig(newConfig: Partial<AppConfig>) {
         gemini: { ...currentConfig.gemini, ...newConfig.gemini },
         azure: { ...currentConfig.azure, ...newConfig.azure },
         anthropic: { ...currentConfig.anthropic, ...newConfig.anthropic },
+        minimaxCode: { ...currentConfig.minimaxCode, ...newConfig.minimaxCode },
         ...mergeVendorConfigs(currentConfig, newConfig),
         prompts: { ...currentConfig.prompts, ...newConfig.prompts },
         timeouts: { ...currentConfig.timeouts, ...newConfig.timeouts },

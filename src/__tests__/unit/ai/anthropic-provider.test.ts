@@ -107,6 +107,17 @@ describe('AnthropicProvider', () => {
         });
     });
 
+    it('传 authToken 时以 Bearer 认证，且不读取环境变量里的 API Key', () => {
+        mocks.clientOptions.length = 0;
+        new AnthropicProvider({ authToken: 'mmoat_x', baseUrl: 'https://agent.minimax.cn/mavis/api/v1/llm' });
+
+        expect(mocks.clientOptions[0]).toMatchObject({
+            apiKey: null,
+            authToken: 'mmoat_x',
+            baseURL: 'https://agent.minimax.cn/mavis/api/v1/llm',
+        });
+    });
+
     it('图片识别：以 base64 图片块发送，并解析 XML 回复', async () => {
         mocks.create.mockResolvedValue(message(QUESTION_XML));
         const provider = new AnthropicProvider({ apiKey: 'sk-ant', model: 'claude-test' });

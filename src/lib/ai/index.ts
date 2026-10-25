@@ -3,6 +3,7 @@ import { GeminiProvider } from "./gemini-provider";
 import { OpenAIProvider } from "./openai-provider";
 import { AzureOpenAIProvider } from "./azure-provider";
 import { AnthropicProvider } from "./anthropic-provider";
+import { MiniMaxCodeProvider } from "./minimax-code-provider";
 import { isVendorProvider, resolveVendorConfig, VENDOR_PRESETS } from "./vendor-presets";
 
 export * from "./types";
@@ -27,6 +28,9 @@ export function getAIService(): AIService {
     } else if (provider === "anthropic") {
         logger.info({ model: config.anthropic?.model }, 'Using Anthropic Provider');
         return new AnthropicProvider(config.anthropic);
+    } else if (provider === "minimax-code") {
+        logger.info({ model: config.minimaxCode?.model }, 'Using MiniMax Code OAuth Provider');
+        return new MiniMaxCodeProvider(config.minimaxCode);
     } else if (provider === "gemini") {
         logger.info('Using Gemini Provider');
         return new GeminiProvider(config.gemini);

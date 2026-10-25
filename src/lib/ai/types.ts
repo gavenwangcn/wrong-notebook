@@ -111,6 +111,8 @@ export interface AIService {
 
 export interface AIConfig {
     apiKey?: string;
+    /** 以 Authorization: Bearer 发送的令牌（OAuth 登录的渠道），仅 Anthropic 兼容接口使用 */
+    authToken?: string;
     baseUrl?: string;
     model?: string;
     // Azure OpenAI 特有字段

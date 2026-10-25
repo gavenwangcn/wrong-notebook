@@ -19,6 +19,7 @@ AI 设置、连接测试、模型列表与提示词设置只向管理员开放�
 | 智谱 GLM | API Key | 默认 `https://open.bigmodel.cn/api/paas/v4`；代码默认 `glm-5.3-flash` |
 | DeepSeek | API Key | 默认 `https://api.deepseek.com`；代码默认 `deepseek-flash` |
 | Kimi | API Key | 默认 `https://api.moonshot.cn/v1`；代码默认 `kimi-k3` |
+| MiniMax Code OAuth | 在设置页网页登录 MiniMax Code 账号 | 固定接口 `https://agent.minimax.cn/mavis/api/v1/llm`；代码默认 `MiniMax-M3.1-Flash` |
 | Anthropic 或兼容接口 | API Key、模型 | 默认 `https://api.anthropic.com`；代码默认 `claude-sonnet-5-5` |
 | Azure OpenAI | API Key、Endpoint、部署名称 | API 版本默认 `2024-02-15-preview`；模型字段用于显示 |
 | OpenAI 或兼容接口 | API Key、模型 | 默认 `https://api.openai.com/v1`；代码默认 `gpt-6.1-sol` |
@@ -28,9 +29,21 @@ AI 设置、连接测试、模型列表与提示词设置只向管理员开放�
 
 OpenAI 兼容服务的 Base URL 应包含其要求的 API 路径；Anthropic 兼容服务的 Base URL 不含 `/v1`，应用会拼接 `/v1/messages`。国产大模型官方渠道通过 OpenAI 兼容接口调用，地址和模型留空时使用官方默认值；使用国际站时改填国际站地址。
 
+## MiniMax Code OAuth
+
+MiniMax Code OAuth 用 MiniMax Code 账号登录后调用模型，不需要 API Key：
+
+1. 在“设置 → AI 设置”中选择 MiniMax Code OAuth。
+2. 点击“网页登录”，在打开的 MiniMax 授权页面登录并确认。浏览器拦截了弹窗时，点击设置页中的“打开授权页面”。
+3. 授权完成后，设置页的账号区域显示“已登录”和剩余积分；保存设置并测试连接。
+
+登录凭据保存在配置目录的 `minimax-code.json`，Access Token 到期前自动续期；refresh token 失效时账号区域显示“登录已失效”，重新登录即可。凭据不随数据备份导出，迁移服务器时需要重新登录。
+
+该渠道使用 MiniMax Code 桌面客户端的登录方式，不是官方开放接口，MiniMax 可能随时调整或限制，请遵守其服务条款。
+
 ## 环境变量
 
-基础选择使用 `AI_PROVIDER`，默认 `minimax`，可选 `minimax`、`glm`、`deepseek`、`kimi`、`anthropic`、`azure`、`openai`、`gemini`。
+基础选择使用 `AI_PROVIDER`，默认 `minimax`，可选 `minimax`、`glm`、`deepseek`、`kimi`、`minimax-code`、`anthropic`、`azure`、`openai`、`gemini`。
 
 | 提供商 | 配置项 |
 | --- | --- |
@@ -38,6 +51,7 @@ OpenAI 兼容服务的 Base URL 应包含其要求的 API 路径；Anthropic 兼
 | 智谱 GLM | `GLM_API_KEY`、`GLM_BASE_URL`、`GLM_MODEL` |
 | DeepSeek | `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` |
 | Kimi | `KIMI_API_KEY`、`KIMI_BASE_URL`、`KIMI_MODEL` |
+| MiniMax Code OAuth | `MINIMAX_CODE_MODEL`（账号只能在网页中登录） |
 | Anthropic | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` |
 | Azure | `AZURE_OPENAI_API_KEY`、`AZURE_OPENAI_ENDPOINT`、`AZURE_OPENAI_DEPLOYMENT`、`AZURE_OPENAI_API_VERSION`、`AZURE_OPENAI_MODEL` |
 | OpenAI | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL` |

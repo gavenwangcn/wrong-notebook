@@ -47,6 +47,7 @@ next-env.d.ts
 
 # App config (contains secrets)
 /config/app-config.json
+/config/minimax-code.json
 dist-scripts
 
 # Playwright

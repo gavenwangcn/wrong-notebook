@@ -36,6 +36,14 @@ describe('设置页连接测试请求', () => {
         });
     });
 
+    it('MiniMax Code 使用服务端保存的登录凭据，只发送模型', () => {
+        const config: AppConfig = { aiProvider: 'minimax-code', minimaxCode: { model: 'MiniMax-M3' } };
+        expect(buildConnectionTestRequest(config, 'zh')).toEqual({
+            ok: true,
+            body: { provider: 'minimax-code', model: 'MiniMax-M3', language: 'zh' },
+        });
+    });
+
     it('缺少 API Key 或 Azure 配置不完整时返回错误码', () => {
         expect(buildConnectionTestRequest({ aiProvider: 'gemini' }, 'zh')).toEqual({ ok: false, error: 'API_KEY_REQUIRED' });
         expect(buildConnectionTestRequest({ aiProvider: 'openai', openai: { instances: [] } }, 'zh')).toEqual({ ok: false, error: 'API_KEY_REQUIRED' });

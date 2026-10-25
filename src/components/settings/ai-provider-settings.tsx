@@ -9,6 +9,7 @@ import { AiConnectionTest } from "@/components/settings/ai-connection-test";
 import { AnthropicSettings } from "@/components/settings/anthropic-settings";
 import { AzureSettings } from "@/components/settings/azure-settings";
 import { GeminiSettings } from "@/components/settings/gemini-settings";
+import { MiniMaxCodeSettings } from "@/components/settings/minimax-code-settings";
 import { OpenAIInstanceSettings } from "@/components/settings/openai-instance-settings";
 import { VendorSettings } from "@/components/settings/vendor-settings";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -50,6 +51,7 @@ export function AiProviderSettings({ config, setConfig, loading, saving, onSave 
                         {VENDOR_PROVIDER_IDS.map((id) => (
                             <SelectItem key={id} value={id}>{VENDOR_PRESETS[id].name}</SelectItem>
                         ))}
+                        <SelectItem value="minimax-code">MiniMax Code OAuth</SelectItem>
                         <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
                         <SelectItem value="azure">Azure OpenAI</SelectItem>
                         <SelectItem value="openai">OpenAI / Compatible</SelectItem>
@@ -64,6 +66,10 @@ export function AiProviderSettings({ config, setConfig, loading, saving, onSave 
 
             {config.aiProvider === 'gemini' && (
                 <GeminiSettings value={config.gemini} onChange={(gemini) => setConfig(prev => ({ ...prev, gemini }))} />
+            )}
+
+            {config.aiProvider === 'minimax-code' && (
+                <MiniMaxCodeSettings value={config.minimaxCode} onChange={(minimaxCode) => setConfig(prev => ({ ...prev, minimaxCode }))} />
             )}
 
             {config.aiProvider === 'anthropic' && (

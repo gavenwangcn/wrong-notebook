@@ -5,6 +5,8 @@ import { OpenAIProvider, DEFAULT_OPENAI_MODEL } from '@/lib/ai/openai-provider';
 import { GeminiProvider } from '@/lib/ai/gemini-provider';
 import { AzureOpenAIProvider } from '@/lib/ai/azure-provider';
 import { AnthropicProvider, DEFAULT_ANTHROPIC_MODEL } from '@/lib/ai/anthropic-provider';
+import { MiniMaxCodeProvider } from '@/lib/ai/minimax-code-provider';
+import { DEFAULT_MINIMAX_CODE_MODEL } from '@/lib/minimax-code/constants';
 import { isVendorProvider, resolveVendorConfig } from '@/lib/ai/vendor-presets';
 import type { VendorProviderId } from '@/lib/ai/vendor-presets';
 import { requireAdmin } from '@/lib/auth-utils';
@@ -74,8 +76,9 @@ function parseErrorCode(error: unknown): string {
 }
 
 export interface AITestRequest {
-    provider: 'openai' | 'gemini' | 'azure' | 'anthropic' | VendorProviderId;
-    apiKey: string;
+    provider: 'openai' | 'gemini' | 'azure' | 'anthropic' | 'minimax-code' | VendorProviderId;
+    /** MiniMax Code 使用已登录的凭据，不需要 apiKey */
+    apiKey?: string;
     baseUrl?: string;
     model?: string;
     // Azure 特有
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
         const body: AITestRequest = await request.json();
         const { provider, apiKey, baseUrl, model, endpoint, deploymentName, apiVersion, language = 'zh' } = body;
 
-        if (!provider || !apiKey) {
+        if (!provider || (!apiKey && provider !== 'minimax-code')) {
             return NextResponse.json({ error: 'Missing provider or apiKey' }, { status: 400 });
         }
 
@@ -154,6 +157,13 @@ export async function POST(request: NextRequest) {
                     textSupport = true;
                     visionSupport = true;
                     modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
+                }
+            } else if (provider === 'minimax-code') {
+                const result = await new MiniMaxCodeProvider({ model }).analyzeImage(TEST_IMAGE_BASE64, TEST_IMAGE_MIME, language);
+                if (result.questionText || result.analysis) {
+                    textSupport = true;
+                    visionSupport = true;
+                    modelInfo = model || DEFAULT_MINIMAX_CODE_MODEL;
                 }
             } else if (isVendorProvider(provider)) {
                 const vendorConfig = resolveVendorConfig(provider, { apiKey, baseUrl, model });
@@ -231,6 +241,12 @@ export async function POST(request: NextRequest) {
                     if (result.questionText) {
                         textSupport = true;
                         modelInfo = model || DEFAULT_ANTHROPIC_MODEL;
+                    }
+                } else if (provider === 'minimax-code') {
+                    const result = await new MiniMaxCodeProvider({ model }).generateSimilarQuestion('1+1=?', ['基础算术'], language, 'easy');
+                    if (result.questionText) {
+                        textSupport = true;
+                        modelInfo = model || DEFAULT_MINIMAX_CODE_MODEL;
                     }
                 } else if (isVendorProvider(provider)) {
                     const vendorConfig = resolveVendorConfig(provider, { apiKey, baseUrl, model });

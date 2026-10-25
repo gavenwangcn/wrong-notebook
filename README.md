@@ -163,7 +163,7 @@
 - **数据库**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **样式**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/)（shadcn/ui 风格组件）
 - **公式**: [KaTeX](https://katex.org/)（react-markdown + remark-math）
-- **AI**: MiniMax / 智谱 GLM / DeepSeek / Kimi / Anthropic（及兼容接口）/ Azure OpenAI / OpenAI（及兼容接口）/ Google Gemini
+- **AI**: MiniMax / 智谱 GLM / DeepSeek / Kimi / MiniMax Code（网页登录）/ Anthropic（及兼容接口）/ Azure OpenAI / OpenAI（及兼容接口）/ Google Gemini
 - **认证**: [NextAuth.js v4](https://next-auth.js.org/)
 - **测试**: Vitest（单元、集成）、Playwright（E2E）
 
@@ -320,11 +320,12 @@ wrong-notebook --port 3000
 
 | 环境变量 | 描述 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI 提供商 | `minimax` | 可选 `minimax`、`glm`、`deepseek`、`kimi`、`anthropic`、`azure`、`openai`、`gemini` |
+| `AI_PROVIDER` | AI 提供商 | `minimax` | 可选 `minimax`、`glm`、`deepseek`、`kimi`、`minimax-code`、`anthropic`、`azure`、`openai`、`gemini` |
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | 地址 `https://api.minimax.cn/v1`，模型 `MiniMax-M3.1-Flash` | 地址和模型可留空 |
 | `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | 智谱 GLM | 地址 `https://open.bigmodel.cn/api/paas/v4`，模型 `glm-5.3-flash` | 地址和模型可留空 |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | 地址 `https://api.deepseek.com`，模型 `deepseek-flash` | 地址和模型可留空 |
 | `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | 地址 `https://api.moonshot.cn/v1`，模型 `kimi-k3` | 地址和模型可留空 |
+| `MINIMAX_CODE_MODEL` | MiniMax Code 模型 | `MiniMax-M3.1-Flash` | 账号在网页设置中登录，无需 API Key |
 | `ANTHROPIC_API_KEY` | Anthropic API Key | 无 | 从 [Claude Console](https://platform.claude.com/) 获取 |
 | `ANTHROPIC_BASE_URL` | API 地址 | `https://api.anthropic.com` | 兼容服务填写不含 `/v1` 的地址 |
 | `ANTHROPIC_MODEL` | 模型 | `claude-sonnet-5-5` | 如 `claude-opus-5-5`、`claude-haiku-5-5` |
@@ -357,7 +358,7 @@ wrong-notebook --port 3000
 AI 配置可在网页中动态修改，无需重启服务器。
 
 1. **进入设置**：管理员点击首页右上角的设置图标，打开「AI 设置」。
-2. **选择提供商**：默认使用 MiniMax；可选 MiniMax、智谱 GLM、DeepSeek、Kimi 官方渠道，以及 Anthropic、Azure OpenAI、OpenAI（含兼容接口）、Google Gemini，OpenAI 可添加多个配置并切换。
+2. **选择提供商**：默认使用 MiniMax；可选 MiniMax、智谱 GLM、DeepSeek、Kimi 官方渠道，用 MiniMax Code 账号网页登录的 MiniMax Code OAuth，以及 Anthropic、Azure OpenAI、OpenAI（含兼容接口）、Google Gemini，OpenAI 可添加多个配置并切换。
 3. **填写参数**：API Key、Base URL（或 Endpoint）、模型（或部署名称）；可测试连接并从接口获取模型列表。
 4. **保存生效**：配置保存到 `config/app-config.json`，优先级高于 `.env`。
 
@@ -390,6 +391,12 @@ AI 配置可在网页中动态修改，无需重启服务器。
 | 智谱 GLM | [智谱开放平台](https://open.bigmodel.cn) | `https://open.bigmodel.cn/api/paas/v4`（国际站 `https://api.z.ai/api/paas/v4`） | `glm-5.3-flash` |
 | DeepSeek | [DeepSeek 开放平台](https://platform.deepseek.com) | `https://api.deepseek.com` | `deepseek-flash` |
 | Kimi | [Kimi 开放平台](https://platform.kimi.com) | `https://api.moonshot.cn/v1`（国际站 `https://api.moonshot.ai/v1`） | `kimi-k3` |
+
+#### MiniMax Code OAuth
+
+用 MiniMax Code 账号网页登录，不需要 API Key。在“设置 → AI 设置”中选择 MiniMax Code OAuth，点击“网页登录”，在打开的 MiniMax 页面完成授权即可；设置页会显示登录状态和剩余积分。模型默认 `MiniMax-M3.1-Flash`，也可选 `MiniMax-M3`、`MiniMax-M2.7` 等。
+
+登录凭据保存在服务端配置目录的 `minimax-code.json`（与 `app-config.json` 同目录，不随数据备份导出），Access Token 到期前自动续期。该渠道使用 MiniMax Code 桌面客户端的登录方式（OAuth 设备码授权），不是官方开放接口，MiniMax 可能随时调整或限制；请遵守 MiniMax 的服务条款。
 
 #### Anthropic
 

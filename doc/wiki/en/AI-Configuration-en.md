@@ -19,6 +19,7 @@ AI settings, connection tests, model lists and prompt settings are admin-only. T
 | Zhipu GLM | API key | Defaults to `https://open.bigmodel.cn/api/paas/v4`; code default `glm-5.3-flash` |
 | DeepSeek | API key | Defaults to `https://api.deepseek.com`; code default `deepseek-flash` |
 | Kimi | API key | Defaults to `https://api.moonshot.cn/v1`; code default `kimi-k3` |
+| MiniMax Code OAuth | Sign in to a MiniMax Code account on the settings page | Fixed endpoint `https://agent.minimax.cn/mavis/api/v1/llm`; code default `MiniMax-M3.1-Flash` |
 | Anthropic or compatible | API key, model | Defaults to `https://api.anthropic.com`; code default `claude-sonnet-5-5` |
 | Azure OpenAI | API key, endpoint, deployment name | API version defaults to `2024-02-15-preview`; the model field is for display |
 | OpenAI or compatible | API key, model | Defaults to `https://api.openai.com/v1`; code default `gpt-6.1-sol` |
@@ -28,9 +29,21 @@ The default names come from the current code and do not mean these models are en
 
 For OpenAI-compatible services, the base URL should include the API path they require. For Anthropic-compatible services, the base URL excludes `/v1`; the app appends `/v1/messages`. The official MiniMax, GLM, DeepSeek and Kimi channels are called through the OpenAI-compatible API; leaving the endpoint and model empty uses the official defaults. Fill in the international endpoint if you use an international site.
 
+## MiniMax Code OAuth
+
+MiniMax Code OAuth calls models after you sign in with a MiniMax Code account, so no API key is needed:
+
+1. In "Settings → AI Provider", choose MiniMax Code OAuth.
+2. Click "Sign in with browser", then sign in and confirm on the MiniMax authorization page that opens. If the browser blocks the pop-up, click "Open the authorization page" on the settings page.
+3. Once authorized, the account area shows "Signed in" and the remaining credits. Save the settings and test the connection.
+
+The credentials are stored in `minimax-code.json` in the config directory, and the access token is renewed automatically before it expires. If the refresh token stops working, the account area shows "Login expired"; sign in again to fix it. The credentials are not included in data backups, so sign in again after moving to another server.
+
+This channel uses the sign-in of the MiniMax Code desktop client rather than an official open API. MiniMax may change or restrict it at any time; follow its terms of service.
+
 ## Environment variables
 
-`AI_PROVIDER` selects the provider. It defaults to `minimax` and accepts `minimax`, `glm`, `deepseek`, `kimi`, `anthropic`, `azure`, `openai` and `gemini`.
+`AI_PROVIDER` selects the provider. It defaults to `minimax` and accepts `minimax`, `glm`, `deepseek`, `kimi`, `minimax-code`, `anthropic`, `azure`, `openai` and `gemini`.
 
 | Provider | Variables |
 | --- | --- |
@@ -38,6 +51,7 @@ For OpenAI-compatible services, the base URL should include the API path they re
 | Zhipu GLM | `GLM_API_KEY`, `GLM_BASE_URL`, `GLM_MODEL` |
 | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` |
 | Kimi | `KIMI_API_KEY`, `KIMI_BASE_URL`, `KIMI_MODEL` |
+| MiniMax Code OAuth | `MINIMAX_CODE_MODEL` (the account can only sign in from the web UI) |
 | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL` |
 | Azure | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_MODEL` |
 | OpenAI | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` |

@@ -24,6 +24,11 @@ export function buildConnectionTestRequest(config: AppConfig, language: string):
         };
     }
 
+    // MiniMax Code 使用服务端保存的登录凭据，只需要模型
+    if (provider === 'minimax-code') {
+        return { ok: true, body: { provider, model: config.minimaxCode?.model, language } };
+    }
+
     // Gemini、Anthropic 与国产大模型渠道的配置结构相同：apiKey、baseUrl、model
     if (provider === 'gemini' || provider === 'anthropic' || isVendorProvider(provider)) {
         const settings = config[provider];

@@ -1,5 +1,6 @@
 import { ParsedQuestion } from "@/lib/ai/types";
 import type { VendorConfig, VendorProviderId } from "@/lib/ai/vendor-presets";
+import type { MiniMaxCodeConfig } from "@/lib/minimax-code/constants";
 import type { MasteryStatus } from "@/lib/mastery-status";
 
 // 通用分页响应类型
@@ -146,7 +147,7 @@ export interface OpenAIInstance {
 type VendorConfigs = { [K in VendorProviderId]?: VendorConfig };
 
 export interface AppConfig extends VendorConfigs {
-    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | VendorProviderId;
+    aiProvider: 'gemini' | 'openai' | 'azure' | 'anthropic' | 'minimax-code' | VendorProviderId;
     allowRegistration?: boolean;
     /** 普通用户每天可发起的 AI 调用次数，0 表示不限制；管理员不受限制 */
     aiDailyLimit?: number;
@@ -172,6 +173,7 @@ export interface AppConfig extends VendorConfigs {
         baseUrl?: string;        // 不含 /v1，如 https://api.anthropic.com
         model?: string;
     };
+    minimaxCode?: MiniMaxCodeConfig;
     prompts?: {
         analyze?: string;
         similar?: string;
