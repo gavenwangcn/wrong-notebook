@@ -59,6 +59,7 @@ export default function ExamDetailPage() {
     if (!paper) return <PageLoading label={t.common.loading} />;
 
     const readyCount = paper.questions.filter((question) => question.status === "ready").length;
+    const recorded = paper.questions.some((question) => question.attempts.length > 0);
     const hasFailed = paper.questions.some((question) => question.status === "failed");
     const recordable = paper.questions.filter((question) => question.status === "ready" && question.errorItemId);
 
@@ -121,7 +122,7 @@ export default function ExamDetailPage() {
                     <div className="flex-1 min-w-0 space-y-2">
                         <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{paper.title}</h1>
                         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <ExamStatusBadge status={paper.status} />
+                            <ExamStatusBadge status={paper.status} recorded={recorded} />
                             <span>{t.exam.progress.replace("{ready}", String(readyCount)).replace("{total}", String(paper.questions.length))}</span>
                             <span>{formatDateTime(paper.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
                         </div>

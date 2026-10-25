@@ -944,9 +944,10 @@ export const translations = {
             noNotebook: "Select at least one notebook",
             status: {
                 generating: "Generating",
-                ready: "Ready",
+                ready: "Generated",
                 partial: "Partly failed",
                 failed: "Failed",
+                completed: "Completed",
             },
             progress: "{ready}/{total} generated",
             questionCount: "{count} questions",
@@ -2102,9 +2103,10 @@ export const translations = {
             noNotebook: "请至少选择一个错题本",
             status: {
                 generating: "生成中",
-                ready: "已完成",
+                ready: "已生成",
                 partial: "部分失败",
                 failed: "生成失败",
+                completed: "已完成",
             },
             progress: "已生成 {ready}/{total}",
             questionCount: "共 {count} 题",

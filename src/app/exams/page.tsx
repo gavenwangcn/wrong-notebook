@@ -68,7 +68,7 @@ export default function ExamsPage() {
                                                     <FileText className="h-4 w-4 shrink-0 text-primary" />
                                                     {paper.title}
                                                 </span>
-                                                <ExamStatusBadge status={paper.status} />
+                                                <ExamStatusBadge status={paper.status} recorded={paper.recordedCount > 0} />
                                             </div>
                                             <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                                                 <span>{formatDateTime(paper.createdAt, "yyyy-MM-dd HH:mm", timeZone)}</span>
