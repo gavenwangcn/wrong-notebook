@@ -35,7 +35,9 @@ MiniMax Code OAuth 用 MiniMax Code 账号登录后调用模型，不需要 API 
 
 1. 在“设置 → AI 设置”中选择 MiniMax Code OAuth。
 2. 点击“网页登录”，在打开的 MiniMax 授权页面登录并确认。浏览器拦截了弹窗时，点击设置页中的“打开授权页面”。
-3. 授权完成后，设置页的账号区域显示“已登录”和剩余积分；保存设置并测试连接。
+3. 授权完成后，设置页的账号区域显示“已登录”、剩余积分和今日签到情况；保存设置并测试连接。
+
+登录后服务每小时检查一次签到：当天（北京时间）还没有签到时自动领取 MiniMax Code 的签到积分，失败的签到会在下一次检查时重试。账号区域显示今天是否已自动签到、获得的积分和连签天数，也可以点“立即签到”。不需要时关闭“每日自动签到”并保存，或设置环境变量 `MINIMAX_CODE_AUTO_CHECKIN=false`。签到只在服务运行时进行。
 
 登录凭据保存在配置目录的 `minimax-code.json`，Access Token 到期前自动续期；refresh token 失效时账号区域显示“登录已失效”，重新登录即可。凭据不随数据备份导出，迁移服务器时需要重新登录。
 
@@ -51,7 +53,7 @@ MiniMax Code OAuth 用 MiniMax Code 账号登录后调用模型，不需要 API 
 | 智谱 GLM | `GLM_API_KEY`、`GLM_BASE_URL`、`GLM_MODEL` |
 | DeepSeek | `DEEPSEEK_API_KEY`、`DEEPSEEK_BASE_URL`、`DEEPSEEK_MODEL` |
 | Kimi | `KIMI_API_KEY`、`KIMI_BASE_URL`、`KIMI_MODEL` |
-| MiniMax Code OAuth | `MINIMAX_CODE_MODEL`（账号只能在网页中登录） |
+| MiniMax Code OAuth | `MINIMAX_CODE_MODEL`、`MINIMAX_CODE_AUTO_CHECKIN`（账号只能在网页中登录） |
 | Anthropic | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` |
 | Azure | `AZURE_OPENAI_API_KEY`、`AZURE_OPENAI_ENDPOINT`、`AZURE_OPENAI_DEPLOYMENT`、`AZURE_OPENAI_API_VERSION`、`AZURE_OPENAI_MODEL` |
 | OpenAI | `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_MODEL` |

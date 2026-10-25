@@ -329,18 +329,18 @@ describe('/api/settings', () => {
             expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();
         });
 
-        it('MiniMax Code 只保存模型，拒绝无效取值', async () => {
+        it('MiniMax Code 只保存模型和自动签到开关，拒绝无效取值', async () => {
             const post = (minimaxCode: unknown) => POST(new Request('http://localhost/api/settings', {
                 method: 'POST',
                 body: JSON.stringify({ minimaxCode }),
                 headers: { 'Content-Type': 'application/json' },
             }));
 
-            expect((await post({ model: ' MiniMax-M3 ', accessToken: 'forged' })).status).toBe(200);
-            expect(mocks.mockUpdateAppConfig).toHaveBeenCalledWith({ minimaxCode: { model: 'MiniMax-M3' } });
+            expect((await post({ model: ' MiniMax-M3 ', autoCheckin: false, accessToken: 'forged' })).status).toBe(200);
+            expect(mocks.mockUpdateAppConfig).toHaveBeenCalledWith({ minimaxCode: { model: 'MiniMax-M3', autoCheckin: false } });
 
             mocks.mockUpdateAppConfig.mockClear();
-            for (const invalid of [{ model: 123 }, { model: 'x'.repeat(101) }, 'MiniMax-M3']) {
+            for (const invalid of [{ model: 123 }, { autoCheckin: 'yes' }, { model: 'x'.repeat(101) }, 'MiniMax-M3']) {
                 expect((await post(invalid)).status).toBe(400);
             }
             expect(mocks.mockUpdateAppConfig).not.toHaveBeenCalled();

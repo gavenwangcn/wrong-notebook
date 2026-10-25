@@ -14,6 +14,7 @@ const logger = createLogger('api:settings');
 
 const minimaxCodeSchema = z.object({
     model: z.string().trim().max(100).optional(),
+    autoCheckin: z.boolean().optional(),
 });
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
         if (body.minimaxCode !== undefined) {
             const parsed = minimaxCodeSchema.safeParse(body.minimaxCode);
             if (!parsed.success) return badRequest('INVALID_MINIMAX_CODE_CONFIG');
-            // 只保存模型；登录凭据由服务端单独管理
+            // 只保存模型和自动签到开关；登录凭据与签到记录由服务端单独管理
             body.minimaxCode = parsed.data;
         }
         const currentConfig = getAppConfig();

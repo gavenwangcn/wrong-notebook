@@ -7,11 +7,12 @@ import { getErrorMessage } from "@/lib/error-message";
 import { toast } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
 import type { LoginPollResult } from "@/lib/minimax-code/auth";
+import type { MiniMaxCodeCheckinRecord } from "@/lib/minimax-code/store";
 import type { MiniMaxCodeStatus } from "@/lib/minimax-code/status";
 
 export type PendingLogin = NonNullable<MiniMaxCodeStatus['pendingLogin']>;
 
-/** MiniMax Code 账号：读取状态、网页登录（打开授权页并轮询结果）、退出登录 */
+/** MiniMax Code 账号：读取状态、网页登录（打开授权页并轮询结果）、退出登录、立即签到 */
 export function useMiniMaxCodeAccount() {
     const { t } = useLanguage();
     const texts = t.settings?.ai?.minimaxCode;
@@ -96,5 +97,22 @@ export function useMiniMaxCodeAccount() {
         }
     };
 
-    return { status, loading, pending, busy, refresh, login, logout };
+    const checkin = async () => {
+        setBusy(true);
+        try {
+            const record = await apiClient.post<MiniMaxCodeCheckinRecord>('/api/minimax-code/checkin', {});
+            if (record.status === 'failed') {
+                toast.error((texts?.checkinFailed || 'Check-in failed: {error}').replace('{error}', record.error || ''));
+            } else {
+                toast.success(texts?.checkinSuccess || 'Checked in');
+            }
+            await refresh();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return { status, loading, pending, busy, refresh, login, logout, checkin };
 }

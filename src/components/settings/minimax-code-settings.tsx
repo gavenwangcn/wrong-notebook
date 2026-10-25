@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MiniMaxCodeCheckin } from "@/components/settings/minimax-code-checkin";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { DEFAULT_MINIMAX_CODE_MODEL, MINIMAX_CODE_MODELS } from "@/lib/minimax-code/constants";
 import type { MiniMaxCodeConfig } from "@/lib/minimax-code/constants";
@@ -15,11 +16,11 @@ interface MiniMaxCodeSettingsProps {
     onChange: (value: MiniMaxCodeConfig) => void;
 }
 
-/** MiniMax Code OAuth 渠道：账号状态（登录、剩余积分）、网页登录与模型选择 */
+/** MiniMax Code OAuth 渠道：账号状态（登录、剩余积分、今日签到）、网页登录、自动签到与模型选择 */
 export function MiniMaxCodeSettings({ value, onChange }: MiniMaxCodeSettingsProps) {
     const { t } = useLanguage();
     const texts = t.settings?.ai?.minimaxCode;
-    const { status, loading, pending, busy, refresh, login, logout } = useMiniMaxCodeAccount();
+    const { status, loading, pending, busy, refresh, login, logout, checkin } = useMiniMaxCodeAccount();
     const loginState = status?.login ?? 'none';
     const account = status?.account;
     const credits = status?.credits;
@@ -71,6 +72,16 @@ export function MiniMaxCodeSettings({ value, onChange }: MiniMaxCodeSettingsProp
                         </>
                     )}
                 </dl>
+
+                {loginState === 'active' && status && (
+                    <MiniMaxCodeCheckin
+                        checkin={status.checkin}
+                        autoCheckin={value?.autoCheckin !== false}
+                        onAutoCheckinChange={(autoCheckin) => onChange({ ...value, autoCheckin })}
+                        busy={busy}
+                        onCheckin={() => void checkin()}
+                    />
+                )}
 
                 {pending ? (
                     <div className="space-y-1 rounded-md bg-muted/50 p-3 text-sm">

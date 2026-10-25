@@ -35,7 +35,9 @@ MiniMax Code OAuth calls models after you sign in with a MiniMax Code account, s
 
 1. In "Settings → AI Provider", choose MiniMax Code OAuth.
 2. Click "Sign in with browser", then sign in and confirm on the MiniMax authorization page that opens. If the browser blocks the pop-up, click "Open the authorization page" on the settings page.
-3. Once authorized, the account area shows "Signed in" and the remaining credits. Save the settings and test the connection.
+3. Once authorized, the account area shows "Signed in", the remaining credits and today's check-in. Save the settings and test the connection.
+
+Once signed in, the server checks every hour: if today's check-in (Beijing time) has not been done yet, it collects the MiniMax Code daily check-in credits, and a failed check-in is retried at the next check. The account area shows whether today's check-in was done automatically, the credits received and the streak, and you can click "Check in now". To turn it off, switch off "Daily auto check-in" and save, or set `MINIMAX_CODE_AUTO_CHECKIN=false`. Check-ins only happen while the service is running.
 
 The credentials are stored in `minimax-code.json` in the config directory, and the access token is renewed automatically before it expires. If the refresh token stops working, the account area shows "Login expired"; sign in again to fix it. The credentials are not included in data backups, so sign in again after moving to another server.
 
@@ -51,7 +53,7 @@ This channel uses the sign-in of the MiniMax Code desktop client rather than an 
 | Zhipu GLM | `GLM_API_KEY`, `GLM_BASE_URL`, `GLM_MODEL` |
 | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_BASE_URL`, `DEEPSEEK_MODEL` |
 | Kimi | `KIMI_API_KEY`, `KIMI_BASE_URL`, `KIMI_MODEL` |
-| MiniMax Code OAuth | `MINIMAX_CODE_MODEL` (the account can only sign in from the web UI) |
+| MiniMax Code OAuth | `MINIMAX_CODE_MODEL`, `MINIMAX_CODE_AUTO_CHECKIN` (the account can only sign in from the web UI) |
 | Anthropic | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL` |
 | Azure | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_MODEL` |
 | OpenAI | `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` |

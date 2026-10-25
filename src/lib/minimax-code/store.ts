@@ -19,9 +19,11 @@ export interface MiniMaxCodeAccount {
 }
 
 export interface MiniMaxCodeCheckinRecord {
-    /** 应用时区下的日期 yyyy-MM-dd */
+    /** 签到日（北京时间）yyyy-MM-dd */
     date: string;
     status: 'checked-in' | 'already' | 'failed';
+    /** auto：定时任务自动签到；manual：在设置页手动签到 */
+    trigger: 'auto' | 'manual';
     points?: number;
     streakDays?: number;
     error?: string;

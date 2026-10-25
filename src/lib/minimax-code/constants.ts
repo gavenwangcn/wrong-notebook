@@ -10,4 +10,6 @@ export const MINIMAX_CODE_MODELS = ['MiniMax-M3.1-Flash', 'MiniMax-M3', 'MiniMax
 /** app-config.json 中 minimaxCode 的配置；登录凭据另存于 minimax-code.json，不在这里 */
 export interface MiniMaxCodeConfig {
     model?: string;
+    /** 每日自动签到，默认开启 */
+    autoCheckin?: boolean;
 }

@@ -100,9 +100,9 @@ describe('网页登录', () => {
 
     it('退出登录删除凭据，保留签到记录', () => {
         saveAccount();
-        updateMiniMaxCodeState((state) => ({ ...state, lastCheckin: { date: '2026-10-25', status: 'checked-in', at: 'x' } }));
+        updateMiniMaxCodeState((state) => ({ ...state, lastCheckin: { date: '2026-10-25', status: 'checked-in', trigger: 'auto', at: 'x' } }));
         logout();
-        expect(readMiniMaxCodeState()).toEqual({ lastCheckin: { date: '2026-10-25', status: 'checked-in', at: 'x' } });
+        expect(readMiniMaxCodeState()).toEqual({ lastCheckin: { date: '2026-10-25', status: 'checked-in', trigger: 'auto', at: 'x' } });
     });
 });
 

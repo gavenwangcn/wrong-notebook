@@ -328,6 +328,7 @@ Data directories, default accounts and local builds are described in [INSTALL_PA
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | URL `https://api.deepseek.com`, model `deepseek-flash` | URL and model are optional |
 | `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | URL `https://api.moonshot.cn/v1`, model `kimi-k3` | URL and model are optional |
 | `MINIMAX_CODE_MODEL` | MiniMax Code model | `MiniMax-M3.1-Flash` | The account signs in from the web settings; no API key needed |
+| `MINIMAX_CODE_AUTO_CHECKIN` | MiniMax Code daily auto check-in | `true` | Set to `false` to turn it off |
 | `ANTHROPIC_API_KEY` | Anthropic API key | None | From the [Claude Console](https://platform.claude.com/) |
 | `ANTHROPIC_BASE_URL` | API URL | `https://api.anthropic.com` | For compatible services, use the URL without `/v1` |
 | `ANTHROPIC_MODEL` | Model | `claude-sonnet-5-5` | e.g. `claude-opus-5-5`, `claude-haiku-5-5` |
@@ -396,9 +397,9 @@ These channels call each vendor's official OpenAI-compatible API, so only an API
 
 #### MiniMax Code OAuth
 
-Sign in with a MiniMax Code account in the browser; no API key is needed. In "Settings → AI Provider", choose MiniMax Code OAuth, click "Sign in with browser" and finish authorizing on the MiniMax page that opens. The settings page shows the login status and remaining credits. The model defaults to `MiniMax-M3.1-Flash`; `MiniMax-M3`, `MiniMax-M2.7` and others are also available.
+Sign in with a MiniMax Code account in the browser; no API key is needed. In "Settings → AI Provider", choose MiniMax Code OAuth, click "Sign in with browser" and finish authorizing on the MiniMax page that opens. The settings page shows the login status, the remaining credits and whether today's check-in was done automatically. The model defaults to `MiniMax-M3.1-Flash`; `MiniMax-M3`, `MiniMax-M2.7` and others are also available.
 
-The credentials are stored in `minimax-code.json` in the server's config directory (next to `app-config.json`, not included in data backups), and the access token is renewed automatically before it expires. This channel uses the sign-in of the MiniMax Code desktop client (OAuth device authorization) rather than an official open API, so MiniMax may change or restrict it at any time. Follow MiniMax's terms of service.
+The credentials are stored in `minimax-code.json` in the server's config directory (next to `app-config.json`, not included in data backups), and the access token is renewed automatically before it expires. Once signed in, the server checks every hour and collects the MiniMax Code daily check-in credits if today's check-in (Beijing time) has not been done yet. You can turn auto check-in off or check in right away on the settings page. This channel uses the sign-in of the MiniMax Code desktop client (OAuth device authorization) rather than an official open API, so MiniMax may change or restrict it at any time. Follow MiniMax's terms of service.
 
 #### Anthropic
 

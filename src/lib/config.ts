@@ -147,6 +147,7 @@ const DEFAULT_CONFIG: AppConfig = {
     },
     minimaxCode: {
         model: process.env.MINIMAX_CODE_MODEL,
+        autoCheckin: process.env.MINIMAX_CODE_AUTO_CHECKIN !== 'false',
     },
     ...Object.fromEntries(VENDOR_PROVIDER_IDS.map((id) => {
         const prefix = VENDOR_PRESETS[id].envPrefix;

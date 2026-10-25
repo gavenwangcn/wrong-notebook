@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
     pollDeviceLogin: vi.fn(),
     fetchProfile: vi.fn(),
     fetchCredits: vi.fn(),
+    fetchCheckinStatus: vi.fn(),
+    claimCheckin: vi.fn(),
     refreshTokens: vi.fn(),
 }));
 
@@ -23,10 +25,13 @@ vi.mock('@/lib/minimax-code/api', async (importOriginal) => ({
     pollDeviceLogin: mocks.pollDeviceLogin,
     fetchProfile: mocks.fetchProfile,
     fetchCredits: mocks.fetchCredits,
+    fetchCheckinStatus: mocks.fetchCheckinStatus,
+    claimCheckin: mocks.claimCheckin,
     refreshTokens: mocks.refreshTokens,
 }));
 
 import { DELETE, GET } from '@/app/api/minimax-code/route';
+import { POST as CHECKIN } from '@/app/api/minimax-code/checkin/route';
 import { GET as POLL, POST as START } from '@/app/api/minimax-code/login/route';
 import { MiniMaxCodeAuthError } from '@/lib/minimax-code/api';
 import { readMiniMaxCodeState, updateMiniMaxCodeState } from '@/lib/minimax-code/store';
@@ -71,6 +76,7 @@ describe('权限', () => {
         expect((await DELETE()).status).toBe(403);
         expect((await START()).status).toBe(403);
         expect((await POLL()).status).toBe(403);
+        expect((await CHECKIN()).status).toBe(403);
         expect(mocks.startDeviceLogin).not.toHaveBeenCalled();
     });
 });
@@ -78,12 +84,16 @@ describe('权限', () => {
 describe('GET /api/minimax-code', () => {
     it('未登录时返回 none', async () => {
         const data = await (await GET()).json();
-        expect(data).toEqual({ login: 'none', account: null, credits: null, pendingLogin: null });
+        expect(data).toEqual({
+            login: 'none', account: null, credits: null, pendingLogin: null,
+            checkin: { autoCheckin: true, today: null, last: null },
+        });
     });
 
-    it('已登录时返回账号与剩余积分，不包含 Token', async () => {
+    it('已登录时返回账号、剩余积分和今天的签到状态，不包含 Token', async () => {
         saveAccount();
         mocks.fetchCredits.mockResolvedValue({ total: 2400, free: 2000, purchased: 400, plan: null });
+        mocks.fetchCheckinStatus.mockResolvedValue({ checkedToday: false, streakDays: 2, points: 800, bonusPoints: 400 });
 
         const response = await GET();
         const text = await response.text();
@@ -92,6 +102,7 @@ describe('GET /api/minimax-code', () => {
             login: 'active',
             account: { name: '小明', userId: 'u1' },
             credits: { total: 2400, free: 2000, purchased: 400 },
+            checkin: { autoCheckin: true, today: { checkedToday: false, streakDays: 2 }, last: null },
         });
         expect(text).not.toContain('secret');
         expect(mocks.fetchCredits).toHaveBeenCalledWith('mmoat_secret');
@@ -111,7 +122,21 @@ describe('GET /api/minimax-code', () => {
     it('积分查询网络失败时仍显示已登录', async () => {
         saveAccount();
         mocks.fetchCredits.mockRejectedValue(new Error('fetch failed'));
-        expect(await (await GET()).json()).toMatchObject({ login: 'active', credits: null });
+        mocks.fetchCheckinStatus.mockResolvedValue({ checkedToday: true, streakDays: 1, points: 800, bonusPoints: 0 });
+        expect(await (await GET()).json()).toMatchObject({ login: 'active', credits: null, checkin: { today: { checkedToday: true } } });
+    });
+
+    it('立即签到并在状态中显示今天的签到记录', async () => {
+        saveAccount();
+        mocks.fetchCheckinStatus.mockResolvedValue({ checkedToday: false, streakDays: 2, points: 800, bonusPoints: 400 });
+        mocks.claimCheckin.mockResolvedValue({ status: 'checked-in', points: 1200, streakDays: 3 });
+        mocks.fetchCredits.mockResolvedValue({ total: 3600, free: 3600, purchased: 0, plan: null });
+
+        const record = await (await CHECKIN()).json();
+        expect(record).toMatchObject({ status: 'checked-in', trigger: 'manual', points: 1200 });
+
+        const data = await (await GET()).json();
+        expect(data.checkin.last).toMatchObject({ status: 'checked-in', trigger: 'manual', points: 1200 });
     });
 });
 
