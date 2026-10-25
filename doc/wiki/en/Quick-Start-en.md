@@ -57,7 +57,7 @@ Open <http://localhost:3000>. The default admin account is:
 | Email | `admin@localhost` |
 | Password | `123456` |
 
-The first sign-in requires changing the default password (the new one cannot be `123456`); then configure the AI service. The default password only applies to fresh installs; upgrading an existing instance keeps its accounts and passwords.
+The first sign-in opens the setup wizard: change the default password (required; the new one cannot be `123456`), then set up an AI provider and create your first notebook. The last two steps can be skipped. Run the wizard again from Settings → User Management; instances that already have notebooks do not open it automatically after upgrading. The default password only applies to fresh installs; upgrading an existing instance keeps its accounts and passwords.
 
 ## Add your first question
 

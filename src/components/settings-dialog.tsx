@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { AlertTriangle, BarChart3, Bot, Info, Languages, Loader2, MessageSquareText, Settings, Shield, User } from "lucide-react";
+import { AlertTriangle, BarChart3, Bot, Info, Languages, Loader2, MessageSquareText, Settings, Shield, User, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -26,32 +26,11 @@ import { PromptSettings } from "@/components/settings/prompt-settings";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTimeZone } from "@/contexts/TimeZoneContext";
 import { apiClient } from "@/lib/api-client";
-import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/date-time";
+import { validateAiConfig } from "@/lib/ai-config-validation";
+import { DEFAULT_TIME_ZONE } from "@/lib/date-time";
 import { toast } from "@/lib/feedback";
 import { frontendLogger } from "@/lib/frontend-logger";
-import type { Translations } from "@/lib/translations";
 import type { AppConfig } from "@/types/api";
-
-/** 保存前校验当前渠道的必填项，返回错误提示 */
-function validateConfig(config: AppConfig, t: Translations): string | null {
-    if (!isValidTimeZone(config.timeZone ?? DEFAULT_TIME_ZONE)) {
-        return t.settings.general.invalidTimeZone;
-    }
-    if (config.aiProvider === 'openai') {
-        for (const instance of config.openai?.instances || []) {
-            if (!instance.name?.trim()) return t.settings?.ai?.validationNameRequired || "Instance name is required";
-            if (!instance.apiKey?.trim()) return t.settings?.ai?.validationApiKeyRequired || "API Key is required";
-            if (!instance.baseUrl?.trim()) return t.settings?.ai?.validationBaseUrlRequired || "Base URL is required";
-            if (!instance.model?.trim()) return t.settings?.ai?.validationModelRequired || "Model name is required";
-        }
-    }
-    if (config.aiProvider === 'azure') {
-        if (!config.azure?.endpoint?.trim()) return t.settings?.ai?.validationAzureEndpointRequired || 'Azure Endpoint is required';
-        if (!config.azure?.deploymentName?.trim()) return t.settings?.ai?.validationAzureDeploymentRequired || 'Deployment Name is required';
-        if (!config.azure?.apiKey?.trim()) return t.settings?.ai?.validationApiKeyRequired || 'API Key is required';
-    }
-    return null;
-}
 
 interface SettingsTabProps {
     value: string;
@@ -99,7 +78,7 @@ export function SettingsDialog() {
     }, [open, fetchSettings]);
 
     const handleSaveSettings = async () => {
-        const validationError = validateConfig(config, t);
+        const validationError = validateAiConfig(config, t);
         if (validationError) {
             toast.error(validationError);
             return;
@@ -192,6 +171,17 @@ export function SettingsDialog() {
                             >
                                 <BarChart3 className="h-4 w-4" />
                                 {t.admin?.dashboard?.title || "Admin Dashboard"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="w-full justify-start gap-2"
+                                onClick={() => {
+                                    setOpen(false);
+                                    router.push("/setup");
+                                }}
+                            >
+                                <Wand2 className="h-4 w-4" />
+                                {t.setup.rerun}
                             </Button>
                             <div className="border-t pt-4">
                                 <UserManagement />

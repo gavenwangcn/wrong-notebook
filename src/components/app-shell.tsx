@@ -9,6 +9,7 @@ import type { LucideIcon } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSetupRedirect } from "@/lib/use-setup-redirect";
 import { cn } from "@/lib/utils";
 
 /** 登录、注册与打印页不显示导航 */
@@ -41,12 +42,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname() || "/";
     const { t } = useLanguage();
     const { data: session, status } = useSession();
+    const isAdmin = session?.user?.role === "admin";
+    const isBare = BARE_PATHS.some((pattern) => pattern.test(pathname));
+    useSetupRedirect(isAdmin && !isBare);
 
-    if (BARE_PATHS.some((pattern) => pattern.test(pathname)) || status === "unauthenticated") {
+    if (isBare || status === "unauthenticated") {
         return <>{children}</>;
     }
 
-    const isAdmin = session?.user?.role === "admin";
     const userName = session?.user?.name || session?.user?.email || "";
 
     return (

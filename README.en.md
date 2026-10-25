@@ -145,6 +145,7 @@ Practice statistics show total practice, accuracy and active months, with distri
 - **⏳ Background tasks**: the button at the bottom right shows the progress of long-running jobs such as recognition, AI generation, bulk tagging and exam generation. Jobs keep running on the server after you leave the page.
 - **💾 Import and export**: export or import data backups in **Settings**, including notebooks, questions, practice and answer records, exams and personal preferences; account credentials and AI settings are not included.
 - **🕒 Application time zone**: Beijing time by default and changeable by administrators; dates and statistics follow the application time zone. See [TIME_ZONE.md](doc/TIME_ZONE.md) (Chinese).
+- **🧭 Setup wizard**: on first sign-in the admin goes through a wizard: change the default password (required) → set up an AI provider (free MiniMax Code recommended) → create the first notebook. The last two steps can be skipped, and the wizard can be run again from **Settings → User Management**. Instances already in use are not interrupted after upgrading.
 - **🔐 Multiple users and admin console**: sign-up and sign-in, with data isolated per user. New sign-ups are off by default and can be turned on under **Settings → User Management**, where admins can also cap daily AI use per user and see today's usage. Administrators open the admin console from **Settings → User Management** to view usage statistics and enable, disable or delete users.
 - **🔌 Openclaw integration**: an external Openclaw agent can upload question images in bulk via `POST /api/openclaw/batch-upload`; see the environment variables below.
 
@@ -205,7 +206,7 @@ When served over HTTPS (or `localhost`), a service worker caches scripts, styles
    npm run dev
    ```
 
-   Open `http://localhost:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. You must change the default password on first sign-in.
+   Open `http://localhost:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. The first sign-in opens the setup wizard: change the default password (required), then set up an AI provider and create your first notebook.
 
 AI API keys can also be set in the web settings after signing in; see the AI model configuration section below.
 
@@ -250,7 +251,7 @@ See [Releases](https://github.com/margrop/wrong-notebook/releases) for available
    docker compose up -d
    ```
 
-3. **Sign in**: open `http://your-ip-or-domain:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. You must change the default password on first sign-in, then enter your AI API key in the web settings.
+3. **Sign in**: open `http://your-ip-or-domain:3000` and sign in with the default admin account: email `admin@localhost`, password `123456`. The first sign-in opens the setup wizard: change the default password (required), then set up an AI provider and create your first notebook.
 
 4. **Upgrade**: pull the new image and recreate the container. Data stays in the mounted directories; on startup only database migrations run.
 

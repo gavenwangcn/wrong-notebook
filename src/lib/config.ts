@@ -29,6 +29,8 @@ export interface AppConfig extends VendorConfigs {
     /** 普通用户每天可发起的 AI 调用次数，0 表示不限制；管理员不受限制 */
     aiDailyLimit?: number;
     timeZone?: string;
+    /** 管理员完成（或跳过）安装向导的时间，ISO 字符串；未设置时新安装会自动进入向导 */
+    setupCompletedAt?: string;
     openai?: {
         instances?: OpenAIInstance[];
         activeInstanceId?: string;
