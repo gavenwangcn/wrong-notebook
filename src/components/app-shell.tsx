@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { BarChart3, BookOpen, CalendarCheck, FileText, LogOut, PlusCircle, Shield, Tags } from "lucide-react";
+import { BarChart3, BookOpen, CalendarCheck, FileText, LogOut, PlusCircle, Shield } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 /** 登录、注册与打印页不显示导航 */
 const BARE_PATHS = [/^\/login/, /^\/register/, /^\/print-preview/, /^\/exams\/[^/]+\/print/];
 
-type NavKey = "home" | "notebooks" | "review" | "tags" | "stats" | "exams";
+type NavKey = "home" | "notebooks" | "review" | "stats" | "exams";
 
 interface NavItem {
     key: NavKey;
@@ -32,8 +32,7 @@ const NAV_ITEMS: NavItem[] = [
         match: (p) => p.startsWith("/notebooks") || p.startsWith("/error-items") || p.startsWith("/practice"),
     },
     { key: "review", href: "/review", icon: CalendarCheck, match: (p) => p.startsWith("/review") },
-    { key: "tags", href: "/tags", icon: Tags, match: (p) => p.startsWith("/tags") },
-    { key: "stats", href: "/stats", icon: BarChart3, match: (p) => p.startsWith("/stats") },
+    { key: "stats", href: "/stats", icon: BarChart3, match: (p) => p.startsWith("/stats") || p.startsWith("/tags") },
     { key: "exams", href: "/exams", icon: FileText, match: (p) => p.startsWith("/exams") },
 ];
 
@@ -116,7 +115,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="pb-20 md:pb-0">{children}</div>
 
             <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t bg-card/90 backdrop-blur-md md:hidden print:hidden">
-                <div className="grid h-16 grid-cols-6">
+                <div className="grid h-16 grid-cols-5">
                     {NAV_ITEMS.map((item) => {
                         const active = item.match(pathname);
                         const Icon = item.icon;

@@ -88,7 +88,7 @@ The print preview can include an answer page; download it as HTML, print it, or 
 <details>
 <summary><strong>Knowledge library: browse by subject, grade and chapter</strong></summary>
 
-The tag library organizes knowledge points by curriculum level, and also offers custom tags and usage statistics. This demo uses English sample tags for algebra and geometry.
+The tag library organizes knowledge points by curriculum level. Knowledge points now live under the **Stats** section: the "Knowledge Points" tab browses the standard library and manages custom tags, and the "Knowledge Point Stats" tab shows usage frequency. This demo uses English sample tags for algebra and geometry.
 
 ![English grade 4 tags expanded to show linear equations, adding fractions, angles, and area and perimeter](doc/screenshots/en/knowledge-tags.png)
 
