@@ -48,10 +48,12 @@ export function AiProviderSettings({ config, setConfig, loading, saving, onSave 
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {VENDOR_PROVIDER_IDS.map((id) => (
+                        {/* MiniMax Code OAuth 排在第 2 位，紧跟 MiniMax 官方渠道 */}
+                        <SelectItem value="minimax">{VENDOR_PRESETS.minimax.name}</SelectItem>
+                        <SelectItem value="minimax-code">MiniMax Code OAuth</SelectItem>
+                        {VENDOR_PROVIDER_IDS.filter((id) => id !== 'minimax').map((id) => (
                             <SelectItem key={id} value={id}>{VENDOR_PRESETS[id].name}</SelectItem>
                         ))}
-                        <SelectItem value="minimax-code">MiniMax Code OAuth</SelectItem>
                         <SelectItem value="anthropic">Anthropic / Compatible</SelectItem>
                         <SelectItem value="azure">Azure OpenAI</SelectItem>
                         <SelectItem value="openai">OpenAI / Compatible</SelectItem>

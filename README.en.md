@@ -165,7 +165,7 @@ When served over HTTPS (or `localhost`), a service worker caches scripts, styles
 - **Database**: [SQLite](https://www.sqlite.org/) (via [Prisma 5](https://www.prisma.io/))
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) + [Radix UI](https://www.radix-ui.com/) (shadcn/ui-style components)
 - **Formulas**: [KaTeX](https://katex.org/) (react-markdown + remark-math)
-- **AI**: MiniMax / Zhipu GLM / DeepSeek / Kimi / MiniMax Code (browser sign-in) / Anthropic (and compatible APIs) / Azure OpenAI / OpenAI (and compatible APIs) / Google Gemini
+- **AI**: MiniMax / MiniMax Code (browser sign-in) / Zhipu GLM / DeepSeek / Kimi / Anthropic (and compatible APIs) / Azure OpenAI / OpenAI (and compatible APIs) / Google Gemini
 - **Auth**: [NextAuth.js v4](https://next-auth.js.org/)
 - **Testing**: Vitest (unit, integration), Playwright (E2E)
 
@@ -322,13 +322,13 @@ Data directories, default accounts and local builds are described in [INSTALL_PA
 
 | Variable | Description | Default | Notes |
 | :--- | :--- | :--- | :--- |
-| `AI_PROVIDER` | AI provider | `minimax` | `minimax`, `glm`, `deepseek`, `kimi`, `minimax-code`, `anthropic`, `azure`, `openai` or `gemini` |
+| `AI_PROVIDER` | AI provider | `minimax` | `minimax`, `minimax-code`, `glm`, `deepseek`, `kimi`, `anthropic`, `azure`, `openai` or `gemini` |
 | `MINIMAX_API_KEY` / `MINIMAX_BASE_URL` / `MINIMAX_MODEL` | MiniMax | URL `https://api.minimax.cn/v1`, model `MiniMax-M3.1-Flash` | URL and model are optional |
+| `MINIMAX_CODE_MODEL` | MiniMax Code model | `MiniMax-M3.1-Flash` | The account signs in from the web settings; no API key needed |
+| `MINIMAX_CODE_AUTO_CHECKIN` | MiniMax Code daily auto check-in | `true` | Set to `false` to turn it off |
 | `GLM_API_KEY` / `GLM_BASE_URL` / `GLM_MODEL` | Zhipu GLM | URL `https://open.bigmodel.cn/api/paas/v4`, model `glm-5.3-flash` | URL and model are optional |
 | `DEEPSEEK_API_KEY` / `DEEPSEEK_BASE_URL` / `DEEPSEEK_MODEL` | DeepSeek | URL `https://api.deepseek.com`, model `deepseek-flash` | URL and model are optional |
 | `KIMI_API_KEY` / `KIMI_BASE_URL` / `KIMI_MODEL` | Kimi | URL `https://api.moonshot.cn/v1`, model `kimi-k3` | URL and model are optional |
-| `MINIMAX_CODE_MODEL` | MiniMax Code model | `MiniMax-M3.1-Flash` | The account signs in from the web settings; no API key needed |
-| `MINIMAX_CODE_AUTO_CHECKIN` | MiniMax Code daily auto check-in | `true` | Set to `false` to turn it off |
 | `ANTHROPIC_API_KEY` | Anthropic API key | None | From the [Claude Console](https://platform.claude.com/) |
 | `ANTHROPIC_BASE_URL` | API URL | `https://api.anthropic.com` | For compatible services, use the URL without `/v1` |
 | `ANTHROPIC_MODEL` | Model | `claude-sonnet-5-5` | e.g. `claude-opus-5-5`, `claude-haiku-5-5` |
@@ -361,7 +361,7 @@ When adding environment variables, update `.env.example` as well.
 AI settings can be changed in the web UI without restarting the server.
 
 1. **Open settings**: as an administrator, click the settings icon at the top right of the home page and open **AI Provider**.
-2. **Choose a provider**: MiniMax is the default. Choose from the official MiniMax, Zhipu GLM, DeepSeek and Kimi channels, MiniMax Code OAuth (sign in with a MiniMax Code account in the browser), Anthropic, Azure OpenAI, OpenAI (including compatible APIs) or Google Gemini; OpenAI supports several configurations you can switch between.
+2. **Choose a provider**: MiniMax is the default. Choose from the official MiniMax channel, MiniMax Code OAuth (sign in with a MiniMax Code account in the browser), the official Zhipu GLM, DeepSeek and Kimi channels, Anthropic, Azure OpenAI, OpenAI (including compatible APIs) or Google Gemini; OpenAI supports several configurations you can switch between.
 3. **Fill in the parameters**: API key, base URL (or endpoint) and model (or deployment name). Test the connection and fetch the model list from the API.
 4. **Save**: settings are stored in `config/app-config.json` and take precedence over `.env`.
 
