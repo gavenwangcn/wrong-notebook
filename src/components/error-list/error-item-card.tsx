@@ -13,7 +13,7 @@ import { formatDateTime } from "@/lib/date-time";
 import { getItemTags } from "@/lib/item-tags";
 import { cleanMarkdown } from "@/lib/markdown-utils";
 import { getMistakeStatusLabel } from "@/lib/mistake-status";
-import type { ErrorItem } from "@/types/api";
+import type { ErrorItemSummary } from "@/types/api";
 
 /** 卡片默认显示的知识点个数，其余折叠 */
 const VISIBLE_TAGS = 3;
@@ -21,7 +21,7 @@ const VISIBLE_TAGS = 3;
 const SUMMARY_LENGTH = 80;
 
 interface ErrorItemCardProps {
-    item: ErrorItem;
+    item: ErrorItemSummary;
     selectMode: boolean;
     selected: boolean;
     onToggleSelect: () => void;

@@ -9,7 +9,8 @@ import { getAppTimeZone } from "@/lib/config";
 import { shiftCalendarDate } from "@/lib/date-time";
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, MIN_PAGE_SIZE } from "@/lib/constants/pagination";
 import { isShortId } from "@/lib/short-id";
-import { PRACTICE_RECORD_COUNT, isMasteryStatus, masteryStatusOf, masteryStatusWhere } from "@/lib/mastery-status";
+import { isMasteryStatus, masteryStatusOf, masteryStatusWhere } from "@/lib/mastery-status";
+import { ERROR_ITEM_LIST_SELECT, ERROR_ITEM_PRINT_SELECT } from "@/lib/error-list-select";
 
 const logger = createLogger('api:error-items:list');
 
@@ -153,11 +154,7 @@ export async function GET(req: Request) {
         const errorItems = await prisma.errorItem.findMany({
             where: whereClause,
             orderBy: { createdAt: "desc" },
-            include: {
-                subject: true,
-                tags: true,
-                _count: PRACTICE_RECORD_COUNT,
-            },
+            select: searchParams.get("view") === "print" ? ERROR_ITEM_PRINT_SELECT : ERROR_ITEM_LIST_SELECT,
             skip: (page - 1) * pageSize,
             take: pageSize,
         });

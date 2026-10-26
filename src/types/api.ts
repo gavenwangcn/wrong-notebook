@@ -95,6 +95,17 @@ export interface ErrorItem {
     updatedAt: string;
 }
 
+/** 列表卡片数据；不包含原图、解答和动画等详情字段。 */
+export type ErrorItemSummary = Pick<ErrorItem,
+    'id' | 'shortId' | 'questionText' | 'mistakeStatus' | 'knowledgePoints' |
+    'difficultyStars' | 'masteryStatus' | 'masteryProbability' | 'createdAt'
+> & { tags?: Pick<Tag, 'name'>[] };
+
+/** 打印所需内容，独立于完整详情与列表卡片的数据类型。 */
+export type PrintableErrorItem = ErrorItemSummary & Pick<ErrorItem,
+    'originalImageUrl' | 'answerText' | 'analysis' | 'figureSvg' | 'gradeSemester' | 'paperLevel'
+> & { subject?: Pick<Notebook, 'name'> | null };
+
 // For creation/updates
 export interface CreateErrorItemRequest extends ParsedQuestion {
     originalImageUrl: string;

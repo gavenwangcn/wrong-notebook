@@ -7,7 +7,7 @@ import { BackButton } from "@/components/ui/back-button";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { QuestionFigure } from "@/components/question-figure";
 import { apiClient } from "@/lib/api-client";
-import { ErrorItem, PaginatedResponse } from "@/types/api";
+import type { PaginatedResponse, PrintableErrorItem } from "@/types/api";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageTitle } from "@/lib/page-title";
 import { PRINT_PREVIEW_PAGE_SIZE } from "@/lib/constants/pagination";
@@ -22,7 +22,7 @@ import {
 function PrintPreviewContent() {
     const searchParams = useSearchParams();
     const { t } = useLanguage();
-    const [items, setItems] = useState<ErrorItem[]>([]);
+    const [items, setItems] = useState<PrintableErrorItem[]>([]);
     usePageTitle(t.printPreview.title);
     const [loading, setLoading] = useState(true);
     const [showAnswers, setShowAnswers] = useState(false);
@@ -37,7 +37,8 @@ function PrintPreviewContent() {
             const params = new URLSearchParams(searchParams.toString());
             // 打印预览需要所有符合条件的数据，设置较大的 pageSize
             params.set("pageSize", String(PRINT_PREVIEW_PAGE_SIZE));
-            const response = await apiClient.get<PaginatedResponse<ErrorItem>>(`/api/error-items/list?${params.toString()}`);
+            params.set("view", "print");
+            const response = await apiClient.get<PaginatedResponse<PrintableErrorItem>>(`/api/error-items/list?${params.toString()}`);
             setItems(response.items);
             setSelectedIds(new Set(response.items.map((item) => item.id)));
         } catch (error) {

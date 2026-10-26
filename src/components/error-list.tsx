@@ -23,7 +23,7 @@ import { locateByShortId } from "@/lib/short-id-client";
 import { isShortId } from "@/lib/short-id-format";
 import type { ErrorListFilters, PaperLevelFilter as PaperLevel, TimeFilter } from "@/lib/error-list-filters";
 import type { MasteryStatus } from "@/lib/mastery-status";
-import type { ErrorItem, PaginatedResponse } from "@/types/api";
+import type { ErrorItemSummary, PaginatedResponse } from "@/types/api";
 
 interface ErrorListProps {
     subjectId?: string;
@@ -39,7 +39,7 @@ type KnowledgeFilterChange = {
 export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
     const { t } = useLanguage();
     const router = useRouter();
-    const [items, setItems] = useState<ErrorItem[]>([]);
+    const [items, setItems] = useState<ErrorItemSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [masteryFilter, setMasteryFilter] = useState<"all" | MasteryStatus>("all");
@@ -101,7 +101,7 @@ export function ErrorList({ subjectId, subjectName }: ErrorListProps = {}) {
             const params = buildErrorListParams(filters);
             params.append("page", page.toString());
             params.append("pageSize", pageSize.toString());
-            const response = await apiClient.get<PaginatedResponse<ErrorItem>>(`/api/error-items/list?${params.toString()}`);
+            const response = await apiClient.get<PaginatedResponse<ErrorItemSummary>>(`/api/error-items/list?${params.toString()}`);
             setItems(response.items);
             setTotal(response.total);
             setTotalPages(response.totalPages);

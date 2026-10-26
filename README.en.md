@@ -30,6 +30,8 @@ The screenshots below were captured from the running app on 2026-10-22 using Eng
 
 **Notebook**: see each question's summary, difficulty stars and knowledge points on one page. Filter by grade, term, mastery and A/B paper, open a question by its ID, compare similarity or print in bulk.
 
+The list loads card data only. Original images, answers and explanations load in question details or print preview, reducing data transfer when paging.
+
 ![English math questions with difficulty stars, English knowledge-point tags and filters](doc/screenshots/en/notebook.png)
 
 <details>
