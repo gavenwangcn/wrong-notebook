@@ -3,6 +3,21 @@
 本文件记录各正式版的改动，由 `scripts/changelog.sh` 根据提交信息生成，请勿手动编辑。
 预览版（`v年.月.日-n`）的改动见 [GitHub Releases](https://github.com/margrop/wrong-notebook/releases)，并归入其后的正式版。
 
+## [2026.10.26](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.26) - 2026-10-26
+
+### ✨ 新功能
+- 裁剪图片支持滚轮、双指捏合和按钮缩放
+- 错题本列表去掉编辑和删除按钮，删除移到错题本详情页；题数改为「xx 题」
+- 试卷生成完成显示为「已生成」，录入过结果后才显示「已完成」
+- 新增管理员安装向导：修改默认密码、配置 AI 渠道、创建第一个错题本
+- 管理员使用默认密码登录时强制先修改密码
+- 知识点栏目并入统计中心，导航由 6 项精简为 5 项
+
+### 🛠 修复
+- 精简错题列表查询并按需加载打印数据
+
+**完整变更**：https://github.com/margrop/wrong-notebook/compare/v2026.10.25...v2026.10.26
+
 ## [2026.10.25](https://github.com/margrop/wrong-notebook/releases/tag/v2026.10.25) - 2026-10-25
 
 ### ✨ 新功能
