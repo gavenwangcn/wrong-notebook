@@ -31,7 +31,8 @@ const get = (query = '') => GET(new Request(`http://localhost/api/error-items/li
 
 describe('错题列表大字段与打印回归（真实 SQLite）', () => {
     beforeAll(async () => {
-        execFileSync(process.execPath, [path.resolve('node_modules/prisma/build/index.js'), 'migrate', 'deploy'], {
+        // 一次创建独立测试库；正式迁移由生产构建流程验证。
+        execFileSync(process.execPath, [path.resolve('node_modules/prisma/build/index.js'), 'db', 'push', '--skip-generate'], {
             env: { ...process.env, DATABASE_URL: state.databaseUrl },
             stdio: 'pipe',
         });
