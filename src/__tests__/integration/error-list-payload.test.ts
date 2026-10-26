@@ -35,29 +35,32 @@ describe('错题列表大字段与打印回归（真实 SQLite）', () => {
             env: { ...process.env, DATABASE_URL: state.databaseUrl },
             stdio: 'pipe',
         });
-        await prisma.user.create({ data: { id: 'reader', email: 'list@example.com', password: 'unused-test-hash' } });
-        await prisma.user.create({ data: { id: 'other', email: 'other@example.com', password: 'unused-test-hash' } });
-        await prisma.subject.create({ data: { id: 'math', name: '数学', userId: 'reader' } });
-        await prisma.knowledgeTag.create({ data: { id: 'tag', name: '方程', subject: 'math' } });
-        for (let index = 0; index < 52; index++) {
-            await prisma.errorItem.create({
-                data: {
-                    id: `question-${index}`, userId: 'reader', subjectId: 'math',
-                    createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, 52 - index)),
-                    questionText: `题目 ${index}：求解方程`, originalImageUrl: image,
-                    answerText: 'x = 1', analysis: '等式两边同时运算', figureSvg: figure,
-                    svgAnimation: animation, svgAnimationEn: animation, ocrText: '完整 OCR',
-                    lastPractice: '{"questionText":"历史练习"}',
-                    mistakeStatus: 'wrong_attempt', difficultyStars: 3, masteryProbability: 0.8,
-                    knowledgePoints: '["旧知识点"]', tags: { connect: { id: 'tag' } },
-                },
-            });
-        }
-        await prisma.errorItem.create({ data: { id: 'private', userId: 'other', questionText: '其他用户的题目', originalImageUrl: image } });
-        await prisma.practiceRecord.createMany({ data: [
-            { userId: 'reader', errorItemId: 'question-0', result: null },
-            { userId: 'reader', errorItemId: 'question-1', result: 'correct' },
-        ] });
+        const questions = Array.from({ length: 52 }, (_, index) => ({
+            id: `question-${index}`, userId: 'reader', subjectId: 'math',
+            createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, 52 - index)),
+            questionText: `题目 ${index}：求解方程`, originalImageUrl: image,
+            answerText: 'x = 1', analysis: '等式两边同时运算', figureSvg: figure,
+            svgAnimation: animation, svgAnimationEn: animation, ocrText: '完整 OCR',
+            lastPractice: '{"questionText":"历史练习"}',
+            mistakeStatus: 'wrong_attempt', difficultyStars: 3, masteryProbability: 0.8,
+            knowledgePoints: '["旧知识点"]',
+        }));
+        // 批量事务只提交一次，避免 NAS 上逐条写入大图片触发大量同步磁盘操作。
+        await prisma.$transaction([
+            prisma.user.create({ data: { id: 'reader', email: 'list@example.com', password: 'unused-test-hash' } }),
+            prisma.user.create({ data: { id: 'other', email: 'other@example.com', password: 'unused-test-hash' } }),
+            prisma.subject.create({ data: { id: 'math', name: '数学', userId: 'reader' } }),
+            prisma.errorItem.createMany({ data: questions }),
+            prisma.knowledgeTag.create({ data: {
+                id: 'tag', name: '方程', subject: 'math',
+                errorItems: { connect: questions.map(({ id }) => ({ id })) },
+            } }),
+            prisma.errorItem.create({ data: { id: 'private', userId: 'other', questionText: '其他用户的题目', originalImageUrl: image } }),
+            prisma.practiceRecord.createMany({ data: [
+                { userId: 'reader', errorItemId: 'question-0', result: null },
+                { userId: 'reader', errorItemId: 'question-1', result: 'correct' },
+            ] }),
+        ]);
     }, 30_000);
 
     afterAll(async () => {
