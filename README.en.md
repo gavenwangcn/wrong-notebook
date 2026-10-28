@@ -24,6 +24,16 @@ An AI-powered notebook for the questions you got wrong. Snap a photo or type a q
 
 > The app's built-in knowledge-point library follows the Chinese K-12 curriculum (primary, junior high and senior high school). The interface is available in Simplified Chinese and English.
 
+## ⭐ Star History
+
+<a href="https://www.star-history.com/#margrop/wrong-notebook&amp;Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date&amp;theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date">
+    <img src="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date" alt="GitHub star history chart for margrop/wrong-notebook">
+  </picture>
+</a>
+
 ## 🖼️ Screenshots
 
 The screenshots below were captured from the running app on 2026-10-22 using English demo questions, answers, explanations, knowledge points and exams. The Student account and practice records are sample data. Click an image to view it full size.
@@ -494,16 +504,6 @@ The `scripts/` directory contains maintenance and debugging scripts, for example
 ## 🤝 Contributing
 
 Issues and pull requests are welcome. Please read the [contributing guide](CONTRIBUTING.md) (Chinese) and the [code of conduct](CODE_OF_CONDUCT.md). For questions and bug reports, see [getting help](SUPPORT.md). Report security vulnerabilities privately as described in the [security policy](SECURITY.md). See the [changelog](CHANGELOG.md) (Chinese) for changes in each stable release.
-
-## ⭐ Star History
-
-<a href="https://www.star-history.com/#margrop/wrong-notebook&amp;Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date&amp;theme=dark">
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date">
-    <img src="https://api.star-history.com/svg?repos=margrop/wrong-notebook&amp;type=Date" alt="GitHub star history chart for margrop/wrong-notebook">
-  </picture>
-</a>
 
 ## 📄 License
 
