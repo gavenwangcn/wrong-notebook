@@ -12,6 +12,8 @@
 
 🌐 **项目介绍页**：<https://blog.margrop.net/wrong-notebook-github-pages/>
 
+📝 **介绍文章**：[别让错题本变成抄题本：我给孩子用的 AI 错题本开源了](https://blog.margrop.net/post/wrong-notebook-ai-family-learning/) · [不用先配 API Key：接上 MiniMax 免费账号](https://blog.margrop.net/post/wrong-notebook-minimax-free-ai-review/)
+
 🚀 **在线演示**：<https://wrong-notebook-demo.vercel.app>（账号 `demo@localhost`，密码 `demo123456`）
 
 > 演示站点为共享账号，数据对所有访客可见，请勿录入个人信息。

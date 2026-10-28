@@ -12,6 +12,8 @@ An AI-powered notebook for the questions you got wrong. Snap a photo or type a q
 
 🌐 **Project website**: <https://blog.margrop.net/wrong-notebook-github-pages/en/>
 
+📝 **Articles**: [Stop Copying Mistakes. Start Learning from Them](https://blog.margrop.net/en/post/wrong-notebook-ai-family-learning/) · [Free MiniMax Accounts, fnOS, and Daily Review](https://blog.margrop.net/en/post/wrong-notebook-minimax-free-ai-review/)
+
 🚀 **Live demo**: <https://wrong-notebook-demo.vercel.app> (account `demo@localhost`, password `demo123456`)
 
 > The demo uses a shared account and its data is visible to every visitor. Do not enter personal information.
