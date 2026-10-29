@@ -1,0 +1,42 @@
+# 在 Docker 内构建安卓 APK（与 Dockerfile / docker-compose-local.yml 跑服务端无关）。
+#
+# 客户端版（连接已部署的服务器，推荐）：
+#   docker compose -f docker-compose.android-build.yml build
+#   docker compose -f docker-compose.android-build.yml run --rm android-build
+#   产物：./dist/WrongNotebook-Android-Client-*.apk
+#
+# 单机版（内置服务端，镜像更大，需 NDK + Rust，构建更久）：
+#   docker compose -f docker-compose.android-build.yml build --build-arg INSTALL_STANDALONE=1
+#   ANDROID_BUILD_SCRIPT="bash scripts/package/build-android-ubuntu.sh --standalone" \
+#     docker compose -f docker-compose.android-build.yml run --rm android-build
+#
+# 自定义参数示例：
+#   ANDROID_BUILD_SCRIPT="bash scripts/package/build-android-ubuntu.sh --mode client --flavor phone" \
+#     docker compose -f docker-compose.android-build.yml run --rm android-build
+
+version: '3'
+
+services:
+  android-build:
+    image: wrong-notebook-android-builder:local
+    build:
+      context: .
+      dockerfile: Dockerfile.android-builder
+      args:
+        INSTALL_STANDALONE: ${INSTALL_STANDALONE:-0}
+    working_dir: /src
+    volumes:
+      - .:/src
+      - android-gradle-cache:/root/.gradle
+    environment:
+      GRADLE_USER_HOME: /root/.gradle
+      ANDROID_HOME: /opt/android-sdk
+      ANDROID_SDK_ROOT: /opt/android-sdk
+      ANDROID_NDK_HOME: /opt/android-sdk/ndk/28.0.13004108
+    command:
+      - bash
+      - -lc
+      - ${ANDROID_BUILD_SCRIPT:-bash scripts/package/build-android-ubuntu.sh --mode client}
+
+volumes:
+  android-gradle-cache:

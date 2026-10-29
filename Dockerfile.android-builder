@@ -1,0 +1,58 @@
+# 安卓 APK 构建环境（非服务端运行镜像）。配合 docker-compose.android-build.yml 使用。
+#
+# 默认：客户端版 APK（需挂载源码，产物在 dist/）。
+# 构建单机版镜像：docker compose -f docker-compose.android-build.yml build --build-arg INSTALL_STANDALONE=1
+#
+# 基础：Node 24 + JDK 17 + Android SDK 35 + Gradle 8.11
+ARG NODE_IMAGE=node:24-bookworm
+FROM ${NODE_IMAGE}
+
+ARG GRADLE_VERSION=8.11.1
+ARG ANDROID_PLATFORM=android-35
+ARG ANDROID_BUILD_TOOLS=35.0.0
+# 单机版交叉编译 Prisma 引擎时使用
+ARG ANDROID_NDK_VERSION=28.0.13004108
+ARG INSTALL_STANDALONE=0
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        openjdk-17-jdk-headless \
+        unzip zip curl wget ca-certificates patchelf \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN mkdir -p "${ANDROID_HOME}/cmdline-tools" \
+    && wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdline-tools.zip \
+    && unzip -q /tmp/cmdline-tools.zip -d "${ANDROID_HOME}/cmdline-tools" \
+    && mv "${ANDROID_HOME}/cmdline-tools/cmdline-tools" "${ANDROID_HOME}/cmdline-tools/latest" \
+    && rm /tmp/cmdline-tools.zip
+
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:/opt/gradle-${GRADLE_VERSION}/bin:${PATH}"
+
+RUN yes | sdkmanager --licenses >/dev/null \
+    && sdkmanager "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}"
+
+RUN if [ "$INSTALL_STANDALONE" = "1" ]; then \
+        sdkmanager "ndk;${ANDROID_NDK_VERSION}"; \
+    fi
+
+ENV ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}
+
+RUN wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O /tmp/gradle.zip \
+    && unzip -q /tmp/gradle.zip -d /opt \
+    && rm /tmp/gradle.zip
+
+RUN if [ "$INSTALL_STANDALONE" = "1" ]; then \
+        curl -fsSL https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal \
+        && . "$HOME/.cargo/env" \
+        && rustup target add aarch64-linux-android; \
+    fi
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /src
+
+# 默认命令由 compose 覆盖；直接 docker run 时打客户端版
+CMD ["bash", "scripts/package/build-android-ubuntu.sh", "--mode", "client"]

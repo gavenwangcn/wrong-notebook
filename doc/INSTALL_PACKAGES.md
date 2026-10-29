@@ -100,6 +100,32 @@ App 切到后台后系统可能结束服务端进程，回到前台时会自动�
 
 需要 Node.js 22.15 及以上。Prisma 引擎与构建机平台一致，桌面版和飞牛OS 包须在目标平台（及架构）上构建。
 
+在 **Ubuntu 22.04+** 上打安卓 APK，可使用一键脚本（默认只打**客户端版**手机 + 平板，连接已部署的服务端；加 `--standalone` 打单机版）：
+
+```bash
+bash scripts/package/build-android-ubuntu.sh --help
+bash scripts/package/build-android-ubuntu.sh --install-apt-deps   # 首次可选：安装 JDK/zip/patchelf 等
+bash scripts/package/build-android-ubuntu.sh                    # dist/WrongNotebook-Android-Client-*.apk
+bash scripts/package/build-android-ubuntu.sh --standalone         # 需 ANDROID_NDK、rustup，耗时更长
+```
+
+脚本内注释说明了 `ANDROID_HOME`、Gradle 8.11 等环境准备；产物仍在 `dist/`。
+
+在 Docker 内构建（无需在宿主机安装 Android SDK / Gradle，适合 Ubuntu 22 等干净机器）：
+
+```bash
+# 客户端 APK（默认）
+docker compose -f docker-compose.android-build.yml build
+docker compose -f docker-compose.android-build.yml run --rm android-build
+
+# 单机版 APK（构建镜像时需 INSTALL_STANDALONE=1，见 docker-compose.android-build.yml 注释）
+docker compose -f docker-compose.android-build.yml build --build-arg INSTALL_STANDALONE=1
+ANDROID_BUILD_SCRIPT="bash scripts/package/build-android-ubuntu.sh --standalone" \
+  docker compose -f docker-compose.android-build.yml run --rm android-build
+```
+
+说明：仓库根目录的 `Dockerfile` + `docker-compose-local.yml` 只用于**运行 Web 服务端**，不能用来打 APK；打 APK 使用 `Dockerfile.android-builder` + `docker-compose.android-build.yml`。
+
 ```bash
 npm ci
 node scripts/package/build.mjs bundle                 # 构建通用服务端包 dist/bundle
