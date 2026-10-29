@@ -27,6 +27,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>WrongNotebookDefaultServerURL</key>
+	<string>$(DEFAULT_SERVER_URL)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take photos of questions to upload to your Wrong Notebook server.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

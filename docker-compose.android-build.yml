@@ -31,6 +31,8 @@ services:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
       ANDROID_NDK_HOME: /opt/android-sdk/ndk/28.0.13004108
+      # 客户端 APK 内置默认服务器（可选），例：http://185.242.235.202:3000
+      ANDROID_DEFAULT_SERVER_URL: ${ANDROID_DEFAULT_SERVER_URL:-}
       # login shell（bash -lc）会重置 PATH，需显式保留镜像内 Gradle / SDK
       PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/gradle-8.11.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     command:

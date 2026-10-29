@@ -200,6 +200,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.0.0-dev;
+				DEFAULT_SERVER_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.margrop.wrongnotebook;
 				PRODUCT_NAME = WrongNotebookClient;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -225,6 +226,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.0.0-dev;
+				DEFAULT_SERVER_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = com.margrop.wrongnotebook;
 				PRODUCT_NAME = WrongNotebookClient;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

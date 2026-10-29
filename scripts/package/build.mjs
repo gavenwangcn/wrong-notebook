@@ -385,14 +385,24 @@ async function buildAndroid() {
     const versionCode = androidVersionCode(version);
     const capitalize = (s) => s[0].toUpperCase() + s.slice(1);
     const variants = modes.flatMap((mode) => flavors.map((flavor) => ({ mode, flavor, name: `${mode}${capitalize(flavor)}` })));
+    const defaultServerUrl = String(
+        process.env.ANDROID_DEFAULT_SERVER_URL || process.env.DEFAULT_SERVER_URL || '',
+    ).trim().replace(/\/+$/, '');
+    if (defaultServerUrl && modes.includes('client')) {
+        log(`客户端默认服务器：${defaultServerUrl}`);
+    }
     log(`构建安卓 APK（${variants.map((v) => v.name).join('、')}，v${version}，versionCode ${versionCode}）`);
-    run(process.env.GRADLE || 'gradle', [
+    const gradleArgs = [
         '-p', project, '--no-daemon',
         ...variants.map((v) => `:app:assemble${capitalize(v.name)}Release`),
         `-PappVersionName=${version}`,
         `-PappVersionCode=${versionCode}`,
         `-PstandaloneRuntimeDir=${runtimeDir}`,
-    ]);
+    ];
+    if (defaultServerUrl) {
+        gradleArgs.push(`-PdefaultServerUrl=${defaultServerUrl}`);
+    }
+    run(process.env.GRADLE || 'gradle', gradleArgs);
     fs.mkdirSync(DIST, { recursive: true });
     for (const { mode, flavor, name } of variants) {
         const apk = path.join(project, 'app', 'build', 'outputs', 'apk', name, 'release', `app-${mode}-${flavor}-release.apk`);
@@ -420,16 +430,24 @@ function buildIos() {
     const configuration = 'Release';
     const destination = flags.simulator ? 'generic/platform=iOS Simulator' : 'generic/platform=iOS';
     fs.mkdirSync(derived, { recursive: true });
+    const defaultServerUrl = String(
+        process.env.IOS_DEFAULT_SERVER_URL || process.env.ANDROID_DEFAULT_SERVER_URL || process.env.DEFAULT_SERVER_URL || '',
+    ).trim().replace(/\/+$/, '');
+    if (defaultServerUrl) {
+        log(`iOS 客户端默认服务器：${defaultServerUrl}`);
+    }
     log(`xcodebuild（${destination}，MARKETING_VERSION=${version}）`);
-    run('xcodebuild', [
+    const xcodeArgs = [
         '-project', xcodeproj,
         '-scheme', scheme,
         '-configuration', configuration,
         '-destination', destination,
         '-derivedDataPath', derived,
         `MARKETING_VERSION=${version}`,
+        `DEFAULT_SERVER_URL=${defaultServerUrl}`,
         'build',
-    ]);
+    ];
+    run('xcodebuild', xcodeArgs);
     const platformDir = flags.simulator ? 'iphonesimulator' : 'iphoneos';
     const appPath = path.join(derived, 'Build', 'Products', `${configuration}-${platformDir}`, 'WrongNotebookClient.app');
     if (!fs.existsSync(appPath)) {

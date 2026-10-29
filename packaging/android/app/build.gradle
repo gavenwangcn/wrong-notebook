@@ -5,6 +5,9 @@ plugins {
 // 版本号由 scripts/package/build.mjs 根据发布标签传入（-PappVersionName / -PappVersionCode）
 def appVersionName = project.findProperty('appVersionName') ?: '0.0.0-dev'
 def appVersionCode = (project.findProperty('appVersionCode') ?: '1') as Integer
+// 客户端版内置默认服务器（-PdefaultServerUrl= 或构建环境变量 ANDROID_DEFAULT_SERVER_URL），未设置则首次仍进配置页
+def defaultServerUrl = (project.findProperty('defaultServerUrl') ?: '') as String
+def defaultServerUrlField = '"' + defaultServerUrl.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 // 发布签名：通过环境变量提供密钥库，未提供时 release 构建使用调试签名，仅供本地测试
 def keystoreFile = System.getenv('ANDROID_KEYSTORE_FILE')
@@ -24,6 +27,7 @@ android {
         targetSdk 35
         versionCode appVersionCode
         versionName appVersionName
+        buildConfigField 'String', 'DEFAULT_SERVER_URL', '""'
     }
 
     signingConfigs {
@@ -55,6 +59,7 @@ android {
             dimension 'mode'
             manifestPlaceholders += [appLabel: '@string/app_name_client']
             buildConfigField 'boolean', 'STANDALONE', 'false'
+            buildConfigField 'String', 'DEFAULT_SERVER_URL', defaultServerUrlField
         }
         phone {
             dimension 'device'

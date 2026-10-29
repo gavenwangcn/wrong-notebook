@@ -6,7 +6,15 @@ enum ServerConfig {
     private static let key = "server.url"
 
     static func get() -> String? {
-        defaults.string(forKey: key)
+        if let saved = defaults.string(forKey: key), !saved.isEmpty {
+            return saved
+        }
+        if let raw = Bundle.main.infoDictionary?["WrongNotebookDefaultServerURL"] as? String,
+           !raw.isEmpty,
+           let normalized = normalize(raw) {
+            return normalized
+        }
+        return nil
     }
 
     static func set(_ url: String) {
