@@ -1,0 +1,15 @@
+"setup_title" = "连接服务器";
+"setup_description" = "填写错题本服务器地址（Docker、npm、桌面版或飞牛OS 等）。手机或平板需要能访问该地址。";
+"setup_hint" = "例如 http://192.168.1.10:3000";
+"setup_connect" = "连接";
+"setup_checking" = "正在检查服务器…";
+"setup_invalid_url" = "请输入有效的 http:// 或 https:// 地址";
+"setup_check_failed_title" = "无法验证服务器";
+"setup_use_anyway_prompt" = "仍要使用此地址吗？";
+"setup_not_wrong_notebook" = "地址有响应，但不像错题本服务器。";
+"setup_use_anyway" = "仍要使用";
+"setup_http_error" = "服务器返回 HTTP %d";
+"cancel" = "取消";
+"error_title" = "无法连接服务器";
+"error_retry" = "重试";
+"error_change_server" = "更换服务器";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Github, Info, MessageSquareText, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AndroidAppSetting } from "@/components/settings/android-app-setting";
+import { NativeAppSetting } from "@/components/settings/native-app-setting";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PROJECT_REPO_URL } from "@/lib/constants/project";
 
@@ -39,7 +39,7 @@ export function AboutSettings() {
                 <span>{t.settings?.about?.version || "Version"}: v{version || "unknown"}</span>
             </div>
 
-            <AndroidAppSetting />
+            <NativeAppSetting />
 
             <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 w-full sm:w-auto px-4 sm:px-0">
                 {links.map(({ href, icon: Icon, label }) => (

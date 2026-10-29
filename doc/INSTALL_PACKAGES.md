@@ -12,6 +12,7 @@
 | 安卓手机 | `WrongNotebook-Android-Phone-<版本>.apk` | 单机版，内置服务端，无需部署服务器；锁定竖屏 |
 | 安卓平板 | `WrongNotebook-Android-Tablet-<版本>.apk` | 单机版，内置服务端，无需部署服务器；横竖屏自动旋转 |
 | 安卓手机 / 平板（客户端） | `WrongNotebook-Android-Client-Phone-<版本>.apk` / `-Client-Tablet-<版本>.apk` | 客户端版，连接已部署的服务器 |
+| iPhone / iPad（客户端） | `WrongNotebook-iOS-Client-<版本>.app`（或自行导出 `.ipa`） | **客户端**，连接已部署的服务器；需在 **macOS + Xcode** 构建并签名后安装（见下文） |
 
 校验和见 Release 中的 `SHA256SUMS.txt`。
 
@@ -94,7 +95,7 @@ App 切到后台后系统可能结束服务端进程，回到前台时会自动�
 - 打印预览中的「打印」调用系统打印，可另存为 PDF。
 - 错题本以外的链接（项目主页、AI 服务商控制台等）用系统浏览器打开。
 
-网页可以通过 User-Agent 中的 `WrongNotebookAndroid/<版本> (phone|tablet)` 识别 App，App 向网页提供的接口见 `src/lib/android-app.ts`。
+网页可以通过 User-Agent 中的 `WrongNotebookAndroid/<版本> (phone|tablet)` 或 `WrongNotebookIOS/<版本> (phone|tablet)` 识别 App，App 向网页提供的接口见 `src/lib/android-app.ts` 与 `src/lib/ios-app.ts`（统一检测用 `src/lib/native-app-bridge.ts`）。
 
 ## 本地构建
 
@@ -125,6 +126,23 @@ ANDROID_BUILD_SCRIPT="bash scripts/package/build-android-ubuntu.sh --standalone"
 ```
 
 说明：仓库根目录的 `Dockerfile` + `docker-compose-local.yml` 只用于**运行 Web 服务端**，不能用来打 APK；打 APK 使用 `Dockerfile.android-builder` + `docker-compose.android-build.yml`。
+
+iOS 客户端**不能**在 Linux 容器内运行 Xcode（与安卓不同）。在 Ubuntu 22 上可用与安卓对等的 Docker 入口做**工程校验**、**打包 Mac 构建用源码**，或通过 **SSH 远程 Mac** 拉回 `.app`：
+
+```bash
+# 默认：生成 dist/WrongNotebook-iOS-mac-build-<版本>.tar.gz（拷到 Mac 解压后 build-ios-macos.sh）
+docker compose -f docker-compose.ios-build.yml build
+docker compose -f docker-compose.ios-build.yml run --rm ios-build
+
+# 远程 Mac 构建（Mac 需 Xcode、Node 22.15+、SSH 免密）
+export IOS_BUILD_SSH=you@mac-builder.local
+docker compose -f docker-compose.ios-build.yml run --rm -v "${HOME}/.ssh:/root/.ssh:ro" ios-build
+
+bash scripts/package/build-ios-ubuntu.sh --help
+IOS_BUILD_SSH=you@mac bash scripts/package/build-ios-ubuntu.sh
+```
+
+打 iOS 包使用 `Dockerfile.ios-builder` + `docker-compose.ios-build.yml`（不是根目录 `Dockerfile`）。
 
 ```bash
 npm ci
@@ -183,3 +201,25 @@ npm 使用 [Trusted Publishing](https://docs.npmjs.com/trusted-publishers)（OID
 | `packaging/android/` | 安卓 App Gradle 工程（单机版 / 客户端版 × 手机版 / 平板版） |
 | `scripts/package/android-runtime.mjs` | 组装安卓单机版内置的 Node.js、Prisma 引擎和服务端 |
 | `scripts/package/build-android-prisma-engines.sh` | 交叉编译安卓 Prisma 引擎 |
+| `packaging/ios/WrongNotebookClient.xcodeproj` | iOS 客户端 Xcode 工程（WKWebView） |
+| `scripts/package/build-ios-macos.sh` | macOS 上一键构建 iOS 客户端 |
+| `scripts/package/build-ios-ubuntu.sh` | Ubuntu / Docker：校验、打包 Mac 源码、可选 SSH 远程构建 |
+| `Dockerfile.ios-builder` / `docker-compose.ios-build.yml` | iOS 构建辅助 Docker 环境（Linux） |
+
+### iOS 客户端
+
+与安卓**客户端版**相同：首次启动填写服务器地址（如 `http://192.168.1.10:3000`），通过 `/api/health` 校验；数据保存在服务器，App 只保存服务器 URL。不支持在 iPhone 内嵌运行 Node 服务端（无单机版）。
+
+构建需 **macOS + Xcode 15+**（推荐 Xcode 16+ 以支持网页拍照上传）。在 Mac 上：
+
+```bash
+bash scripts/package/build-ios-macos.sh
+# 模拟器：bash scripts/package/build-ios-macos.sh --simulator
+# 或：node scripts/package/build.mjs ios [--simulator]
+```
+
+在 **Ubuntu 22** 上请用 `build-ios-ubuntu.sh` 或 `docker-compose.ios-build.yml`（见上文 Docker 小节）：本地只能生成 Mac 构建包或经 `IOS_BUILD_SSH` 远程构建，无法在纯 Linux 内产出已签名的 `.app`。
+
+产物在 `dist/WrongNotebook-iOS-Client-<版本>.app`。安装到真机需在 Xcode 中配置 **Signing & Capabilities**（Apple 开发者账号或免费 Apple ID），然后连接设备 Run；分发给他人的常见方式：TestFlight、Ad Hoc IPA、或企业签名（自行负责合规）。
+
+HTTP 服务器需在 `Info.plist` 中允许明文流量（工程已设置 `NSAllowsArbitraryLoads`，便于局域网 IP 访问；生产环境建议服务端使用 HTTPS）。

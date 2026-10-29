@@ -1,0 +1,18 @@
+# iOS 客户端构建辅助环境（非服务端运行镜像）。配合 docker-compose.ios-build.yml 使用。
+#
+# 说明：Apple 仅允许在 macOS 上运行 Xcode/xcodebuild，本镜像基于 Linux，不能像在容器内打安卓 APK 那样
+# 直接产出 .app。容器内脚本会：
+#   - 默认：校验工程并生成 dist/WrongNotebook-iOS-mac-build-<版本>.tar.gz（拷到 Mac 构建）
+#   - 设置 IOS_BUILD_SSH 并挂载 ~/.ssh：rsync 到远程 Mac 构建并拉回 dist/*.app
+#
+# 在 Mac 本机构建请直接：bash scripts/package/build-ios-macos.sh
+ARG NODE_IMAGE=node:24-bookworm
+FROM ${NODE_IMAGE}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        openssh-client rsync zip ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+CMD ["bash", "scripts/package/build-ios-ubuntu.sh"]

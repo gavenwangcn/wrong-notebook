@@ -25,7 +25,7 @@ wrong-notebook 是一个错题本 Web 应用：上传题目图片或文字，由
 | `e2e/` | Playwright 测试 |
 | `prisma/` | `schema.prisma`、迁移、种子数据 |
 | `scripts/` | CI、部署、数据迁移和种子脚本；`scripts/package/` 为安装包构建 |
-| `packaging/` | npm、桌面版（Electron）、飞牛OS 安装包的启动器与配置，安卓 App（`android/`，单机版与客户端版），见 `doc/INSTALL_PACKAGES.md` |
+| `packaging/` | npm、桌面版（Electron）、飞牛OS 安装包的启动器与配置，安卓 App（`android/`，单机版与客户端版）、iOS 客户端（`ios/`），见 `doc/INSTALL_PACKAGES.md` |
 | `doc/` | 项目文档（部署、日志、Markdown、HTTPS 等） |
 
 ## 常用命令

@@ -10,6 +10,8 @@
  *   node scripts/package/build.mjs android [--mode standalone|client] [--flavor phone|tablet]
  *                                                          打包安卓 APK（需要 Android SDK 和 Gradle）：单机版内置服务端，
  *                                                          需先构建 dist/bundle 和安卓 Prisma 引擎；客户端版连接已部署的服务器
+ *   node scripts/package/build.mjs ios [--simulator]
+ *                                                          打包 iOS 客户端（需 macOS + Xcode）；产物为 .app 或 .ipa（见 scripts/package/build-ios-macos.sh）
  *
  * 版本号依次取 --version、环境变量 PACKAGE_VERSION、package.json。
  * Prisma 引擎与当前构建机平台一致，因此桌面端和飞牛OS 需在目标平台上构建（见 .github/workflows/packages.yml）。
@@ -38,6 +40,7 @@ function parseFlags(args) {
         const m = /^--(version|arch|flavor|mode)(?:=(.*))?$/.exec(args[i]);
         if (m) out[m[1]] = m[2] ?? args[++i];
         else if (args[i] === '--skip-build') out.skipBuild = true;
+        else if (args[i] === '--simulator') out.simulator = true;
         else out._.push(args[i]);
     }
     return out;
@@ -401,9 +404,48 @@ async function buildAndroid() {
     }
 }
 
-const commands = { bundle: buildBundle, npm: buildNpm, desktop: buildDesktop, fnos: buildFnos, android: buildAndroid };
+/**
+ * iOS 客户端（WKWebView 连接服务器）。必须在 macOS 上执行 xcodebuild。
+ */
+function buildIos() {
+    if (process.platform !== 'darwin') {
+        throw new Error(
+            'iOS 客户端需在 macOS 上使用 Xcode 构建（bash scripts/package/build-ios-macos.sh）；'
+            + 'Ubuntu/Docker 请用 bash scripts/package/build-ios-ubuntu.sh 或 docker-compose.ios-build.yml',
+        );
+    }
+    const xcodeproj = path.join(PACKAGING, 'ios', 'WrongNotebookClient.xcodeproj');
+    const scheme = 'WrongNotebookClient';
+    const derived = path.join(WORK, 'ios', 'DerivedData');
+    const configuration = 'Release';
+    const destination = flags.simulator ? 'generic/platform=iOS Simulator' : 'generic/platform=iOS';
+    fs.mkdirSync(derived, { recursive: true });
+    log(`xcodebuild（${destination}，MARKETING_VERSION=${version}）`);
+    run('xcodebuild', [
+        '-project', xcodeproj,
+        '-scheme', scheme,
+        '-configuration', configuration,
+        '-destination', destination,
+        '-derivedDataPath', derived,
+        `MARKETING_VERSION=${version}`,
+        'build',
+    ]);
+    const platformDir = flags.simulator ? 'iphonesimulator' : 'iphoneos';
+    const appPath = path.join(derived, 'Build', 'Products', `${configuration}-${platformDir}`, 'WrongNotebookClient.app');
+    if (!fs.existsSync(appPath)) {
+        throw new Error(`未找到 ${appPath}，请检查 xcodebuild 输出`);
+    }
+    fs.mkdirSync(DIST, { recursive: true });
+    const suffix = flags.simulator ? 'Simulator' : 'Client';
+    const outApp = path.join(DIST, `WrongNotebook-iOS-${suffix}-${version}.app`);
+    rm(outApp);
+    copy(appPath, outApp);
+    log(`iOS 应用已生成：${path.relative(ROOT, outApp)}（需 Apple 开发者签名后安装到真机，或使用 Xcode 直接 Run）`);
+}
+
+const commands = { bundle: buildBundle, npm: buildNpm, desktop: buildDesktop, fnos: buildFnos, android: buildAndroid, ios: buildIos };
 if (!commands[command]) {
-    console.error('用法：node scripts/package/build.mjs <bundle|npm|desktop|fnos|android> [参数]');
+    console.error('用法：node scripts/package/build.mjs <bundle|npm|desktop|fnos|android|ios> [参数]');
     process.exit(1);
 }
 try {

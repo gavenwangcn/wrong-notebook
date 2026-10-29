@@ -2,7 +2,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AndroidAppSetting } from '@/components/settings/android-app-setting';
+import { NativeAppSetting } from '@/components/settings/native-app-setting';
+import { getNativeAppBridge } from '@/lib/native-app-bridge';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import {
     androidLibraryName,
@@ -27,9 +28,9 @@ afterEach(async () => {
     vi.unstubAllGlobals();
 });
 
-const render = () => act(async () => root.render(<LanguageProvider><AndroidAppSetting /></LanguageProvider>));
+const render = () => act(async () => root.render(<LanguageProvider><NativeAppSetting /></LanguageProvider>));
 
-describe('AndroidAppSetting', () => {
+describe('NativeAppSetting', () => {
     it('普通浏览器中不显示', async () => {
         await render();
         expect(container.querySelector('button')).toBeNull();
@@ -44,6 +45,20 @@ describe('AndroidAppSetting', () => {
         });
         await render();
         expect(container.textContent).toContain('http://192.168.1.10:3000');
+        await act(async () => container.querySelector('button')?.click());
+        expect(changeServer).toHaveBeenCalledTimes(1);
+    });
+
+    it('iOS 客户端同样显示更换服务器', async () => {
+        const changeServer = vi.fn();
+        vi.stubGlobal('WrongNotebookIOS', {
+            changeServer,
+            getServerUrl: () => 'http://10.0.0.5:3000',
+            getDeviceType: () => 'phone',
+            isStandalone: () => false,
+        });
+        await render();
+        expect(getNativeAppBridge()?.getServerUrl()).toBe('http://10.0.0.5:3000');
         await act(async () => container.querySelector('button')?.click());
         expect(changeServer).toHaveBeenCalledTimes(1);
     });

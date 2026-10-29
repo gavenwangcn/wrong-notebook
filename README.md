@@ -312,8 +312,9 @@ wrong-notebook --port 3000
 | 飞牛OS | `WrongNotebook-FnOS-<版本>-x86.fpk`、`WrongNotebook-FnOS-<版本>-arm.fpk` |
 | 安卓手机 / 平板（单机版） | `WrongNotebook-Android-Phone-<版本>.apk`（竖屏）、`WrongNotebook-Android-Tablet-<版本>.apk`（横竖屏自动旋转） |
 | 安卓手机 / 平板（客户端） | `WrongNotebook-Android-Client-Phone-<版本>.apk`、`WrongNotebook-Android-Client-Tablet-<版本>.apk` |
+| iPhone / iPad（客户端） | `WrongNotebook-iOS-Client-<版本>.app`（需 macOS + Xcode 构建并签名后安装，见 [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md)） |
 
-安卓单机版内置服务端，安装后直接使用，数据保存在本机（卸载 App 会删除数据；数据含 API Key，不参与系统备份，卸载或换机前请在设置中导出备份），首次以默认管理员 `admin@localhost` / `123456` 登录并按提示修改密码；需要 Android 8.0 及以上的 64 位 ARM 设备。客户端版不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），可在「设置 → 关于」中更换服务器，需要 Android 7.0 及以上。两种 App 都支持拍照上传、导出文件和系统打印，可以同时安装。
+安卓单机版内置服务端，安装后直接使用，数据保存在本机（卸载 App 会删除数据；数据含 API Key，不参与系统备份，卸载或换机前请在设置中导出备份），首次以默认管理员 `admin@localhost` / `123456` 登录并按提示修改密码；需要 Android 8.0 及以上的 64 位 ARM 设备。客户端版不内置服务端，首次打开时填写已部署的服务器地址（如 `http://192.168.1.10:3000`），可在「设置 → 关于」中更换服务器，需要 Android 7.0 及以上。iOS 客户端同样连接已部署的服务器（无单机版），需 iOS 16 及以上，在 Mac 上用 Xcode 签名安装或 TestFlight 分发。安卓与 iOS 客户端均支持拍照上传、导出文件和系统打印。
 
 数据目录、默认账号、本地构建方法见 [INSTALL_PACKAGES.md](doc/INSTALL_PACKAGES.md)。
 

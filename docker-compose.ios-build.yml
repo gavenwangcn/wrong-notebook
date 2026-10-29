@@ -1,0 +1,43 @@
+# 在 Docker 内触发 iOS 客户端构建（与 Dockerfile / docker-compose-local.yml 跑服务端无关）。
+#
+# Linux 宿主机（如 Ubuntu 22）无法运行 Xcode。默认行为：校验工程并生成 Mac 构建用 tar.gz：
+#   docker compose -f docker-compose.ios-build.yml build
+#   docker compose -f docker-compose.ios-build.yml run --rm ios-build
+#   产物：./dist/WrongNotebook-iOS-mac-build-*.tar.gz
+#
+# 若有一台 Mac 构建机（已装 Xcode、Node 22.15+，SSH 免密可达），可在 Ubuntu 上远程构建并拉回 .app：
+#   export IOS_BUILD_SSH=you@192.168.1.50
+#   docker compose -f docker-compose.ios-build.yml run --rm \
+#     -v "${HOME}/.ssh:/root/.ssh:ro" ios-build
+#   产物：./dist/WrongNotebook-iOS-Client-*.app
+#
+# 模拟器包（远程 Mac）：
+#   IOS_BUILD_SCRIPT="bash scripts/package/build-ios-ubuntu.sh --simulator" \
+#     IOS_BUILD_SSH=you@mac docker compose -f docker-compose.ios-build.yml run --rm \
+#     -v "${HOME}/.ssh:/root/.ssh:ro" ios-build
+#
+# 仅校验工程：
+#   IOS_BUILD_SCRIPT="bash scripts/package/build-ios-ubuntu.sh --validate-only" \
+#     docker compose -f docker-compose.ios-build.yml run --rm ios-build
+
+version: '3'
+
+services:
+  ios-build:
+    image: wrong-notebook-ios-builder:local
+    build:
+      context: .
+      dockerfile: Dockerfile.ios-builder
+    working_dir: /src
+    volumes:
+      - .:/src
+    environment:
+      IOS_BUILD_SSH: ${IOS_BUILD_SSH:-}
+      IOS_BUILD_REMOTE_DIR: ${IOS_BUILD_REMOTE_DIR:-wrong-notebook-ios-build}
+      IOS_BUILD_MODE: ${IOS_BUILD_MODE:-pack}
+      PACKAGE_VERSION: ${PACKAGE_VERSION:-}
+      npm_config_registry: ${npm_config_registry:-https://registry.npmjs.org}
+    command:
+      - bash
+      - -lc
+      - ${IOS_BUILD_SCRIPT:-bash scripts/package/build-ios-ubuntu.sh}
