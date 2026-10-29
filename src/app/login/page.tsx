@@ -98,6 +98,11 @@ export default function LoginPage() {
                                 {t.auth?.login?.registerNow || 'Register now'}
                             </Link>
                         </div>
+                        <div className="text-center text-sm">
+                            <Link href="/download" className="text-primary hover:underline">
+                                {t.auth?.login?.downloadMobile || 'Download mobile app'}
+                            </Link>
+                        </div>
                     </form>
                 </CardContent>
             </Card>

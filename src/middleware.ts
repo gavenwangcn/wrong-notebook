@@ -17,7 +17,10 @@ export async function middleware(req: NextRequest) {
         });
 
         const isAuth = !!token;
-        const isAuthPage = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/register");
+        const isAuthPage =
+            req.nextUrl.pathname.startsWith("/login")
+            || req.nextUrl.pathname.startsWith("/register")
+            || req.nextUrl.pathname.startsWith("/download");
         const isAdminPage = req.nextUrl.pathname.startsWith("/admin");
 
         logger.debug({
@@ -77,6 +80,6 @@ export const config = {
          * - icons/、manifest.webmanifest（PWA 图标与清单，登录页也要能加载）
          * - sw.js、offline.html（Service Worker 与离线页，未登录时也要能加载）
          */
-        "/((?!api|_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|sw.js|offline.html).*)",
+        "/((?!api|_next/static|_next/image|favicon.ico|icons/|manifest.webmanifest|sw.js|offline.html|dest/).*)",
     ],
 };

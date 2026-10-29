@@ -77,3 +77,4 @@ __pycache__/
 
 # 安装包构建产物
 /dist/
+/public/dest/*.apk
