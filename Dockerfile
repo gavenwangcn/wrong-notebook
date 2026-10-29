@@ -80,6 +80,9 @@ COPY --from=builder /app/public ./public
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# standalone 文件追踪可能只带上 bcryptjs 的 ESM 入口；entrypoint 里 seed-admin.js 使用 require()，
+# 需要完整的 umd/（见 bcryptjs 3 的 exports.require），否则首次启动 seed 失败。
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 # Copy Prisma schema and migrations for runtime usage if needed (e.g. for migrations)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
