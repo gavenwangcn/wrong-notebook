@@ -1,0 +1,48 @@
+# 从当前仓库源码构建镜像并启动服务端（生产模式 standalone，非 npm run dev）。
+# 适用：Linux Ubuntu 22.04 等已安装 Docker Engine 与 Compose 插件的环境。
+#
+# 首次使用：
+#   mkdir -p data config
+#   openssl rand -base64 32   # 写入下方 NEXTAUTH_SECRET
+#   docker compose -f docker-compose-local.yml build
+#   docker compose -f docker-compose-local.yml up -d
+#
+# 代码更新后重建并重启（数据保留在 ./data、./config）：
+#   docker compose -f docker-compose-local.yml build
+#   docker compose -f docker-compose-local.yml up -d --force-recreate
+#
+# 可选构建参数（export 后再 build）：
+#   APP_REVISION、APP_VERSION — 镜像标签与 /api/health 展示（默认 unknown / package.json）
+#   TEST_TIMEOUT_MS — 镜像内 Vitest 超时，慢机器可设为 120000
+#   HTTP_PROXY、HTTPS_PROXY、NO_PROXY — 构建阶段拉依赖时使用
+#   NODE_IMAGE — 默认 node:24-alpine
+
+version: '3'
+
+services:
+  wrong-notebook:
+    image: wrong-notebook:local
+    pull_policy: build
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_REVISION: ${APP_REVISION:-unknown}
+        APP_VERSION: ${APP_VERSION:-}
+        NODE_IMAGE: ${NODE_IMAGE:-node:24-alpine}
+        TEST_TIMEOUT_MS: ${TEST_TIMEOUT_MS:-5000}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
+    container_name: wrong-notebook
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # 按实际访问地址修改（局域网 IP、域名或 http://localhost:3000）
+      # - NEXTAUTH_URL=http://192.168.1.10:3000
+      - NEXTAUTH_SECRET=your_secret_key
+      - AUTH_TRUST_HOST=true
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
