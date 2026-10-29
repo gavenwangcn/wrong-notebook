@@ -62,7 +62,10 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 name="email"
-                                type="email"
+                                type="text"
+                                inputMode="email"
+                                autoComplete="username"
+                                spellCheck={false}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required

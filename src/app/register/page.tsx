@@ -154,7 +154,10 @@ export default function RegisterPage() {
                             <Input
                                 id="email"
                                 name="email"
-                                type="email"
+                                type="text"
+                                inputMode="email"
+                                autoComplete="email"
+                                spellCheck={false}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
