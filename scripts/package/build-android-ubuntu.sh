@@ -113,9 +113,29 @@ check_android_sdk() {
     export ANDROID_SDK_ROOT="$sdk"
 }
 
+resolve_gradle() {
+    if command -v gradle >/dev/null 2>&1; then
+        echo gradle
+        return 0
+    fi
+    local candidate
+    for candidate in /opt/gradle-*/bin/gradle; do
+        if [[ -x "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    echo gradle
+}
+
 check_gradle() {
-    local g="${GRADLE:-gradle}"
-    need_cmd "$g" || return 1
+    local g="${GRADLE:-$(resolve_gradle)}"
+    if [[ "$g" == /* ]]; then
+        [[ -x "$g" ]] || { echo "Gradle 不可执行: $g" >&2; return 1; }
+    else
+        need_cmd "$g" || return 1
+    fi
+    export GRADLE="$g"
     local gv
     gv="$("$g" -v 2>/dev/null | grep '^Gradle' | head -1 || true)"
     if [[ -z "$gv" ]]; then

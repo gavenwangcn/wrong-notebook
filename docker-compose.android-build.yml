@@ -14,8 +14,6 @@
 #   ANDROID_BUILD_SCRIPT="bash scripts/package/build-android-ubuntu.sh --mode client --flavor phone" \
 #     docker compose -f docker-compose.android-build.yml run --rm android-build
 
-version: '3'
-
 services:
   android-build:
     image: wrong-notebook-android-builder:local
@@ -33,9 +31,11 @@ services:
       ANDROID_HOME: /opt/android-sdk
       ANDROID_SDK_ROOT: /opt/android-sdk
       ANDROID_NDK_HOME: /opt/android-sdk/ndk/28.0.13004108
+      # login shell（bash -lc）会重置 PATH，需显式保留镜像内 Gradle / SDK
+      PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:/opt/gradle-8.11.1/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
     command:
       - bash
-      - -lc
+      - -c
       - ${ANDROID_BUILD_SCRIPT:-bash scripts/package/build-android-ubuntu.sh --mode client}
 
 volumes:
